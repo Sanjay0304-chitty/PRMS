@@ -1,0 +1,32 @@
+.theme-switcher {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(128, 128, 128, 0.12);
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.theme-switcher-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.5;
+  transition: all 0.2s ease;
+}
+
+.theme-switcher-btn:hover {
+  opacity: 0.8;
+}
+
+.theme-switcher-btn.active {
+  opacity: 1;
+  background: rgba(128, 128, 128, 0.2);
+}

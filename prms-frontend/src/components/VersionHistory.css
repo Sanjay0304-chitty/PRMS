@@ -1,0 +1,6 @@
+.version-history { margin-top: 12px; }
+.version-history-toggle { display: flex; align-items: center; gap: 6px; background: none; border: none; cursor: pointer; font-size: 14px; color: inherit; }
+.version-history-list { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.version-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border-radius: 6px; background: var(--surface-container); }
+.version-item.current { border-left: 3px solid var(--primary-color); }
+.version-item button { background: var(--primary-color); color: var(--on-primary); border: none; border-radius: 4px; padding: 3px 8px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 12px; }

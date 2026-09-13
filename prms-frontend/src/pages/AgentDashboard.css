@@ -1,0 +1,322 @@
+/* ======================================================
+   Agent Dashboard — EstateSync Design
+   Reuses kpi-card, panel-card, dashboard-main-grid
+   from styles.css
+   ====================================================== */
+
+.agent-dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+  animation: fade-in 0.4s ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Skeleton ---- */
+.agent-dashboard-skeleton {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-lg);
+}
+
+@media (max-width: 1200px) {
+  .agent-dashboard-skeleton {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .agent-dashboard-skeleton {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- Properties grid ---- */
+.agent-properties-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
+}
+
+.agent-property-card {
+  border: 1px solid var(--border-low);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--surface-container-low);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.agent-property-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+}
+
+.agent-property-img {
+  height: 160px;
+  overflow: hidden;
+}
+
+.agent-property-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+.agent-property-card:hover .agent-property-img img {
+  transform: scale(1.05);
+}
+
+.agent-property-img-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--outline-variant);
+  background: linear-gradient(135deg, var(--surface-subtle), var(--surface-container-low));
+}
+
+.agent-property-info {
+  padding: var(--spacing-md);
+  display: grid;
+  gap: var(--spacing-sm);
+}
+
+.agent-property-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.agent-property-top h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.agent-location {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.agent-rent-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: var(--spacing-xs);
+  border-top: 1px solid var(--border-low);
+}
+
+.agent-rent-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.agent-rent-row strong {
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+/* ---- Status badges ---- */
+.agent-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.agent-status--available {
+  color: var(--status-success);
+  background: rgba(22, 163, 74, 0.1);
+}
+
+.agent-status--rented {
+  color: var(--primary-accent);
+  background: rgba(37, 99, 235, 0.1);
+}
+
+.agent-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.agent-status--confirmed {
+  color: var(--status-success);
+  background: rgba(22, 163, 74, 0.1);
+}
+
+.agent-status--active {
+  color: var(--status-success);
+  background: rgba(22, 163, 74, 0.1);
+}
+
+.agent-status--error {
+  color: var(--status-error);
+  background: rgba(220, 38, 38, 0.1);
+}
+
+/* ---- Priority badges ---- */
+.agent-priority-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.agent-priority--high {
+  color: var(--status-error);
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.agent-priority--medium {
+  color: var(--status-warning);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.agent-priority--low {
+  color: var(--status-success);
+  background: rgba(22, 163, 74, 0.1);
+}
+
+/* ---- Bookings list ---- */
+.agent-bookings-list {
+  display: grid;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+}
+
+.agent-booking-item {
+  display: grid;
+  grid-template-columns: 50px 1fr auto;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  background: var(--surface-container-low);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.agent-booking-item:hover {
+  box-shadow: var(--shadow-xs);
+  transform: translateY(-1px);
+}
+
+.agent-booking-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: grid;
+  place-items: center;
+  color: var(--primary-color);
+  background: var(--secondary-fixed);
+}
+
+.agent-booking-info h4 {
+  margin: 0 0 3px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.agent-booking-info p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* ---- Maintenance list ---- */
+.agent-maintenance-list {
+  display: grid;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+}
+
+.agent-maintenance-item {
+  display: grid;
+  grid-template-columns: 50px 1fr auto;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  background: var(--surface-container-low);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.agent-maintenance-item:hover {
+  box-shadow: var(--shadow-xs);
+  transform: translateY(-1px);
+}
+
+.agent-maint-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.agent-maint-icon.urgent {
+  background: var(--error-state);
+  color: var(--status-error);
+}
+.agent-maint-icon.soft {
+  background: var(--primary-fixed);
+  color: var(--primary-accent);
+}
+
+.agent-maintenance-info h4 {
+  margin: 0 0 3px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.agent-maintenance-info p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.agent-maintenance-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 1200px) {
+  .dashboard-main-grid {
+    grid-template-columns: 1fr;
+  }
+  .agent-properties-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 800px) {
+  .agent-booking-item,
+  .agent-maintenance-item {
+    grid-template-columns: 1fr;
+  }
+
+  .agent-maintenance-badges {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+  }
+}

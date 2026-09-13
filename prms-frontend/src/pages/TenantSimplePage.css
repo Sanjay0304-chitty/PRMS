@@ -1,0 +1,212 @@
+.tenant-simple-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.tenant-simple-hero h1 {
+  margin: 0;
+  font-size: 46px;
+  line-height: 1.05;
+  letter-spacing: -1.5px;
+  font-weight: 500;
+}
+
+.tenant-simple-hero p {
+  margin: var(--spacing-sm) 0 0;
+  color: var(--text-secondary);
+  font-size: 22px;
+  max-width: 900px;
+}
+
+.tenant-simple-primary-btn {
+  height: 40px;
+  padding: 0 18px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--primary-container);
+  color: var(--on-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tenant-simple-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.tenant-simple-card {
+  min-height: 150px;
+  padding: var(--spacing-lg);
+  border: 2px solid var(--border-color-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-container-lowest);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.03);
+}
+
+.tenant-simple-icon {
+  width: 58px;
+  height: 58px;
+  margin-bottom: 18px;
+  border-radius: var(--radius-md);
+  display: grid;
+  place-items: center;
+  color: var(--secondary-accent);
+  background: var(--secondary-fixed);
+}
+
+.tenant-simple-card p {
+  margin: 0 0 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+}
+
+.tenant-simple-card h3 {
+  margin: 0;
+  color: var(--on-surface);
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+.tenant-simple-table-card {
+  border: 2px solid var(--border-color-strong);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--surface-container-lowest);
+}
+
+.tenant-simple-table-header {
+  min-height: 76px;
+  padding: 0 var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tenant-simple-table-header h2 {
+  margin: 0;
+  font-size: 23px;
+  font-weight: 500;
+}
+
+.tenant-simple-search {
+  width: 320px;
+  height: 44px;
+  padding: 0 var(--spacing-sm);
+  border: 2px solid var(--border-color-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-container);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.tenant-simple-search input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 15px;
+}
+
+.tenant-simple-table {
+  border-top: 2px solid var(--border-color-strong);
+}
+
+.tenant-simple-table-head,
+.tenant-simple-table-row {
+  display: grid;
+  align-items: center;
+}
+
+.tenant-simple-table-head {
+  min-height: 52px;
+  padding: 0 var(--spacing-lg);
+  background: var(--page-bg);
+  border-bottom: 2px solid var(--border-color-strong);
+}
+
+.tenant-simple-table-head p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.tenant-simple-table-row {
+  min-height: 86px;
+  padding: 0 var(--spacing-lg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tenant-simple-table-row:last-child {
+  border-bottom: none;
+}
+
+.tenant-simple-table-row span {
+  color: var(--on-surface);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.tenant-simple-table-row button {
+  height: 32px;
+  padding: 0 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--primary-container);
+  color: var(--on-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (max-width: 1250px) {
+  .tenant-simple-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 850px) {
+  .tenant-simple-hero {
+    flex-direction: column;
+  }
+
+  .tenant-simple-hero h1 {
+    font-size: 36px;
+  }
+
+  .tenant-simple-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .tenant-simple-table-header {
+    padding: var(--spacing-md);
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  .tenant-simple-search {
+    width: 100%;
+  }
+
+  .tenant-simple-table {
+    overflow-x: auto;
+  }
+
+  .tenant-simple-table-head,
+  .tenant-simple-table-row {
+    min-width: 900px;
+  }
+}

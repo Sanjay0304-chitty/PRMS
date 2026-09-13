@@ -1,0 +1,173 @@
+.booking-heatmap {
+  padding: var(--spacing-xs) 0;
+}
+
+.heatmap-loading {
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.heatmap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-md);
+}
+
+.heatmap-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.heatmap-title-row h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.heatmap-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.heatmap-nav button {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xs, 6px);
+  padding: 6px var(--spacing-xs);
+  cursor: pointer;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+}
+
+.heatmap-nav button:hover {
+  background: var(--surface-container);
+}
+
+.heatmap-month {
+  font-weight: 600;
+  font-size: 0.95rem;
+  min-width: 120px;
+  text-align: center;
+}
+
+.heatmap-legend {
+  display: flex;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+  padding-left: 120px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-xs, 3px);
+}
+
+.legend-available {
+  background: var(--secondary-fixed);
+  border: 1px solid var(--primary-fixed);
+}
+
+.legend-booked {
+  background: var(--primary-accent);
+}
+
+.heatmap-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.heatmap-grid-row {
+  display: flex;
+  align-items: stretch;
+}
+
+.heatmap-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+}
+
+.heatmap-corner {
+  background: var(--surface-container);
+  border-right: 1px solid var(--border-color);
+  min-width: 120px;
+  height: 28px;
+}
+
+.heatmap-date-cell {
+  flex: 1;
+  font-weight: 500;
+  color: var(--text-secondary);
+  height: 28px;
+  background: var(--surface-container);
+  border-right: 1px solid var(--border-color);
+}
+
+.heatmap-label-cell {
+  min-width: 120px;
+  max-width: 120px;
+  padding: 0 var(--spacing-xs);
+  background: var(--surface-container);
+  border-right: 1px solid var(--border-color);
+  height: 28px;
+}
+
+.prop-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.82rem;
+  color: var(--on-surface);
+  font-weight: 500;
+}
+
+.heatmap-data-cell {
+  flex: 1;
+  height: 28px;
+  border-right: 1px solid var(--border-color);
+  transition: opacity 0.15s;
+}
+
+.heatmap-data-cell.available {
+  background: var(--secondary-fixed);
+}
+
+.heatmap-data-cell.booked {
+  background: var(--primary-accent);
+}
+
+.heatmap-data-cell:hover {
+  opacity: 0.8;
+  cursor: pointer;
+}
+
+.heatmap-empty {
+  text-align: center;
+  padding: var(--spacing-lg) var(--spacing-md);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.heatmap-empty p {
+  margin: 0;
+}

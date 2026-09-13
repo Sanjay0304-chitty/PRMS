@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Prisma
+prms-backend/.prisma/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# SQLite data
+dev.db
+
+# Uploads
+uploads/
+
+# Typescript build cache
+tsconfig.tsbuildinfo
+
+# Data seed files
+prms-backend/data/*.csv
+
+# Misc
+bcrypt_whl_file.whl

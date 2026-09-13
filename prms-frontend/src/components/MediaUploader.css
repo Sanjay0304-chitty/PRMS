@@ -1,0 +1,170 @@
+.media-uploader {
+  margin-top: 1rem;
+}
+
+.media-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  color: var(--fg, #18181b);
+}
+
+.media-header h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* ---------- Dropzone ---------- */
+.media-dropzone {
+  border: 2px dashed var(--muted-border, #d4d4d8);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--muted-fg, #52525b);
+}
+
+.media-dropzone:hover,
+.media-drop-active {
+  border-color: var(--accent, #6366f1);
+  background: rgba(99, 102, 241, 0.04);
+}
+
+.media-drop-icon {
+  margin-bottom: 0.25rem;
+  color: var(--accent, #6366f1);
+}
+
+.media-hidden-input {
+  display: none;
+}
+
+/* ---------- Grid ---------- */
+.media-grid {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+.media-item {
+  position: relative;
+  border-radius: 0.65rem;
+  overflow: hidden;
+  background: #f7f7f8;
+  border: 1px solid #e4e4e7;
+}
+
+.media-video-item .media-thumb-video {
+  width: 100%;
+  display: block;
+  max-height: 200px;
+  object-fit: cover;
+}
+
+/* ---------- Document item ---------- */
+.media-doc-grid {
+  grid-template-columns: 1fr;
+}
+
+.media-doc-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+}
+
+.media-doc-icon {
+  flex-shrink: 0;
+  color: var(--muted-fg, #71717a);
+}
+
+.media-doc-name {
+  flex: 1;
+  font-size: 0.875rem;
+  color: var(--fg, #18181b);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.media-doc-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.media-action-btn {
+  background: none;
+  border: 1px solid var(--muted-border, #d4d4d8);
+  border-radius: 0.45rem;
+  padding: 0.35rem;
+  cursor: pointer;
+  color: var(--muted-fg, #71717a);
+  transition: background 0.15s, color 0.15s;
+}
+.media-action-btn:hover {
+  background: #f4f4f5;
+  color: var(--fg, #18181b);
+}
+
+.media-action-delete:hover {
+  color: #ef4444;
+}
+
+/* ---------- Delete button ---------- */
+.media-delete {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  border-radius: 0.35rem;
+  padding: 0.3rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.media-delete:hover {
+  background: rgba(239, 68, 68, 0.85);
+}
+
+/* ---------- Toast ---------- */
+.media-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.media-toast-success {
+  background: #065f46;
+  color: #fff;
+}
+
+.media-toast-error {
+  background: #991b1b;
+  color: #fff;
+}
+
+/* Spinner */
+.spin-icon {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

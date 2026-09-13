@@ -1,0 +1,303 @@
+.landlord-categories {
+  padding: 0;
+}
+
+.landlord-categories-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-lg);
+}
+
+.landlord-categories-header h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.landlord-categories-header p {
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  margin: 0;
+}
+
+.landlord-categories-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px;
+  background: var(--primary-container);
+  color: var(--on-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.landlord-categories-loading {
+  padding: var(--spacing-lg);
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.landlord-categories-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-4xl) var(--spacing-lg);
+  color: var(--text-secondary);
+}
+
+.landlord-categories-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.landlord-categories-section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: var(--spacing-sm);
+  color: var(--on-surface);
+}
+
+.landlord-categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--spacing-sm);
+}
+
+.landlord-categories-list {
+  display: grid;
+  gap: var(--spacing-sm);
+}
+
+.landlord-category-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  transition: box-shadow 0.2s;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+}
+
+.landlord-category-card:hover {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.landlord-category-card-full {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  transition: box-shadow 0.2s;
+}
+
+.landlord-category-card-full:hover {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.landlord-category-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--secondary-fixed), var(--secondary-container));
+  color: var(--primary-accent);
+  flex-shrink: 0;
+}
+
+.landlord-category-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.landlord-category-info h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 2px;
+}
+
+.landlord-category-info p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0 0 6px;
+}
+
+.landlord-category-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.landlord-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 2px var(--spacing-sm);
+  border-radius: var(--radius-xs, 6px);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.landlord-badge.shared {
+  background: var(--success-fixed);
+  color: var(--success-label);
+}
+
+.landlord-badge.personal {
+  background: var(--warning-state);
+  color: var(--warning-label);
+}
+
+.landlord-category-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--border-color);
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.action-btn:hover {
+  background: var(--surface-container);
+  border-color: var(--border-color-hover);
+}
+
+.action-btn.save {
+  background: var(--primary-container);
+  border-color: var(--primary-container);
+  color: var(--on-primary);
+  width: auto;
+  padding: 0 var(--spacing-sm);
+  gap: var(--spacing-xs);
+}
+
+.action-btn.save:hover {
+  filter: brightness(1.15);
+}
+
+.action-btn.save span {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.action-btn.cancel {
+  background: var(--surface-container);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+  width: auto;
+  padding: 0 var(--spacing-sm);
+  gap: var(--spacing-xs);
+}
+
+.action-btn.danger:hover {
+  background: var(--error-state);
+  border-color: var(--error-state-border);
+  color: var(--error-label);
+}
+
+.action-btn.toggle:hover {
+  background: var(--warning-state);
+  border-color: var(--warning-state-border);
+  color: var(--warning-label);
+}
+
+.edit-name,
+.edit-desc {
+  padding: 6px var(--spacing-sm);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  outline: none;
+  width: 100%;
+}
+
+.edit-name:focus,
+.edit-desc:focus {
+  border-color: var(--border-color);
+}
+
+.landlord-categories-inline-form {
+  display: grid;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.landlord-categories-inline-form h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.form-input {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 0.92rem;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  border-color: var(--border-color);
+}
+
+.form-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.landlord-toast {
+  position: fixed;
+  bottom: var(--spacing-lg);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  font-size: 0.92rem;
+  font-weight: 500;
+  z-index: 1000;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.landlord-toast.success {
+  background: var(--success-label);
+  color: var(--on-primary);
+}
+
+.landlord-toast.error {
+  background: var(--error-state);
+  color: var(--on-primary);
+}

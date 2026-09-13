@@ -1,0 +1,592 @@
+// PRMS Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum PropertyStatus {
+  AVAILABLE
+  RENTED
+  MAINTENANCE
+  INACTIVE
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum MaintenanceStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum MaintenancePriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model Agent {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id])
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  agentProperties AgentProperty[]
+  @@map("agents")
+}
+
+model AgentProperty {
+  agentId    String
+  propertyId String
+  agent      Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  
+  @@id([agentId, propertyId])
+  @@map("agent_properties")
+}
+
+model PropertyCategory {
+  id             String     @id @default(uuid())
+  name           String
+  description    String?
+  isShared       Boolean    @default(true)
+  ownerId        String?
+  owner          User?      @relation("user_categories", fields: [ownerId], references: [id])
+  isDisabled     Boolean    @default(false)
+  created_at     DateTime   @default(now())
+  updated_at     DateTime   @updatedAt
+  properties     Property[]
+
+  @@unique([ownerId, name])
+  @@index([isShared])
+  @@index([ownerId])
+  @@map("property_categories")
+}
+
+model User {
+  id              String   @id @default(uuid())
+  firebase_uid    String   @unique
+  email           String?  @unique
+  passwordHash    String?
+  full_name       String?
+  phone           String?
+  profile_img_url String?
+  refreshToken    String?
+  is_active       Boolean  @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  
+  UserRole    UserRole[]
+  properties  Property[]
+  tickets     MaintenanceTicket[]
+  bookings       Booking[]
+  sentMessages   Message[]    @relation("sender")
+  receivedMessages Message[] @relation("receiver")
+  payments       Payment[]
+  invoices    Invoice[]
+  notifications Notification[]
+  favorites   Favorite[]
+  auditLogs   AuditLog[]
+  agents               Agent[]
+  personalCategories   PropertyCategory[] @relation("user_categories")
+  preferences          UserPreference?
+  uploadedFiles        UserProfileFile[]
+  websiteCustomizer    WebsiteCustomizer?
+  viewingAppointments  ViewingAppointment[] @relation("TenantViewings")
+  consentRecords       ConsentRecord[]
+  privacyRequests      PrivacyRequest[]
+
+  @@index([email])
+  @@map("users")
+}
+
+model ConsentRecord {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  type        String    // PRIVACY_NOTICE, MARKETING, TERMS
+  wording     String    // exact text shown to the user at the time
+  version     String    // e.g. "1.0" - bump when wording changes materially
+  consented   Boolean
+  consentedAt DateTime  @default(now())
+  withdrawnAt DateTime?
+  ipAddress   String?
+
+  @@index([userId])
+  @@index([userId, type])
+  @@map("consent_records")
+}
+
+model PrivacyRequest {
+  id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  type            String    // ACCESS, CORRECTION, DELETION, CONSENT_WITHDRAWAL
+  details         String?
+  status          String    @default("SUBMITTED") // SUBMITTED, IN_REVIEW, APPROVED, REJECTED, COMPLETED
+  assignedAdminId String?
+  decision        String?
+  decisionReason  String?
+  submitted_at    DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  completed_at    DateTime?
+
+  @@index([userId])
+  @@index([status])
+  @@map("privacy_requests")
+}
+
+model RetentionPolicy {
+  id            String   @id @default(uuid())
+  category      String   @unique
+  label         String
+  retentionDays Int
+  description   String?
+  updated_at    DateTime @updatedAt
+
+  @@map("retention_policies")
+}
+
+model DataBreachIncident {
+  id                 String    @id @default(uuid())
+  title              String
+  detectedAt         DateTime
+  nature             String
+  cause              String?
+  dataTypesAffected  String
+  affectedUserCount  Int       @default(0)
+  containmentAction  String?
+  riskAssessment     String?
+  notificationStatus String    @default("PENDING") // PENDING, COMMISSIONER_NOTIFIED, USERS_NOTIFIED, NOT_REQUIRED
+  resolution         String?
+  status             String    @default("OPEN") // OPEN, CONTAINED, RESOLVED
+  createdById        String?
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+
+  @@map("data_breach_incidents")
+}
+
+model Role {
+  id    String @id @default(uuid())
+  name  String @unique
+  users UserRole[]
+  @@map("roles")
+}
+
+model UserRole {
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId String
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+model Property {
+  id             String    @id @default(uuid())
+  title          String
+  address        String
+  property_type  String    @default("apartment")
+  description    String?
+  categoryId     String?
+  category       PropertyCategory? @relation(fields: [categoryId], references: [id])
+  rent           Float
+  status         PropertyStatus  @default(AVAILABLE)
+  availableFrom  DateTime?
+  availableTo    DateTime?
+  city           String?
+  state          String?
+  ownerId        String
+  owner          User      @relation(fields: [ownerId], references: [id])
+  amenities      Amenity[]
+  agentProperties AgentProperty[]
+  images             PropertyImage[]
+  videoUrls          Json?
+  documentUrls       Json?
+  bookings           Booking[]
+  invoices       Invoice[]
+  favorites      Favorite[]
+  viewingAppointments ViewingAppointment[]
+
+  @@index([ownerId])
+  @@map("properties")
+}
+
+model Amenity {
+  id             String   @id @default(uuid())
+  name           String
+  description    String?
+  propertyId     String
+  property       Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  @@map("amenities")
+}
+
+model PropertyImage {
+  id              String   @id @default(uuid())
+  url             String
+  thumbnailUrl    String?
+  type            String   @default("image")
+  documentName    String?
+  propertyId      String
+  property        Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  @@map("property_images")
+}
+
+model Booking {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  propertyId     String
+  property       Property @relation(fields: [propertyId], references: [id])
+  start_date     DateTime
+  end_date       DateTime
+  status         BookingStatus   @default(PENDING)
+  totalAmount    Float?
+  paymentStatus  PaymentStatus   @default(UNPAID)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  payments       Payment[]
+  invoices       Invoice[]
+
+  // ── Rental application fields (Part 2 of the workflow plan) ──
+  alternative_start_date DateTime?
+  lease_duration_months  Int?
+  occupants              Int?
+  applicant_message      String?
+  pdpa_consent           Boolean   @default(false)
+  acknowledgement        Boolean   @default(false)
+
+  // ── Review / offer fields (Part 4) ──
+  application_stage String?   @default("SUBMITTED") // SUBMITTED, UNDER_REVIEW, NEEDS_INFORMATION, APPROVED, REJECTED, WITHDRAWN, EXPIRED
+  reviewer_notes     String?
+  rejection_reason   String?
+  offer_expiry       DateTime?
+  security_deposit   Float?
+  utility_deposit    Float?
+
+  // ── Tenancy lifecycle fields (Part 8) ──
+  moveInConfirmedAt      DateTime?
+  moveInConditionReport  String?
+  keyHandoverConfirmedAt DateTime?
+  noticeSubmittedAt      DateTime?
+  noticeSubmittedById    String?
+  moveOutInspectionAt    DateTime?
+  moveOutConditionReport String?
+  closedAt               DateTime?
+
+  agreements     Agreement[]
+
+  @@index([userId])
+  @@index([propertyId])
+  @@map("bookings")
+}
+
+model ViewingAppointment {
+  id              String   @id @default(uuid())
+  propertyId      String
+  property        Property @relation(fields: [propertyId], references: [id])
+  tenantId        String
+  tenant          User     @relation("TenantViewings", fields: [tenantId], references: [id])
+  preferredTime   DateTime
+  alternativeTime DateTime?
+  message         String?
+  status          String   @default("REQUESTED") // REQUESTED, ACCEPTED, PROPOSED_ALTERNATE, CONFIRMED, COMPLETED, NO_SHOW, CANCELLED
+  proposedTime    DateTime?
+  respondedById   String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  @@index([propertyId])
+  @@index([tenantId])
+  @@map("viewing_appointments")
+}
+
+model Agreement {
+  id                  String    @id @default(uuid())
+  bookingId           String
+  booking             Booking   @relation(fields: [bookingId], references: [id])
+  version             Int       @default(1)
+  reference           String    @unique
+  status              String    @default("DRAFT") // DRAFT, AWAITING_TENANT_SIGNATURE, AWAITING_LANDLORD_SIGNATURE, FULLY_SIGNED, PHYSICAL_COPY_PENDING, PHYSICALLY_SIGNED, SUPERSEDED, CANCELLED
+  monthlyRent         Float
+  securityDeposit     Float
+  utilityDeposit      Float
+  leaseStartDate      DateTime
+  leaseEndDate        DateTime
+  terms               String?
+  signingMethod       String?   // ELECTRONIC, PHYSICAL
+  tenantConsentAt     DateTime?
+  tenantLegalName     String?
+  tenantOtp           String?
+  tenantOtpVerifiedAt DateTime?
+  tenantSignedAt      DateTime?
+  landlordSignedAt    DateTime?
+  landlordLegalName   String?
+  documentHash        String?
+  physicalCopyUrl     String?
+  physicalVerifiedAt  DateTime?
+  physicalVerifiedById String?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+
+  @@index([bookingId])
+  @@map("agreements")
+}
+
+model Payment {
+  id             String   @id @default(uuid())
+  bookingId      String
+  booking        Booking  @relation(fields: [bookingId], references: [id])
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  amount         Float
+  type           String   @default("rent")
+  method         String   @default("cash")
+  status         PaymentStatus @default(PENDING)
+  due_date       DateTime
+  paid_at        DateTime?
+  reference      String?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  @@index([userId])
+  @@map("payments")
+}
+
+model Invoice {
+  id             String   @id @default(uuid())
+  bookingId      String
+  booking        Booking  @relation(fields: [bookingId], references: [id])
+  propertyId     String
+  property       Property @relation(fields: [propertyId], references: [id])
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  amount         Float
+  status         PaymentStatus @default(PENDING)
+  due_date       DateTime
+  issue_date     DateTime @default(now())
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  @@index([userId])
+  @@map("invoices")
+}
+
+model MaintenanceTicket {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  propertyId     String?
+  title          String
+  description    String
+  status         MaintenanceStatus @default(OPEN)
+  priority       MaintenancePriority @default(MEDIUM)
+  assignedTo     String?
+  resolved_at    DateTime?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  @@index([userId])
+  @@index([propertyId])
+  @@map("maintenance_tickets")
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  senderId       String
+  sender         User     @relation("sender", fields: [senderId], references: [id])
+  receiverId     String
+  receiver       User     @relation("receiver", fields: [receiverId], references: [id])
+  content        String
+  conversationId String
+  isRead         Boolean  @default(false)
+  edited         Boolean  @default(false)
+  deleted        Boolean  @default(false)
+  created_at     DateTime @default(now())
+
+  @@index([conversationId])
+  @@map("messages")
+}
+
+model Notification {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  type           String
+  title          String
+  message        String
+  isRead         Boolean  @default(false)
+  created_at     DateTime @default(now())
+
+  @@index([userId])
+  @@map("notifications")
+}
+
+model SystemSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  category    String   @default("general")
+  description String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  @@map("system_settings")
+}
+
+model UserPreference {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appearance  String   @default("system")
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  @@map("user_preferences")
+}
+
+model Theme {
+  id          String       @id @default(uuid())
+  name        String       @default("Default Theme")
+  isPublished Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  versions    ThemeVersion[]
+  drafts      ThemeDraft[]
+  @@map("themes")
+}
+
+model ThemeVersion {
+  id              String   @id @default(uuid())
+  themeId         String
+  theme           Theme    @relation(fields: [themeId], references: [id], onDelete: Cascade)
+  version         Int
+  lightConfig     Json?
+  darkConfig      Json?
+  createdAt       DateTime @default(now())
+  createdBy       String?
+
+  @@unique([themeId, version])
+  @@index([themeId])
+  @@map("theme_versions")
+}
+
+model ThemeDraft {
+  id              String   @id @default(uuid())
+  themeId         String
+  theme           Theme    @relation(fields: [themeId], references: [id], onDelete: Cascade)
+  lightConfig     Json?
+  darkConfig      Json?
+  updatedAt       DateTime @updatedAt
+  @@map("theme_drafts")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  username    String?
+  userRole    String?
+  module      String
+  action      String
+  entity      String
+  entityId    String?
+  description String?
+  oldValue    String?
+  newValue    String?
+  status      String   @default("Success")
+  level       String   @default("info")
+  ipAddress   String?
+  userAgent   String?
+  requestUrl  String?
+  httpMethod  String?
+  errorMessage String?
+  created_at  DateTime @default(now())
+
+  @@index([userId])
+  @@index([entity])
+  @@index([module])
+  @@index([action])
+  @@index([status])
+  @@index([created_at])
+  @@map("audit_logs")
+}
+
+model Favorite {
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  propertyId     String
+  property       Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  created_at     DateTime @default(now())
+
+  @@id([userId, propertyId])
+  @@map("favorites")
+}
+
+model UserProfileFile {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  originalName   String
+  storageName    String   @unique
+  mimeType       String
+  fileSize       Int
+  category       String   // "image" | "document"
+  url            String
+  thumbnailUrl   String?
+  description    String?
+  created_at     DateTime @default(now())
+
+  @@index([userId])
+  @@map("user_profile_files")
+}
+
+model WebsiteCustomizer {
+  id             String  @id @default(uuid())
+  userId         String  @unique
+  user           User    @relation(fields: [userId], references: [id])
+  company_name   String  @default("PRMS")
+  logo_url       String?
+  logo_thumb_url String?
+  // Light mode colors - default to the app's actual built-in navy/purple
+  // branding (matching styles.css's :root tokens), not an arbitrary theme,
+  // so an account that never touches the customizer looks unchanged.
+  light_header_bg    String @default("#0F172A")
+  light_sidebar_bg   String @default("#0F172A")
+  light_body_bg      String @default("#F3F6FB")
+  light_footer_bg    String @default("#0F172A")
+  light_accent_color String @default("#8A2BE2")
+  light_card_bg    String @default("#FFFFFF")
+  // Dark mode colors
+  dark_header_bg    String @default("#1E293B")
+  dark_sidebar_bg   String @default("#1E293B")
+  dark_body_bg      String @default("#0F172A")
+  dark_footer_bg    String @default("#020617")
+  dark_accent_color String @default("#A78BFA")
+  dark_card_bg    String @default("#334155")
+  // Theme switch
+  active_theme String @default("light") // "light" | "dark"
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  @@map("website_customizer")
+}

@@ -1,0 +1,212 @@
+.landlord-simple-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.landlord-simple-hero h1 {
+  margin: 0;
+  font-size: 46px;
+  line-height: 1.05;
+  letter-spacing: -1.5px;
+  font-weight: 500;
+}
+
+.landlord-simple-hero p {
+  margin: var(--spacing-sm) 0 0;
+  color: var(--text-secondary);
+  font-size: 22px;
+  max-width: 900px;
+}
+
+.landlord-simple-primary-btn {
+  height: 40px;
+  padding: 0 18px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--primary-container);
+  color: var(--on-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.landlord-simple-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.landlord-simple-card {
+  min-height: 150px;
+  padding: var(--spacing-lg);
+  border: 2px solid var(--border-color-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-container-lowest);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.03);
+}
+
+.landlord-simple-icon {
+  width: 58px;
+  height: 58px;
+  margin-bottom: 18px;
+  border-radius: var(--radius-md);
+  display: grid;
+  place-items: center;
+  color: var(--secondary-accent);
+  background: var(--secondary-fixed);
+}
+
+.landlord-simple-card p {
+  margin: 0 0 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+}
+
+.landlord-simple-card h3 {
+  margin: 0;
+  color: var(--on-surface);
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+.landlord-simple-table-card {
+  border: 2px solid var(--border-color-strong);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--surface-container-lowest);
+}
+
+.landlord-simple-table-header {
+  min-height: 76px;
+  padding: 0 var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.landlord-simple-table-header h2 {
+  margin: 0;
+  font-size: 23px;
+  font-weight: 500;
+}
+
+.landlord-simple-search {
+  width: 320px;
+  height: 44px;
+  padding: 0 var(--spacing-sm);
+  border: 2px solid var(--border-color-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-container);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.landlord-simple-search input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 15px;
+}
+
+.landlord-simple-table {
+  border-top: 2px solid var(--border-color-strong);
+}
+
+.landlord-simple-table-head,
+.landlord-simple-table-row {
+  display: grid;
+  align-items: center;
+}
+
+.landlord-simple-table-head {
+  min-height: 52px;
+  padding: 0 var(--spacing-lg);
+  background: var(--page-bg);
+  border-bottom: 2px solid var(--border-color-strong);
+}
+
+.landlord-simple-table-head p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.landlord-simple-table-row {
+  min-height: 86px;
+  padding: 0 var(--spacing-lg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.landlord-simple-table-row:last-child {
+  border-bottom: none;
+}
+
+.landlord-simple-table-row span {
+  color: var(--on-surface);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.landlord-simple-table-row button {
+  height: 32px;
+  padding: 0 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--primary-container);
+  color: var(--on-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (max-width: 1250px) {
+  .landlord-simple-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 850px) {
+  .landlord-simple-hero {
+    flex-direction: column;
+  }
+
+  .landlord-simple-hero h1 {
+    font-size: 36px;
+  }
+
+  .landlord-simple-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .landlord-simple-table-header {
+    padding: var(--spacing-md);
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  .landlord-simple-search {
+    width: 100%;
+  }
+
+  .landlord-simple-table {
+    overflow-x: auto;
+  }
+
+  .landlord-simple-table-head,
+  .landlord-simple-table-row {
+    min-width: 900px;
+  }
+}

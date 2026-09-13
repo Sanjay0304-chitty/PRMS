@@ -1,0 +1,184 @@
+/* ============================
+   Customization Panel Styles
+   ============================ */
+
+/* -- Panel wrapper -- */
+
+.wc-panel {
+  width: 380px;
+  min-width: 380px;
+  background: var(--card-bg);
+  border-right: 1px solid var(--border-color);
+  overflow-y: auto;
+  border-radius: 0;
+}
+
+/* -- Empty state -- */
+
+.cp-panel-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cp-empty-header {
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.cp-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin: 0 0 8px 0;
+}
+
+.cp-hint {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+/* -- Header -- */
+
+.cp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.cp-element-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cp-tag {
+  display: inline-block;
+  font-family: 'Courier New', monospace;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  background: var(--secondary-container);
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.cp-id {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.cp-close-btn {
+  padding: 6px 12px;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* -- Sections -- */
+
+.cp-section {
+  margin-top: 20px;
+}
+
+.wc-section-title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  margin: 0 0 12px 0;
+}
+
+/* -- Scope field -- */
+
+.cp-scope-field {
+  margin-bottom: 12px;
+}
+
+/* -- Typography toggles -- */
+
+.cp-typography-toggles {
+  margin-bottom: 12px;
+}
+
+/* -- Spacing grid -- */
+
+.wc-spacing-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.wc-spacing-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wc-spacing-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--text-secondary-light);
+  text-align: center;
+}
+
+.wc-spacing-item input {
+  text-align: center;
+  padding: 4px 2px;
+  font-size: 0.8125rem;
+}
+
+/* -- Mode toggle (Basic / Advanced) -- */
+
+.wc-mode-toggle {
+  display: flex;
+  gap: 4px;
+  margin: 12px 20px 0 20px;
+}
+
+.wc-mode-toggle button {
+  padding: 4px 12px;
+  border: 1px solid var(--outline-variant);
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 13px;
+  color: inherit;
+  transition: all 0.2s;
+}
+
+.wc-mode-toggle button:hover {
+  background: var(--surface-container);
+}
+
+.wc-mode-toggle button.active {
+  background: var(--primary-color);
+  color: var(--on-primary);
+  border-color: var(--primary-color);
+}
+
+/* -- Scope selector radio group -- */
+
+.wc-scope-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.wc-scope-selector label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  color: var(--text-color);
+}
+
+.wc-scope-selector input[type='radio'] {
+  accent-color: var(--primary-color);
+  width: auto;
+}

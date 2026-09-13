@@ -1,0 +1,321 @@
+/* Shared primitives for pages that use the plain page-shell/card-table
+   layout convention (MyBookings, LandlordBookings, TenantMaintenance,
+   LandlordMaintenance, AgentMaintenance). None of these classes were
+   ever defined anywhere, so every page using them rendered as unstyled
+   browser-default tables/buttons. */
+
+.page-shell {
+  padding: var(--spacing-lg, 24px);
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.page-header p {
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.page-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.card-table {
+  background: var(--surface-main);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius, 10px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  padding: 20px;
+}
+
+/* ---- Status tabs ---- */
+.status-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.status-filter button {
+  padding: 8px 16px;
+  border: 1px solid var(--border-color);
+  background: var(--surface-container-low);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.status-filter button:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.status-filter button.active {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: #fff;
+}
+
+/* ---- Table ---- */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table th {
+  text-align: left;
+  padding: 10px 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.table tr:hover td {
+  background: var(--surface-hover);
+}
+
+/* ---- Buttons ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--primary-container);
+  color: var(--on-primary);
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.btn:hover {
+  opacity: 0.85;
+}
+
+.btn-sm {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+.btn-outline {
+  background: var(--primary-container);
+  border-color: var(--primary-container);
+  color: var(--on-primary);
+}
+
+.btn-danger {
+  background: var(--status-error);
+  color: #fff;
+}
+
+.btn-success {
+  background: var(--status-success);
+  color: #fff;
+}
+
+.btn-text {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* ---- Badges ---- */
+.shell-badge {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.shell-badge-warning {
+  background: var(--warning-state-background);
+  color: var(--warning-state);
+  border: 1px solid var(--warning-state);
+}
+
+.shell-status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+  background: var(--surface-container-low);
+  color: var(--text-secondary);
+}
+
+.shell-status-badge.status-pending,
+.shell-status-badge.status-open,
+.shell-status-badge.status-medium { background: var(--warning-state-background); color: var(--warning-state); }
+
+.shell-status-badge.status-confirmed,
+.shell-status-badge.status-active,
+.shell-status-badge.status-completed,
+.shell-status-badge.status-resolved,
+.shell-status-badge.status-closed,
+.shell-status-badge.status-checked_in,
+.shell-status-badge.status-low { background: var(--success-state-background); color: var(--success-state); }
+
+.shell-status-badge.status-cancelled,
+.shell-status-badge.status-urgent,
+.shell-status-badge.status-high { background: var(--error-state-background); color: var(--error-state); }
+
+.shell-status-badge.status-in_progress,
+.shell-status-badge.status-upcoming { background: rgba(139, 92, 246, 0.12); color: var(--primary-color); }
+
+/* ---- Alerts ---- */
+.alert {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.alert-danger {
+  background: var(--error-state-background);
+  color: var(--error-state);
+}
+
+/* ---- Inputs ---- */
+.input {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--surface-main);
+  color: var(--text-primary);
+}
+
+/* ---- Bookings grid (MyBookings) ---- */
+.booking-property-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.booking-property-card {
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius, 10px);
+  overflow: hidden;
+  background: var(--surface-main);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.booking-property-card:hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.booking-property-card-header {
+  position: relative;
+}
+
+.booking-property-card-img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  display: block;
+}
+
+.booking-property-card-img-placeholder {
+  width: 100%;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--outline-variant);
+  background: linear-gradient(135deg, var(--surface-subtle), var(--surface-container-low));
+}
+
+.booking-property-card-header .shell-status-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.booking-property-card h3,
+.booking-property-card h4 {
+  margin: 12px 12px 4px;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.booking-property-card .price {
+  margin: 0 12px 12px;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.card-footer {
+  padding: 0 12px 14px;
+}
+
+.bookings-empty-state {
+  text-align: center;
+  padding: 48px 16px;
+  color: var(--text-secondary);
+}
+
+.bookings-empty-state .btn-primary {
+  margin-top: 12px;
+}
+
+/* ---- Maintenance notes ---- */
+.notes {
+  margin-top: 8px;
+}
+
+.note-item {
+  padding: 8px 0;
+  border-top: 1px solid var(--border-color);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* ---- Small layout utilities used by these pages ---- */
+.flex { display: flex; align-items: center; }
+.gap-2 { gap: 8px; }
+.mt-2 { margin-top: 8px; }
+.mt-4 { margin-top: 16px; }
+.ml-1 { margin-left: 4px; }

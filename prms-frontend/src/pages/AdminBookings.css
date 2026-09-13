@@ -1,0 +1,39 @@
+.admin-bookings-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  border: 2px solid var(--border-color-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-container-lowest);
+  margin-bottom: var(--spacing-lg);
+  width: fit-content;
+}
+
+.admin-bookings-tabs button {
+  height: 38px;
+  padding: 0 var(--spacing-md);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-bookings-tabs button.active {
+  background: var(--primary-color);
+  color: var(--on-primary);
+}
+
+.admin-bookings-table-row button.btn-danger {
+  background: var(--status-error);
+  color: #ffffff;
+}
+
+.admin-bookings-table-row button:disabled {
+  background: var(--surface-container);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+}

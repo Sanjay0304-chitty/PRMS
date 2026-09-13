@@ -1,0 +1,116 @@
+.ppd-section {
+  margin-top: 16px;
+}
+
+.ppd-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  margin: 0 0 4px;
+  color: var(--text-primary);
+}
+
+.ppd-section-hint {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0 0 12px;
+}
+
+.ppd-notice {
+  background: var(--success-state-background, #dcfce7);
+  color: var(--success-state, #16a34a);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-top: 12px;
+}
+
+.ppd-data-dump {
+  margin-top: 12px;
+  background: var(--surface-container-low, #0f172a);
+  color: #e2e8f0;
+  padding: 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  max-height: 360px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ppd-consent-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.ppd-status-off {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.ppd-consent-history {
+  margin-top: 12px;
+}
+
+.ppd-request-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ppd-request-types {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.ppd-request-type {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.ppd-request-type.active {
+  border-color: var(--primary-color);
+  background: rgba(138, 43, 226, 0.06);
+}
+
+.ppd-request-type input {
+  margin-top: 3px;
+}
+
+.ppd-request-type strong {
+  display: block;
+  font-size: 13px;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.ppd-request-type p {
+  margin: 0;
+}
+
+.ppd-request-form textarea {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+@media (max-width: 700px) {
+  .ppd-request-types {
+    grid-template-columns: 1fr;
+  }
+}

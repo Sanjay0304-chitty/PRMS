@@ -1,0 +1,334 @@
+/* ============================================
+   TenantBookingModal – overlay & card
+   ============================================ */
+
+.tenant-booking-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.tenant-booking-modal {
+  position: relative;
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 32px 28px;
+  max-width: 460px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+/* ---- Close button ---- */
+.tenant-booking-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: 4px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.tenant-booking-close:hover {
+  color: var(--text-primary);
+  background: var(--surface-container);
+}
+
+/* ---- Title ---- */
+.tenant-booking-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 4px;
+  font-size: 22px;
+  color: var(--text-primary);
+}
+
+.tenant-booking-property-name {
+  color: var(--text-secondary);
+  margin: 0 0 24px;
+  font-size: 15px;
+}
+
+.tenant-booking-section-title {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
+/* ---- Date fields ---- */
+.tenant-booking-dates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.tenant-booking-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.tenant-booking-field input[type='date'] {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.tenant-booking-field input[type='date']:focus {
+  border-color: var(--status-error);
+}
+
+.tenant-booking-field input[type='number'],
+.tenant-booking-field textarea {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+  resize: vertical;
+}
+
+.tenant-booking-field input[type='number']:focus,
+.tenant-booking-field textarea:focus {
+  border-color: var(--status-error);
+}
+
+.tenant-booking-message-field {
+  margin-bottom: 16px;
+}
+
+.tenant-booking-computed-end {
+  margin: -8px 0 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.tenant-booking-consent {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tenant-booking-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.tenant-booking-checkbox input {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+/* ---- Check Availability button ---- */
+.tenant-booking-check-btn {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary-container);
+  color: var(--on-primary);
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.2s;
+}
+
+.tenant-booking-check-btn:hover:not(:disabled) {
+  background: var(--primary-fixed);
+}
+
+.tenant-booking-check-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ---- Availability result panel ---- */
+.tenant-booking-availability {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+}
+
+/* Red overlap warning */
+.tenant-booking-availability--overlap {
+  background: var(--error-container);
+  border-color: var(--error-state-border);
+  color: var(--text-primary);
+}
+
+/* Green available */
+.tenant-booking-availability--ok {
+  background: var(--success-state-background);
+  border-color: var(--success-state-border);
+  color: var(--text-primary);
+}
+
+/* Error */
+.tenant-booking-availability--error {
+  background: var(--error-container);
+  border-color: var(--error-state-border);
+  color: var(--status-error);
+}
+
+.tenant-booking-availability--error > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ---- Availability content ---- */
+.tenant-booking-availability-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tenant-booking-availability-content p {
+  width: 100%;
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.tenant-booking-availability-content strong {
+  color: var(--text-primary);
+  font-size: 15px;
+}
+
+/* ---- Conflicting bookings list ---- */
+.tenant-booking-conflicts {
+  width: 100%;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tenant-booking-conflicts li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 4px;
+  background: var(--card-bg);
+  border: 1px solid var(--error-state-border);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.tenant-booking-conflict-range {
+  font-weight: 600;
+  color: var(--status-error);
+}
+
+.tenant-booking-conflict-tenant {
+  color: var(--text-secondary);
+}
+
+.tenant-booking-conflict-status {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--surface-container);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-color);
+  text-transform: uppercase;
+}
+
+/* ---- Confirm Booking button ---- */
+.tenant-booking-confirm-btn {
+  width: 100%;
+  margin-top: 14px;
+  padding: 12px;
+  background: var(--status-success);
+  color: var(--on-success);
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.2s;
+}
+
+.tenant-booking-confirm-btn:hover:not(:disabled) {
+  background: var(--success-state);
+}
+
+.tenant-booking-confirm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ---- Result panel (submission) ---- */
+.tenant-booking-result {
+  text-align: center;
+  padding: 24px 0;
+}
+
+.tenant-booking-result h2 {
+  margin: 12px 0 4px;
+  font-size: 20px;
+  color: var(--text-primary);
+}
+
+.tenant-booking-result p {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.tenant-booking-success-icon {
+  color: var(--status-success);
+}
+
+.tenant-booking-error-icon {
+  color: var(--status-error);
+}
+
+/* ---- Spinner (shared) ---- */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}

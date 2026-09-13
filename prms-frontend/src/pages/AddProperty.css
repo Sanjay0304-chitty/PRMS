@@ -1,0 +1,221 @@
+/* ========================================
+   AddProperty Page — Redesigned
+   Stripe-inspired layout, PRMS tokens
+   ======================================== */
+
+/* ---------- Page Container ---------- */
+.add-property-page {
+  min-height: calc(100vh - 80px);
+}
+
+/* ---------- Header Bar ---------- */
+.add-property-header {
+  position: sticky;
+  top: 68px;
+  z-index: 50;
+}
+
+.add-property-header .header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ---------- Section Navigation ---------- */
+.section-nav::-webkit-scrollbar {
+  height: 0;
+}
+
+.section-nav button {
+  transition: background 0.2s, color 0.2s;
+}
+
+.section-nav button:hover {
+  opacity: 0.85;
+}
+
+/* ---------- Form Sections ---------- */
+.form-section {
+  scroll-margin-top: 120px;
+}
+
+.form-section:hover .section-card {
+  box-shadow: rgba(0, 0, 0, 0.04) 0px 2px 8px !important;
+}
+
+/* ---------- Section Card ---------- */
+.section-card {
+  transition: box-shadow 0.3s;
+}
+
+.section-card .section-header {
+  cursor: default;
+}
+
+.section-card .section-body {
+  transition: background 0.2s;
+}
+
+/* ---------- Form Controls ---------- */
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-grid {
+  display: grid;
+}
+
+/* Input focus state */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none !important;
+}
+
+/* Error state */
+input.input-error,
+select.input-error,
+textarea.input-error {
+  border-color: #e53e3e !important;
+  box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1) !important;
+}
+
+/* Input hover */
+input:hover:not(:focus):not(.input-error),
+select:hover:not(:focus),
+textarea:hover:not(:focus) {
+  border-color: var(--primary-color, #667eea)90 !important;
+}
+
+/* Select dropdown arrow - custom */
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px !important;
+}
+
+/* ---------- Image Upload Zone ---------- */
+.image-upload-zone {
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.image-upload-zone:hover {
+  border-style: solid;
+}
+
+/* ---------- Image Preview Grid ---------- */
+.image-preview-grid {
+  display: grid;
+}
+
+.image-preview-grid > div {
+  transition: transform 0.2s;
+}
+
+.image-preview-grid > div:hover {
+  transform: scale(1.02);
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  transition: all 0.2s;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-outline:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1024px) {
+  .form-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .add-property-header .header-inner {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start !important;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .form-section {
+    scroll-margin-top: 100px;
+  }
+
+  .section-card .section-body {
+    padding: 16px !important;
+  }
+
+  .image-preview-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .add-property-header {
+    padding: 12px 16px !important;
+  }
+
+  .section-nav {
+    padding: 12px 16px !important;
+  }
+
+  .add-property-form {
+    padding: 0 16px 40px !important;
+  }
+}
+
+/* ---------- Animations ---------- */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.form-section {
+  animation: fadeInUp 0.4s ease-out backwards;
+}
+
+.form-section:nth-child(2) { animation-delay: 0.05s; }
+.form-section:nth-child(3) { animation-delay: 0.1s; }
+.form-section:nth-child(4) { animation-delay: 0.15s; }
+
+/* ---------- Error Banner ---------- */
+.error-banner {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* ---------- Field-Level Error ---------- */
+.field-error {
+  animation: fadeInUp 0.2s ease-out;
+}
+
+/* ---------- Utility ---------- */
+.add-property-page * {
+  box-sizing: border-box;
+}
+
+.add-property-page a {
+  color: var(--primary-color, #667eea);
+  text-decoration: none;
+}
+
+.add-property-page a:hover {
+  text-decoration: underline;
+}

@@ -1,0 +1,2056 @@
+* {
+  box-sizing: border-box;
+}
+
+/* A handful of pages (MaintenanceForm, MyBookings, TenantDashboard,
+   TenantMaintenance, LandlordMaintenance, AgentProperties) use Tailwind
+   utility class names in their JSX (flex, gap-2, mt-4, ...), but this
+   project has no Tailwind — none of them did anything, which is why
+   e.g. the maintenance ticket form's step tabs, priority buttons, and
+   footer all stacked instead of laying out in a row. Minimal shim for
+   the exact set actually used, matching Tailwind's own values. */
+.flex { display: flex; }
+.flex-wrap { flex-wrap: wrap; }
+.gap-2 { gap: 8px; }
+.justify-between { justify-content: space-between; }
+.mt-2 { margin-top: 8px; }
+.mt-4 { margin-top: 16px; }
+
+/* Scrollbars hidden app-wide (page and any inner scrollable panel, e.g.
+   the audit log feed) — scrolling still works via wheel/touch/keyboard,
+   this only removes the visible scrollbar chrome. */
+* {
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+}
+
+/* Website Customizer – CSS variables (injectable at runtime) */
+:root {
+  --primary-color:       #8a2be2;
+  --secondary-color:     #0f172a;
+  --accent-color:        #b84cff;
+  --background-color:    #f3f6fb;
+  --text-color:          #111827;
+  --font-family:         Inter, Arial, sans-serif;
+  --border-radius:       10px;
+  --header-background-color: #0f172a;
+  --header-text-color:   #ffffff;
+  --header-cta-button-color: #8a2be2;
+  --footer-background-color: #0f172a;
+  --footer-text-color:   #94a3b8;
+
+  /* Spacing scale — referenced by var(--spacing-*) throughout the app's CSS
+     but was never actually defined anywhere, so every gap/padding/margin
+     using it silently computed to 0 (invisible unless an element's own
+     border happened to create the illusion of a gap). */
+  --spacing-5xs: 2px;
+  --spacing-3xs: 4px;
+  --spacing-2xs: 6px;
+  --spacing-xs:  8px;
+  --spacing-sm:  12px;
+  --spacing-md:  16px;
+  --spacing-lg:  24px;
+  --spacing-xl:  32px;
+  --spacing-2xl: 48px;
+  --spacing-3xl: 64px;
+  --spacing-4xl: 96px;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  background: var(--page-bg);
+  color: var(--text-primary);
+}
+
+/* Chrome/Edge paint autofilled inputs with their own light-blue/yellow
+   background, at a specificity no ordinary `background` rule can beat —
+   most visibly on the Login form, but it hits any text input the browser
+   offers to fill in. The box-shadow inset trick repaints over it with the
+   theme's own surface color instead of the browser's fixed one, so an
+   autofilled field blends in with the rest of the (possibly dark) UI
+   instead of standing out as a stray light box; the long transition delay
+   stops Chrome's own transition from briefly flashing its native color
+   first on every keystroke. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--text-primary);
+  caret-color: var(--text-primary);
+  -webkit-box-shadow: 0 0 0 1000px var(--card-bg) inset;
+  box-shadow: 0 0 0 1000px var(--card-bg) inset;
+  transition: background-color 600000s 0s, color 600000s 0s;
+}
+
+a {
+  color: #9b3ee8;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+button,
+input {
+  font-family: inherit;
+}
+
+/* ================= THEME VARIABLES ================= */
+
+/* Independent light theme variables */
+:root,
+[data-theme="light"] {
+  /* Core palette */
+  --primary-color: #8a2be2;
+  --secondary-color: #0f172a;
+  --accent-color: #b84cff;
+
+  /* Page & surface levels */
+  --page-bg: #f8f9ff;
+  --surface: #f8f9ff;
+  --surface-main: #ffffff;
+  --surface-subtle: #f8fafc;
+  --surface-container-low: #eff4ff;
+  --surface-container: #e5eeff;
+  --surface-container-high: #dce9ff;
+  --surface-container-highest: #d3e4fe;
+  --surface-container-lowest: #ffffff;
+  --surface-dim: #cbdbf5;
+  --surface-hover: #e8ecf4;
+  --navbar-bg-glass: rgba(255, 255, 255, 0.75);
+
+  /* Text colors */
+  --text-primary: #111827;
+  --on-surface: #0b1c30;
+  --on-surface-variant: #45464d;
+  --text-secondary: #6b7280;
+  --text-secondary-light: #cbd5e1;
+
+  /* Accent colors (aligned with reference design) */
+  --secondary-accent: #812bca;
+  --secondary-container: #9c4ae5;
+  --secondary-fixed: #f1dbff;
+  --secondary-fixed-dim: #deb7ff;
+  --on-secondary: #ffffff;
+  --on-secondary-fixed: #2d0050;
+  --on-secondary-fixed-variant: #6a00b2;
+
+  /* Dark containers */
+  --primary-container: #131b2e;
+  --on-primary-container: #7c839b;
+  --on-primary: #ffffff;
+  --primary-fixed: #dae2fd;
+
+  /* Borders & outlines */
+  --border-color: #e5e7eb;
+  --border-color-strong: #cbd5e1;
+  --border-low: #e2e8f0;
+  --outline: #76777d;
+  --outline-variant: #c6c6cd;
+
+  /* Status colors */
+  --status-success: #10b981;
+  --status-warning: #f59e0b;
+  --status-error: #ef4444;
+
+  /* Same status palette under a second naming convention used by several
+     pages (badges etc.) that was never defined anywhere. */
+  --success-state: var(--status-success);
+  --success-state-background: rgba(16, 185, 129, 0.12);
+  --warning-state: var(--status-warning);
+  --warning-state-background: rgba(245, 158, 11, 0.12);
+  --error-state: var(--status-error);
+  --error-state-background: rgba(239, 68, 68, 0.12);
+
+  /* A third naming convention for the same palette (badges paired with a
+     "-fixed" background and a "-label" text color, or a "-border" color) —
+     also never defined anywhere. */
+  --success-fixed: rgba(16, 185, 129, 0.12);
+  --success-label: #047857;
+  --success-border: rgba(16, 185, 129, 0.35);
+  --warning-label: #78350f;
+  --error-label: #ffffff;
+  --error-state-border: rgba(239, 68, 68, 0.35);
+
+  /* Misc tokens referenced but never defined, found via the same sweep. */
+  --primary-accent: var(--primary-color);
+  --border-color-hover: var(--border-color-strong);
+
+  --error: #ba1a1a;
+  --error-container: #ffdad6;
+  --on-error: #ffffff;
+  --on-error-container: #93000a;
+
+  /* Role colors */
+  --role-admin: #0f172a;
+  --role-landlord: #8b5cf6;
+  --role-tenant: #3b82f6;
+
+  /* Sidebar */
+  --sidebar-bg: var(--primary-container);
+  --sidebar-text: #ffffff;
+
+  /* Cards & elevation */
+  --card-bg: #ffffff;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12);
+
+  /* Font families */
+  --headline-font: 'Plus Jakarta Sans', Inter, sans-serif;
+  --body-font: 'Inter', sans-serif;
+
+  /* Border radii */
+  --radius-xs: 0.1875rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-full: 9999px;
+
+  /* Tertiary */
+  --tertiary-color: #000000;
+  --tertiary-container: #001a42;
+  --on-tertiary-container: #3980f4;
+  --tertiary-fixed: #d8e2ff;
+  --on-tertiary-fixed: #001a42;
+  --tertiary-fixed-dim: #adc6ff;
+}
+
+/* Dark theme overrides */
+[data-theme="dark"] {
+  --page-bg: #121212;
+  --surface: #1e1e1e;
+  --surface-hover: #2a2a2a;
+  --text-primary: #f9fafb;
+  --text-secondary: #9ca3af;
+  --border-color: #374151;
+  --border-color-strong: #4b5563;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  /* Button background: near-black navy reads fine on a light page, but
+     nearly disappears against a near-black dark-mode page. Swap it for
+     the brand purple in dark mode instead so buttons stay visible —
+     every button fixed to use var(--primary-container) picks this up
+     automatically, no per-button change needed. */
+  --primary-container: #8a2be2;
+  --card-bg: #1e1e1e;
+  --sidebar-bg: #0a0a0a;
+  --sidebar-text: #e5e7eb;
+  --navbar-bg-glass: rgba(18, 18, 18, 0.75);
+
+  /* --background-color / --text-color are the older, JS-driven theme
+     variables (set inline by SettingsContext / the Website Customizer).
+     Several layout stylesheets read them directly instead of the newer
+     --page-bg / --text-primary pair, but nothing ever gave them a
+     dark-mode value here — so whenever the JS side hadn't (yet, or ever)
+     written a dark-specific override, they silently kept resolving to
+     their light-mode default even with data-theme="dark" set, pinning
+     those elements' background/text to light colors. A real inline
+     override from the JS side still wins as before (inline beats a
+     class-selector custom property); this is only the fallback. */
+  --background-color: #1e1e1e;
+  --text-color: #f9fafb;
+
+  /* Surface/container family — was missing entirely, so light-theme values
+     (light blue/white) leaked through in dark mode (e.g. the "Tenant" role
+     badge and the dashboard's mini stat tiles stayed light-on-light). */
+  --surface-main: #1e1e1e;
+  --surface-subtle: #17171a;
+  --surface-container-low: #202024;
+  --surface-container: #26262b;
+  --surface-container-high: #2e2e34;
+  --surface-container-highest: #38383f;
+  --surface-container-lowest: #1e1e1e;
+  --surface-dim: #141417;
+  --on-surface: #f1f5f9;
+  --on-surface-variant: #cbd5e1;
+  --border-low: #2d333c;
+  --outline: #8b8d98;
+  --outline-variant: #3f3f46;
+}
+
+/* ================= LOGIN PAGE ================= */
+
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.login-left {
+  position: relative;
+  min-height: 100vh;
+  padding: 48px;
+  color: white;
+  background:
+    linear-gradient(rgba(15, 23, 42, 0.78), rgba(15, 23, 42, 0.92)),
+    url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1600&auto=format&fit=crop');
+  background-size: cover;
+  background-position: center;
+}
+
+.brand-small {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.brand-small svg {
+  color: var(--secondary-accent);
+}
+
+.login-hero-content {
+  max-width: 720px;
+  margin-top: 170px;
+}
+
+.purple-line {
+  width: 150px;
+  height: 6px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--secondary-accent), var(--secondary-fixed-dim));
+  margin-bottom: 70px;
+}
+
+.login-hero-content h1 {
+  font-size: 31px;
+  line-height: 1.25;
+  margin-bottom: 40px;
+  font-family: var(--headline-font);
+}
+
+.login-hero-content p {
+  max-width: 760px;
+  color: var(--text-secondary-light);
+  font-size: 24px;
+  line-height: 1.6;
+}
+
+.trusted-card {
+  margin-top: 80px;
+  width: 90%;
+  max-width: 900px;
+  padding: 24px 32px;
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px);
+  border-radius: 18px;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--secondary-container);
+}
+
+.avatar-group {
+  display: flex;
+}
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  margin-right: -12px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--secondary-container);
+  color: var(--sidebar-bg);
+  border: 3px solid var(--sidebar-bg);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.login-right {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  background: var(--page-bg);
+}
+
+.login-theme-toggle {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  color: var(--text-primary);
+}
+
+.login-form-box {
+  width: 100%;
+  max-width: 700px;
+}
+
+.login-form-box h2 {
+  margin: 0 0 12px;
+  font-size: 28px;
+  color: var(--text-primary);
+  font-family: var(--headline-font);
+}
+
+.form-subtitle {
+  margin-bottom: 55px;
+  font-size: 20px;
+  color: var(--text-secondary);
+}
+
+form label {
+  display: block;
+  margin: 28px 0 10px;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+
+.input-box {
+  height: 76px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 22px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--card-bg);
+  transition: border-color 0.2s, box-shadow 0.15s;
+}
+
+.input-box:focus-within {
+  border-color: var(--border-color);
+}
+
+.input-box input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 22px;
+  color: var(--text-primary);
+}
+
+.input-box svg {
+  color: var(--outline);
+}
+
+.input-right-icon {
+  cursor: pointer;
+  color: var(--outline);
+}
+
+.form-row {
+  margin: 32px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.remember {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.remember input {
+  width: 24px;
+  height: 24px;
+}
+
+.primary-btn {
+  width: 100%;
+  height: 80px;
+  border: none;
+  border-radius: var(--radius-lg);
+  background: var(--secondary-accent);
+  color: white;
+  font-size: 22px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.primary-btn:hover {
+  background: var(--on-secondary-fixed-variant);
+}
+
+.divider {
+  margin: 50px 0 36px;
+  display: flex;
+  align-items: center;
+  gap: 26px;
+}
+
+.divider span {
+  flex: 1;
+  height: 1px;
+  background: var(--border-low);
+}
+
+.divider p {
+  margin: 0;
+  color: var(--text-secondary);
+  letter-spacing: 6px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.social-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.social-row button {
+  height: 70px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--card-bg);
+  font-size: 22px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.social-row button:hover {
+  border-color: var(--secondary-accent);
+  color: var(--secondary-accent);
+}
+
+.signup-text {
+  margin-top: 70px;
+  text-align: center;
+  font-size: 20px;
+  color: var(--text-secondary);
+}
+
+.signup-text a {
+  color: var(--secondary-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.signup-text a:hover {
+  text-decoration: underline;
+}
+
+/* Auth error banner */
+.login-error {
+  padding: 12px 16px;
+  background: var(--status-error);
+  color: white;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+/* Register-specific */
+.register-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.register-half label {
+  margin-top: 0;
+}
+
+.register-consent-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 4px 0 14px;
+}
+
+.register-consent-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary, #64748b);
+  cursor: pointer;
+}
+
+.register-consent-checkbox input {
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.register-consent-checkbox a {
+  color: var(--primary-color, #8a2be2);
+  font-weight: 600;
+}
+
+.register-terms-note {
+  font-size: 12px;
+  color: var(--text-secondary, #94a3b8);
+  margin: 0;
+}
+
+.register-terms-note a {
+  color: var(--primary-color, #8a2be2);
+  font-weight: 600;
+}
+
+/* ================= ROLE SELECTION PAGE ================= */
+
+.role-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 0.85fr 1.15fr;
+  background: #f8fafc;
+}
+
+.role-left {
+  padding: 42px 56px;
+  background: linear-gradient(135deg, #1e143b, #0f172a 70%);
+  color: white;
+}
+
+.role-brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 34px;
+  font-weight: 900;
+}
+
+.role-brand svg {
+  color: #9b3ee8;
+}
+
+.role-left-content {
+  margin-top: 150px;
+  max-width: 720px;
+}
+
+.role-left-content h1 {
+  margin: 0 0 32px;
+  font-size: 54px;
+  line-height: 1.18;
+  letter-spacing: -1.5px;
+}
+
+.role-left-content p {
+  color: #7f8797;
+  font-size: 24px;
+  line-height: 1.5;
+  max-width: 700px;
+}
+
+.role-right {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+}
+
+.role-card {
+  width: 100%;
+  max-width: 650px;
+  padding: 70px 70px 36px;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+}
+
+.steps {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  margin-bottom: 60px;
+}
+
+.step {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+}
+
+.step span {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #dbeafe;
+  color: #1f2937;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.step.active span {
+  background: #8a2be2;
+  color: white;
+}
+
+.step p {
+  margin: 0;
+  font-weight: 700;
+  color: #374151;
+}
+
+.step-line {
+  width: 270px;
+  height: 3px;
+  margin: 26px 14px 0;
+  background: #d1d5db;
+}
+
+.role-card h2 {
+  margin: 0 0 14px;
+  font-size: 34px;
+  color: #111827;
+}
+
+.role-subtitle {
+  margin: 0 0 42px;
+  font-size: 19px;
+  color: #555;
+}
+
+.role-options {
+  display: grid;
+  gap: 24px;
+}
+
+.role-option {
+  width: 100%;
+  min-height: 104px;
+  padding: 22px 24px;
+  display: grid;
+  grid-template-columns: 70px 1fr 40px;
+  align-items: center;
+  text-align: left;
+  border: 2px solid #d1d5db;
+  border-radius: 14px;
+  background: white;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.role-option:hover {
+  border-color: #a855f7;
+}
+
+.role-option.selected {
+  border-color: #8a2be2;
+  background: #f3d8ff;
+}
+
+.role-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: #eaf1ff;
+  color: #8a2be2;
+}
+
+.role-option h3 {
+  margin: 0 0 4px;
+  font-size: 17px;
+  color: #1f2937;
+}
+
+.role-option p {
+  margin: 0;
+  font-size: 16px;
+  color: #555;
+}
+
+.radio-circle {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #d1d5db;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+
+.radio-circle span {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #8a2be2;
+}
+
+.role-option.selected .radio-circle {
+  border-color: #8a2be2;
+}
+
+.continue-btn {
+  width: 100%;
+  height: 80px;
+  margin-top: 44px;
+  border: none;
+  border-radius: 10px;
+  background: #050505;
+  color: white;
+  font-size: 18px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  cursor: pointer;
+}
+
+.continue-btn:hover {
+  background: #111827;
+}
+
+/* ================= ADMIN DASHBOARD ================= */
+
+.admin-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  background: var(--page-bg, #f3f6fb);
+}
+
+.admin-shell.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary, #0f172a);
+  font-size: 15px;
+}
+
+.admin-sidebar {
+  min-height: 100vh;
+  padding: 34px 18px;
+  background: #0f172a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+
+.side-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.side-icon.active {
+  background: linear-gradient(135deg, #8b2fe8, #b84cff);
+  color: white;
+}
+
+.side-icon.logout {
+  color: #ef4444;
+}
+
+.side-bottom {
+  margin-top: auto;
+  display: grid;
+  gap: 22px;
+}
+
+.admin-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-topbar {
+  height: 88px;
+  padding: 0 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8fafc;
+  border-bottom: 2px solid #d7dce5;
+}
+
+.admin-brand {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.admin-brand h2 {
+  margin: 0;
+  font-size: 28px;
+  color: #111827;
+}
+
+.admin-brand span {
+  width: 1px;
+  height: 34px;
+  background: #cbd5e1;
+}
+
+.admin-brand p {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #4b5563;
+}
+
+.admin-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.live-badge {
+  width: 220px;
+  min-height: 40px;
+  padding: 6px 18px;
+  border: 2px solid #cbd5e1;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #dbeafe;
+}
+
+.live-badge span {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+
+.live-badge p {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 1.2px;
+}
+
+.profile-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #1e293b;
+  color: white;
+  font-weight: 900;
+  border: 4px solid #9b3ee8;
+}
+
+.admin-content {
+  flex: 1;
+  padding: 42px 36px 34px;
+}
+
+.admin-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 36px;
+}
+
+.admin-title-row h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+  letter-spacing: -0.5px;
+}
+
+.admin-title-row p {
+  margin: 6px 0 0;
+  font-size: 15px;
+  color: var(--text-secondary, #4b5563);
+}
+
+.admin-buttons {
+  display: flex;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.light-btn,
+.dark-btn {
+  height: 52px;
+  padding: 0 24px;
+  border-radius: 10px;
+  font-size: 17px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.light-btn {
+  border: 2px solid #d1d5db;
+  background: white;
+  color: #374151;
+}
+
+.dark-btn {
+  border: none;
+  background: #050505;
+  color: white;
+}
+
+.health-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  margin-bottom: 34px;
+}
+
+.health-card {
+  min-height: 116px;
+  padding: 24px;
+  border: 2px solid #d1d5db;
+  border-radius: 16px;
+  background: white;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.health-icon {
+  width: 66px;
+  height: 66px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+}
+
+.health-icon.green {
+  color: #16a34a;
+  background: #dcfce7;
+}
+
+.health-icon.purple {
+  color: #9333ea;
+  background: #f3d8ff;
+}
+
+.health-icon.blue {
+  color: #2563eb;
+  background: #dbeafe;
+}
+
+.health-icon.red {
+  color: #dc2626;
+  background: #fee2e2;
+}
+
+.health-card p {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 900;
+  color: #6b7280;
+  letter-spacing: 1px;
+}
+
+.health-card h3 {
+  margin: 0;
+  font-size: 30px;
+  color: #050505;
+}
+
+.health-card strong {
+  margin-left: auto;
+  color: #9333ea;
+  font-size: 15px;
+}
+
+.alert-pill {
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: #fecaca;
+  color: #dc2626 !important;
+}
+
+.mini-progress {
+  margin-left: auto;
+  width: 72px;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.mini-progress span {
+  display: block;
+  width: 92%;
+  height: 100%;
+  background: #22c55e;
+}
+
+.admin-lower-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 34px;
+}
+
+.user-directory,
+.audit-panel,
+.notes-panel {
+  border: 2px solid #d1d5db;
+  border-radius: 16px;
+  background: white;
+  overflow: hidden;
+}
+
+.panel-header {
+  min-height: 78px;
+  padding: 18px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel-header h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.search-box {
+  width: 300px;
+  height: 46px;
+  padding: 0 14px;
+  border: 2px solid #d1d5db;
+  border-radius: 11px;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-box input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 17px;
+}
+
+.user-table {
+  border-top: 2px solid #d1d5db;
+}
+
+.table-head,
+.table-row {
+  display: grid;
+  grid-template-columns: 1.5fr 0.65fr 0.85fr 0.55fr;
+  align-items: center;
+}
+
+.table-head {
+  padding: 16px 30px;
+  background: #f3f4f8;
+  border-bottom: 2px solid #d1d5db;
+}
+
+.table-head p {
+  margin: 0;
+  text-transform: uppercase;
+  color: #4b5563;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.table-row {
+  min-height: 88px;
+  padding: 0 30px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.table-row:last-child {
+  border-bottom: none;
+}
+
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.table-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #dbeafe;
+  color: #111827;
+  font-weight: 900;
+}
+
+.user-cell h3 {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+
+.user-cell p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 15px;
+}
+
+.role-chip {
+  padding: 5px 13px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.role-chip.landlord {
+  color: #2563eb;
+  background: #dbeafe;
+}
+
+.role-chip.tenant {
+  color: #64748b;
+  background: #f1f5f9;
+}
+
+.role-chip.admin {
+  color: #9333ea;
+  background: #f3e8ff;
+}
+
+.status-chip {
+  font-size: 15px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.status-chip.active {
+  color: #22c55e;
+}
+
+.status-chip.active::before {
+  content: '●';
+  margin-right: 8px;
+}
+
+.status-chip.pending {
+  color: #f59e0b;
+}
+
+.status-chip.pending::before {
+  content: '●';
+  margin-right: 8px;
+}
+
+.activity-text {
+  margin: 0;
+  color: #4b5563;
+}
+
+.right-panels {
+  display: grid;
+  gap: 34px;
+}
+
+.audit-panel {
+  background: #24364a;
+  color: white;
+  border: none;
+}
+
+.audit-header {
+  padding: 22px 26px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.audit-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.audit-header span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #cbd5e1;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.audit-header i {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+
+.audit-list {
+  padding: 22px 26px 28px;
+  display: grid;
+  gap: 22px;
+}
+
+.audit-item {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 18px;
+  padding-left: 14px;
+  border-left: 4px solid #22c55e;
+}
+
+.audit-item.danger {
+  border-left-color: #dc2626;
+}
+
+.audit-item p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.audit-item h3 {
+  margin: 0 0 5px;
+  font-size: 17px;
+  color: #c4b5fd;
+}
+
+.audit-item.success h3 {
+  color: #86efac;
+}
+
+.audit-item span {
+  color: #cbd5e1;
+  font-size: 14px;
+}
+
+.notes-panel {
+  min-height: 230px;
+  padding: 26px;
+  background: #eef3fb;
+}
+
+.notes-panel h2 {
+  margin: 0 0 10px;
+  font-size: 20px;
+}
+
+.notes-panel p {
+  margin: 0 0 20px;
+  color: #6b7280;
+}
+
+.cluster-row {
+  display: flex;
+  gap: 12px;
+}
+
+.cluster-row div {
+  width: 62px;
+  height: 58px;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  background: white;
+  padding: 7px;
+}
+
+.cluster-row span {
+  display: block;
+  font-size: 11px;
+  font-weight: 900;
+  color: #6b7280;
+}
+
+.cluster-row strong {
+  font-size: 19px;
+}
+
+.admin-footer {
+  min-height: 54px;
+  padding: 0 36px;
+  border-top: 2px solid #d1d5db;
+  display: flex;
+  align-items: center;
+  gap: 46px;
+  background: #e8f1ff;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.admin-footer p {
+  margin: 0;
+}
+
+.admin-footer p:nth-child(3) {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-footer span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media (max-width: 1200px) {
+  .health-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .admin-lower-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 950px) {
+  .login-page,
+  .role-page {
+    grid-template-columns: 1fr;
+  }
+
+  .login-left,
+  .role-left {
+    min-height: 420px;
+  }
+
+  .login-hero-content {
+    margin-top: 80px;
+  }
+
+  .login-right {
+    min-height: auto;
+  }
+
+  .role-left-content {
+    margin-top: 90px;
+  }
+
+  .role-left-content h1 {
+    font-size: 38px;
+  }
+
+  .role-card {
+    padding: 48px 28px;
+  }
+
+  .step-line {
+    width: 140px;
+  }
+
+  .admin-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-sidebar {
+    min-height: auto;
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .side-bottom {
+    margin-top: 0;
+    display: flex;
+  }
+
+  .admin-topbar,
+  .admin-title-row,
+  .admin-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    height: auto;
+    gap: 18px;
+    padding: 24px;
+  }
+
+  .health-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .table-head,
+  .table-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 18px;
+  }
+
+  .search-box {
+    width: 100%;
+  }
+
+  .panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+  }
+
+  .login-error {
+    max-width: 100%;
+  }
+}
+
+/* ═══ APP LOADING ═══ */
+
+.app-loading {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  background: #f8fafc;
+  color: #4b5563;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.app-loading .spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #d1d5db;
+  border-top-color: #9b3ee8;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ═══ LOGIN / REGISTER ERRORS ═══ */
+
+.login-error {
+  max-width: 100%;
+  margin: 24px 0;
+  padding: 16px 20px;
+  border-radius: 10px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.register-row {
+  display: flex;
+  gap: 20px;
+}
+
+.register-half {
+  flex: 1;
+}
+
+.register-half label {
+  margin-top: 0;
+}
+
+/* ═══ PROPERTIES PAGE ═══ */
+
+.properties-page { padding: 24px; }
+
+.properties-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.properties-title-row h1 { font-size: 28px; font-weight: 700; color: #1f2937; }
+.properties-title-row p { color: #6b7280; margin-top: 4px; }
+
+.btn-primary {
+  display: flex; align-items: center; gap: 8px;
+  height: 40px; padding: 0 18px;
+  background: var(--primary-container);
+  color: var(--on-primary); border: none; border-radius: 10px;
+  font-weight: 600; font-size: 13px; cursor: pointer;
+}
+.btn-primary:hover { filter: brightness(1.15); }
+
+/* Small action buttons ("View All", "See All", "New Request" on the
+   dashboards) — used in several pages' JSX but had no matching rule here
+   at all, so they rendered as bare unstyled browser buttons. */
+.btn-outline-sm,
+.btn-primary-sm {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px;
+  background: var(--primary-container);
+  color: var(--on-primary); border: none; border-radius: 8px;
+  font-weight: 600; font-size: 12px; cursor: pointer;
+}
+.btn-outline-sm:hover,
+.btn-primary-sm:hover { filter: brightness(1.15); }
+
+.properties-toolbar {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 16px; margin-bottom: 20px; flex-wrap: wrap;
+}
+
+
+.properties-view-controls { display: flex; align-items: center; gap: 12px; }
+.properties-type-filters { display: flex; gap: 6px; }
+
+.btn-type {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 14px; background: #f8fafc;
+  border: 1px solid #e5e7eb; border-radius: 8px;
+  font-size: 13px; color: #6b7280; cursor: pointer;
+}
+.btn-type:hover { background: #f3e8ff; color: #7c3aed; }
+.btn-type.active { background: #7c3aed; color: #fff; border-color: #7c3aed; }
+
+.properties-view-toggle { display: flex; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+.view-btn { padding: 8px 12px; background: #f8fafc; border: none; color: #6b7280; cursor: pointer; }
+.view-btn.active { background: #7c3aed; color: #fff; }
+
+.properties-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+.properties-list { display: flex; flex-direction: column; gap: 16px; }
+.properties-list .property-card { flex-direction: row; max-width: 100%; }
+.properties-list .property-card-image { width: 200px; min-height: 140px; }
+
+.property-card { background: #fff; border-radius: 14px; border: 1px solid #e5e7eb; overflow: hidden; transition: box-shadow 0.25s; }
+.property-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+.property-card-image { height: 180px; background: linear-gradient(135deg, #f3e8ff, #ede9fe); display: flex; align-items: center; justify-content: center; color: #9b3ee8; position: relative; }
+.property-card-image img { width: 100%; height: 100%; object-fit: cover; border-radius: 14px 14px 0 0; }
+.property-status { position: absolute; top: 12px; right: 12px; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.status-green { background: rgba(16,185,129,0.15); color: #065f46; }
+.status-yellow { background: rgba(245,158,11,0.15); color: #92400e; }
+.status-blue { background: rgba(59,130,246,0.15); color: #1e40af; }
+.status-red { background: rgba(239,68,68,0.15); color: #991b1b; }
+.status-gray { background: rgba(107,114,128,0.15); color: #4b5563; }
+
+.property-card-body { padding: 16px; }
+.property-card-body h3 { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
+.property-location-row { display: flex; align-items: center; gap: 4px; color: var(--text-secondary); font-size: 13px; margin-bottom: 8px; }
+.property-type-row { margin-bottom: 12px; }
+.property-type-badge { display: inline-block; padding: 3px 10px; background: #f3e8ff; color: #7c3aed; border-radius: 6px; font-size: 12px; font-weight: 600; }
+.property-bottom-row { display: flex; justify-content: space-between; align-items: center; }
+.property-price { display: flex; align-items: center; gap: 4px; font-weight: 700; color: var(--text-primary); font-size: 15px; }
+.property-units { color: #9ca3af; font-size: 13px; }
+
+.properties-pagination { display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 32px; }
+.properties-pagination button { display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; color: #374151; cursor: pointer; font-size: 13px; }
+.properties-pagination button:disabled { opacity: 0.4; cursor: default; }
+.page-info { color: #6b7280; font-size: 13px; }
+
+.properties-error { padding: 16px 20px; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; border-radius: 10px; margin-bottom: 16px; font-weight: 500; }
+.properties-loading { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 64px; color: #6b7280; }
+.properties-loading .spinner { width: 40px; height: 40px; border: 3px solid #e5e7eb; border-top-color: #9b3ee8; border-radius: 50%; animation: spin 0.7s linear infinite; }
+.properties-empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 64px; color: #9ca3af; }
+.properties-empty h2 { color: #4b5563; }
+
+/* ============================
+   Element Picker Styles
+   ============================ */
+
+body.customization-mode [data-customize-id] {
+  outline: 2px dashed rgba(138, 43, 226, 0.4) !important;
+  outline-offset: 2px;
+  transition: outline 0.1s ease;
+}
+
+body.customization-mode [data-customize-id].customization-hover {
+  outline: 2px solid rgba(138, 43, 226, 0.8) !important;
+  background: rgba(138, 43, 226, 0.05) !important;
+}
+
+[data-customize-id].selected {
+  outline: 3px solid #8a2be2 !important;
+  outline-offset: 2px;
+}
+
+/* ================= KPI / DASHBOARD UTILITIES ================= */
+
+/* KPI Card grid */
+.kpi-card-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-md);
+}
+
+@media (max-width: 1200px) {
+  .kpi-card-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 800px) {
+  .kpi-card-grid { grid-template-columns: 1fr; }
+}
+
+/* KPI Card base */
+.kpi-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--border-low);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+  position: relative;
+}
+.kpi-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* Dashboard two-column main grid */
+.dashboard-main-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--spacing-lg);
+}
+@media (max-width: 1024px) {
+  .dashboard-main-grid { grid-template-columns: 1fr; }
+}
+
+/* Panel card wrapper */
+.panel-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-low);
+  padding: var(--spacing-xl);
+}
+
+/* Shared popup dialog (components/Modal.jsx) — used by the category
+   "add" forms, booking details, and maintenance ticket forms. Its own
+   width/spacing classes (mx-auto, w-[480px]/[750px]/[1000px]) assume
+   Tailwind, which this project doesn't have, so the dialog had no real
+   width, padding, or card styling at all — it just shrank to fit its
+   content with a plain white background. */
+.modal {
+  width: 480px;
+  max-width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-lg);
+}
+.modal.w-\[750px\] { width: 750px; }
+.modal.w-\[1000px\] { width: 1000px; }
+
+.modal .modal-header {
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+}
+.modal .modal-header h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 700;
+}
+/* The header's own Close button (rendered by Modal.jsx as
+   `btn-text close-btn`) relied on .btn-text from a page-specific
+   stylesheet that isn't always loaded wherever Modal is used, so it
+   fell back to a plain bordered browser-default button. Styled directly
+   here instead, so it's guaranteed regardless of the host page. */
+.modal .modal-header .close-btn {
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  color: var(--primary-container);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+.modal .modal-header .close-btn:hover {
+  background: var(--surface-container);
+}
+.modal .modal-body {
+  color: var(--text-primary);
+}
+.modal .modal-body > * + * {
+  margin-top: var(--spacing-md);
+}
+.modal .modal-footer {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--border-color);
+}
+.modal .form-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+.modal .input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Maintenance ticket form's step tabs (Details / Photos / Location) —
+   had no CSS anywhere, so they just stacked as plain text. */
+.step-progress {
+  display: flex;
+  gap: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.step-progress > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 8px;
+  cursor: pointer;
+}
+.step-progress > div.active {
+  color: var(--primary-container);
+  border-bottom: 2px solid var(--primary-container);
+}
+
+/* Neutral (unselected) pill, e.g. the non-active priority options in the
+   maintenance form — the selected one already gets real styling via
+   .btn.btn-sm.btn-primary. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-container);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Trend indicator pill */
+.trend-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.trend-pill.positive {
+  color: var(--status-success);
+  background: rgba(16, 185, 129, 0.1);
+}
+.trend-pill.negative {
+  color: var(--status-error);
+  background: rgba(239, 68, 68, 0.1);
+}
+.trend-pill.neutral {
+  color: var(--status-warning);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+/* Dashboard header row, actions, and KPI-card internals - used by all
+   four dashboards (Admin/Landlord/Tenant/Agent) but were only ever
+   defined in LandlordDashboard.css, so any dashboard other than
+   Landlord's rendered them completely unstyled on a fresh page load
+   (they only "worked" if LandlordDashboard.css had already been loaded
+   earlier in the same SPA session by visiting that page first). Moved
+   here so every dashboard gets them reliably regardless of nav order. */
+.landlord-page-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+}
+
+.landlord-page-title-row h1 {
+  margin: 0;
+  font-family: var(--headline-font);
+  font-size: 28px;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.landlord-page-title-row h1 .brand-icon {
+  color: var(--primary-color);
+  font-size: 28px;
+}
+
+.landlord-page-title-row p {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-family: var(--body-font);
+}
+
+.landlord-page-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.btn-outline,
+.btn-primary-solid,
+.btn-ghost {
+  height: 40px;
+  padding: 0 18px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: var(--body-font);
+}
+
+.btn-outline {
+  border: 1px solid var(--primary-container);
+  background: var(--primary-container);
+  color: var(--on-primary);
+}
+.btn-outline:hover {
+  filter: brightness(1.15);
+}
+
+.btn-primary-solid {
+  border: none;
+  background: var(--primary-container);
+  color: var(--on-primary);
+}
+.btn-primary-solid:hover {
+  filter: brightness(1.08);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-ghost {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+}
+.btn-ghost:hover {
+  background: var(--surface-container-low);
+  color: var(--text-primary);
+}
+
+.kpi-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-md);
+}
+
+.kpi-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-lg);
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+}
+
+.icon-purple {
+  color: var(--primary-color);
+  background: rgba(138, 43, 226, 0.08);
+}
+.icon-blue {
+  color: var(--primary-accent);
+  background: rgba(37, 99, 235, 0.08);
+}
+.icon-amber {
+  color: var(--status-warning);
+  background: rgba(245, 158, 11, 0.08);
+}
+.icon-rose {
+  color: var(--status-error);
+  background: rgba(225, 29, 72, 0.08);
+}
+
+.kpi-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 4px;
+}
+
+.kpi-value {
+  font-family: var(--headline-font);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.kpi-sublabel {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.kpi-skeleton .skeleton-line {
+  border-radius: 6px;
+  background: linear-gradient( 90deg, var(--surface-container-low) 25%, var(--surface-container) 50%, var(--surface-container-low) 75% );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease infinite;
+}
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.skeleton-xs { height: 12px; margin-top: 8px; }
+.skeleton-sm { height: 44px; width: 44px; border-radius: var(--radius-lg); margin-bottom: var(--spacing-md); }
+.skeleton-lg { height: 26px; width: 55%; }
+
+/* Material Symbols ligature icons (font itself is loaded in index.html)
+   - the base font-family rule was never actually defined anywhere, so
+   every material-symbols-outlined span rendered as literal text (e.g.
+   "settings_applications") instead of an icon glyph. */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (max-width: 1024px) {
+  .landlord-page-title-row {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  .landlord-page-actions {
+    width: 100%;
+  }
+
+  .btn-outline,
+  .btn-primary-solid {
+    flex: 1;
+    justify-content: center;
+  }
+}

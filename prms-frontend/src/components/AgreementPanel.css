@@ -1,0 +1,179 @@
+.agreement-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.agreement-panel-loading {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.agreement-panel-error {
+  background: var(--error-container, #fee2e2);
+  color: var(--status-error, #dc2626);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.agreement-panel-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.agreement-panel-card {
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 16px;
+  background: var(--surface-main, #fff);
+}
+
+.agreement-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.agreement-status-badge {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: var(--surface-container-low, #f1f5f9);
+  color: var(--text-secondary);
+}
+
+.agreement-status-draft { background: var(--warning-state-background); color: var(--warning-state); }
+.agreement-status-awaiting_tenant_signature,
+.agreement-status-awaiting_landlord_signature { background: rgba(139, 92, 246, 0.12); color: var(--primary-color); }
+.agreement-status-fully_signed,
+.agreement-status-physically_signed { background: var(--success-state-background); color: var(--success-state); }
+.agreement-status-physical_copy_pending { background: var(--warning-state-background); color: var(--warning-state); }
+.agreement-status-superseded,
+.agreement-status-cancelled { background: var(--error-state-background); color: var(--error-state); }
+
+.agreement-panel-terms {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.agreement-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.agreement-form-grid label,
+.agreement-terms-label,
+.agreement-sign-block label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.agreement-form-grid input,
+.agreement-terms-label textarea,
+.agreement-sign-block input {
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--surface-main, #fff);
+}
+
+.agreement-summary {
+  background: var(--surface-container-low, #f8fafc);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.agreement-summary p { margin: 0; }
+.agreement-summary-terms {
+  margin-top: 6px !important;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+}
+
+.agreement-sign-block {
+  border-top: 1px dashed var(--border-color);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.agreement-sign-block h4 {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.agreement-otp-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.agreement-waiting-note {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.agreement-doc-link {
+  color: var(--primary-color);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.agreement-signed-info {
+  background: var(--success-state-background);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 13px;
+}
+.agreement-signed-info p { margin: 2px 0; }
+.agreement-hash code {
+  font-size: 11px;
+  background: rgba(0,0,0,0.06);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.agreement-history {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.agreement-history ul { margin: 6px 0 0; padding-left: 18px; }
+
+@media print {
+  .agreement-sign-block, .agreement-history, button { display: none !important; }
+}
+
+@media (max-width: 700px) {
+  .agreement-form-grid { grid-template-columns: 1fr 1fr; }
+}

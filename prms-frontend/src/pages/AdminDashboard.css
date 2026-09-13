@@ -1,0 +1,327 @@
+/* ======================================================
+   Admin Dashboard — EstateSync Design
+   Reuses kpi-card, panel-card, dashboard-main-grid from styles.css
+   ====================================================== */
+
+.admin-dashboard-page {
+  animation: fade-in 0.4s ease;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- KPI icon colours (admin extras) ---- */
+.icon-emerald {
+  color: var(--status-success);
+  background: rgba(22, 163, 74, 0.08);
+}
+
+/* ---- User Directory ---- */
+.admin-dashboard-page .dashboard-main-grid {
+  margin-top: var(--spacing-xl);
+}
+
+.admin-directory {
+  min-height: 390px;
+}
+
+.admin-search {
+  width: 280px;
+  height: 40px;
+  padding: 0 var(--spacing-sm);
+  border: 1px solid var(--border-low);
+  border-radius: var(--radius-md);
+  background: var(--surface-container-low);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--text-secondary);
+}
+.admin-search input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.admin-table-warp {
+  margin-top: var(--spacing-md);
+  border-top: 1px solid var(--border-low);
+}
+
+.admin-table-head,
+.admin-table-row {
+  display: grid;
+  grid-template-columns: 2fr 0.85fr 0.9fr 0.7fr;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 0 var(--spacing-3xs);
+}
+
+.admin-table-head {
+  min-height: 44px;
+  border-bottom: 1px solid var(--border-low);
+  padding-bottom: var(--spacing-sm);
+}
+
+.admin-table-head span {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.admin-table-row {
+  min-height: 72px;
+  border-bottom: 1px solid var(--border-low);
+  padding-top: var(--spacing-sm);
+  padding-bottom: var(--spacing-sm);
+}
+.admin-table-row:last-child {
+  border-bottom: none;
+}
+
+.admin-user-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.admin-user-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--primary-fixed);
+  color: var(--on-primary-container);
+  font-weight: 800;
+  font-size: 13px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.admin-user-info h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.admin-user-info p {
+  margin: var(--spacing-5xs) 0 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.user-role {
+  display: inline-block;
+  padding: var(--spacing-3xs) var(--spacing-sm);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.user-role--landlord {
+  color: var(--primary-accent);
+  background: rgba(37, 99, 235, 0.08);
+}
+.user-role--tenant {
+  color: var(--text-secondary);
+  background: var(--surface-container);
+}
+.user-role--admin {
+  color: var(--primary-color);
+  background: var(--secondary-fixed);
+}
+
+.user-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2xs);
+  font-size: 12px;
+  font-weight: 600;
+}
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.user-status--active .status-dot { background: var(--status-success); }
+.user-status--active { color: var(--status-success); }
+.user-status--pending .status-dot { background: var(--status-warning); }
+.user-status--pending { color: var(--status-warning); }
+
+.admin-activity {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* ---- Right col ---- */
+.admin-right-col {
+  display: grid;
+  gap: var(--spacing-lg);
+}
+
+/* ---- Dark audit panel ---- */
+.dark-panel {
+  background: var(--primary-container);
+  color: var(--on-primary);
+}
+
+.audit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-md);
+}
+
+.dark-panel .panel-title-text {
+  color: var(--on-primary);
+}
+
+.audit-live {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2xs);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: var(--border-color-hover);
+}
+.live-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--status-success);
+  animation: pulse-dot 2s ease infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.audit-list {
+  display: grid;
+  gap: var(--spacing-md);
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: var(--spacing-xs);
+}
+
+.audit-item {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  gap: var(--spacing-md);
+  padding-left: var(--spacing-sm);
+  border-left: 4px solid var(--status-success);
+}
+.audit-danger {
+  border-left-color: var(--status-error);
+}
+
+.audit-time {
+  font-size: 12px;
+  color: var(--border-color-hover);
+  margin: 0;
+}
+
+.audit-body h4 {
+  margin: 0 0 var(--spacing-3xs);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--status-success);
+}
+.audit-danger h4 {
+  color: var(--primary-color);
+}
+
+.audit-body p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--secondary-fixed);
+}
+
+/* ---- Operational notes ---- */
+.admin-notes {
+  min-height: 160px;
+}
+
+.notes-header {
+  margin-bottom: var(--spacing-2xs);
+}
+
+.notes-text {
+  margin: 0 0 var(--spacing-md);
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.clusters-grid {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.cluster-tile {
+  width: 70px;
+  height: 64px;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--border-low);
+  border-radius: var(--radius-md);
+  background: var(--surface-container-low);
+  display: grid;
+  place-items: center;
+  text-align: center;
+  gap: var(--spacing-5xs);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.cluster-tile:hover {
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+}
+
+.cluster-tile span {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.cluster-tile strong {
+  font-size: 18px;
+  color: var(--text-primary);
+}
+
+/* ---- Responsive tweaks ---- */
+@media (max-width: 1100px) {
+  .dashboard-main-grid {
+    grid-template-columns: 1fr;
+  }
+  .admin-search {
+    width: 100%;
+  }
+}
+
+@media (max-width: 800px) {
+  .admin-table-head,
+  .admin-table-row {
+    grid-template-columns: 1fr auto;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) 0;
+  }
+  .admin-table-head span:nth-child(3),
+  .admin-table-head span:nth-child(4),
+  .admin-table-row > :nth-child(3),
+  .admin-table-row > :nth-child(4) {
+    display: none;
+  }
+  .clusters-grid {
+    flex-wrap: wrap;
+  }
+}

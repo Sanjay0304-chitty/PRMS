@@ -1,0 +1,122 @@
+/* ======== Profile Dropdown ======== */
+
+.profile-dropdown-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+/* Toggle button */
+.profile-dropdown-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px 6px 6px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: none;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.profile-dropdown-toggle:hover {
+  background: var(--surface-container);
+}
+
+.profile-dropdown-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.3;
+}
+
+.profile-dropdown-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.profile-dropdown-role {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.profile-dropdown-avatar-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--outline-variant);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.profile-dropdown-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.profile-chevron {
+  position: absolute;
+  bottom: -6px;
+  right: -4px;
+  color: var(--text-secondary-light);
+}
+
+/* Dropdown menu */
+.profile-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 180px;
+  background: var(--card-bg);
+  border: 1px solid var(--outline-variant);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  padding: 6px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.profile-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  color: var(--text-color);
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.1s;
+  text-align: left;
+}
+
+.profile-dropdown-item:hover {
+  background: var(--surface-container);
+  color: var(--text-primary);
+}
+
+.profile-dropdown-item.logout-item {
+  color: var(--status-error);
+}
+
+.profile-dropdown-item.logout-item:hover {
+  background: var(--error-container);
+}
+
+.profile-dropdown-divider {
+  height: 1px;
+  background: var(--outline-variant);
+  margin: 4px 8px;
+}

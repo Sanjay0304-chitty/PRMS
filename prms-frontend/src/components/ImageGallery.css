@@ -1,0 +1,286 @@
+/* ============ IMAGE GALLERY ============ */
+/* Enhanced gallery: main image, nav arrows, thumbnails, upload, drag-and-drop, delete */
+
+/* ── Hidden File Input ── */
+.gallery-file-input {
+  display: none;
+}
+
+/* ── Main Image ── */
+.gallery-main {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 8 / 5;
+  max-height: 440px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--surface-card, #1e293b);
+  border: 2px solid rgba(255, 255, 255, 0.04);
+}
+
+.gallery-main-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Fallback when no image */
+.gallery-main-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-secondary, #93c5fd);
+  font-size: 1rem;
+}
+
+/* ── Nav Arrows ── */
+.gallery-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(30, 41, 59, 0.65);
+  backdrop-filter: blur(10px);
+  color: var(--text-primary, #f1f5f9);
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transition: opacity 0.2s ease, background 0.15s ease;
+  cursor: pointer;
+  z-index: 3;
+}
+
+.gallery-main:hover .gallery-nav {
+  opacity: 1;
+}
+
+.gallery-nav:hover {
+  background: rgba(30, 41, 59, 0.88);
+}
+
+.gallery-nav-prev {
+  left: 12px;
+}
+
+.gallery-nav-next {
+  right: 12px;
+}
+
+/* ── Counter ── */
+.gallery-counter {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  font-size: 0.8rem;
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  z-index: 3;
+}
+
+/* ── Upload Trigger ── */
+.gallery-upload-trigger {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(10px);
+  color: var(--text-primary, #f1f5f9);
+  font-size: 0.82rem;
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity 0.2s ease, background 0.15s ease;
+  cursor: pointer;
+  z-index: 3;
+}
+
+.gallery-main:hover .gallery-upload-trigger {
+  opacity: 1;
+}
+
+.gallery-upload-trigger:hover {
+  background: rgba(30, 41, 59, 0.88);
+}
+
+.upload-trigger-icons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── Toast ── */
+.gallery-toast {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  z-index: 4;
+  white-space: nowrap;
+}
+
+.gallery-toast-success {
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: #fff;
+}
+
+.gallery-toast-error {
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+  color: #fff;
+}
+
+/* ── Drag Overlay ── */
+.gallery-drag-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(99, 102, 241, 0.18);
+  border: 3px dashed rgba(99, 102, 241, 0.7);
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  color: var(--accent-2, #a78bfa);
+  font-size: 1.1rem;
+  font-weight: 500;
+  z-index: 10;
+}
+
+/* ── Thumbnails ── */
+.gallery-thumbnails {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.gallery-thumb {
+  position: relative;
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+  border-radius: 9px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid rgba(99, 102, 241, 0.03);
+  transition: all 0.2s ease;
+}
+
+.gallery-thumb:hover {
+  border-color: rgba(99, 102, 241, 0.35);
+  transform: translateY(-2px);
+}
+
+.gallery-thumb-active {
+  border-color: var(--accent, #6366f1);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+}
+
+.gallery-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gallery-thumb-video-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #111827;
+  color: #fff;
+}
+
+.gallery-thumb-video-badge {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  color: #fff;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+  pointer-events: none;
+}
+
+/* ── Upload Thumbnail Button ── */
+.gallery-thumb-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: rgba(99, 102, 241, 0.07);
+  border: 1px dashed rgba(99, 102, 241, 0.4) !important;
+  color: var(--accent, #6366f1);
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.gallery-thumb-upload:hover {
+  background: rgba(99, 102, 241, 0.16);
+  border-color: var(--accent, #6366f1);
+}
+
+/* ── Delete Button on Thumbnail ── */
+.gallery-thumb-delete {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(239, 68, 68, 0.92);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transform: scale(0.85);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+.gallery-thumb:hover .gallery-thumb-delete {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.gallery-thumb-delete:hover {
+  background: #dc2626;
+  transform: scale(1.15) !important;
+}
+
+/* ── Drag Active ── */
+.gallery-drag-active {
+  outline: none;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .gallery-thumbnails {
+    flex-wrap: nowrap;
+  }
+}
