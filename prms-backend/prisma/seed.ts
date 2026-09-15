@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
+import { execFileSync } from 'node:child_process';
+import path from 'node:path';
 
 const adapter = new PrismaBetterSqlite3({
   url: './prisma/dev.db',
@@ -121,6 +123,21 @@ async function main() {
     create: { agentId: agentRecord.id, propertyId: prop2.id },
     update: {},
   });
+
+  console.log('Seeding additional property datasets...');
+  const tsxCli = path.join(process.cwd(), 'node_modules', 'tsx', 'dist', 'cli.mjs');
+  const propertySeeds = [
+    'prisma/seed_malaysia_properties.ts',
+    'prisma/seed_malaysia_listings.ts',
+    'prisma/seed_propertydata.ts',
+  ];
+
+  for (const seedFile of propertySeeds) {
+    execFileSync(process.execPath, [tsxCli, seedFile], {
+      cwd: process.cwd(),
+      stdio: 'inherit',
+    });
+  }
 
   console.log('Seeding complete.');
 }
