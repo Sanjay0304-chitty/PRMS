@@ -13,7 +13,7 @@ export default function NotificationDropdown() {
     async function loadNotifs() {
       try {
         const { data } = await adminApi.getNotifications()
-        const items = data?.data || data || []
+        const items = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []
         if (!cancelled) setNotifs(items)
       } catch { /* ignore */ } finally {
         if (!cancelled) setLoading(false)
@@ -28,7 +28,7 @@ export default function NotificationDropdown() {
     const interval = setInterval(() => {
       adminApi.getNotifications()
         .then(res => {
-          const items = res?.data?.data || res?.data || []
+          const items = Array.isArray(res?.data?.data) ? res.data.data : Array.isArray(res?.data) ? res.data : []
           setNotifs(items)
         })
         .catch(() => { /* ignore */ })
@@ -42,7 +42,7 @@ export default function NotificationDropdown() {
     const timeout = setTimeout(() => {
       adminApi.getNotifications()
         .then(res => {
-          const items = res?.data?.data || res?.data || []
+          const items = Array.isArray(res?.data?.data) ? res.data.data : Array.isArray(res?.data) ? res.data : []
           setNotifs(items)
         })
         .catch(() => { /* ignore */ })

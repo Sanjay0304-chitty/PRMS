@@ -16,11 +16,10 @@
 export function getApiBaseUrl() {
   const envUrl = import.meta.env.VITE_API_BASE_URL;
   if (envUrl && envUrl !== '') return envUrl;
-  // Guard: during SSR or unit tests, window may not be available.
-  // Fall back to localhost for those cases.
-  if (typeof window !== 'undefined' && window.location?.origin) {
-    return window.location.origin;
-  }
+  // Backend runs on port 3500 by default. Only use window.location.origin
+  // when the frontend and backend are served from the same host/port
+  // (e.g. production build behind a reverse proxy).
+  // The .gitignore'd .env.development sets VITE_API_BASE_URL for dev.
   return 'http://localhost:3500';
 }
 
