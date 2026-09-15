@@ -24,7 +24,10 @@ export class NotificationController {
       if (!userId) return res.status(401).json({ success: false, error: { message: 'User required' } });
       const data = await notificationService.markRead(userId, String(req.params.id));
       res.json(successResponse(data));
-    } catch (error: any) { res.status(500).json({ success: false, error: { message: error.message } }); }
+    } catch (error: any) {
+      const status = error instanceof notificationService.NotificationNotFoundError ? 404 : 500;
+      res.status(status).json({ success: false, error: { message: error.message } });
+    }
   };
 
   markAllRead = async (req: Request, res: Response) => {
@@ -40,9 +43,12 @@ export class NotificationController {
     try {
       const userId = (req as AuthRequest).user?.id;
       if (!userId) return res.status(401).json({ success: false, error: { message: 'User required' } });
-      await notificationService.deleteNotification(String(req.params.id));
+      await notificationService.deleteNotification(userId, String(req.params.id));
       res.json(successResponse(null, 'Notification deleted'));
-    } catch (error: any) { res.status(500).json({ success: false, error: { message: error.message } }); }
+    } catch (error: any) {
+      const status = error instanceof notificationService.NotificationNotFoundError ? 404 : 500;
+      res.status(status).json({ success: false, error: { message: error.message } });
+    }
   };
 
   create = async (req: Request, res: Response) => {
