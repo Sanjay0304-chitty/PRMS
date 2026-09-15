@@ -22,7 +22,7 @@ export class NotificationController {
     try {
       const userId = (req as AuthRequest).user?.id;
       if (!userId) return res.status(401).json({ success: false, error: { message: 'User required' } });
-      const data = await notificationService.markRead(String(req.params.id));
+      const data = await notificationService.markRead(userId, String(req.params.id));
       res.json(successResponse(data));
     } catch (error: any) { res.status(500).json({ success: false, error: { message: error.message } }); }
   };
