@@ -13,7 +13,7 @@
   width: 96px;
   height: 100vh;
   padding: 34px 18px;
-  background: var(--header-background-color);
+  background: var(--sidebar-bg, var(--header-background-color));
   color: var(--text-color);
   display: flex;
   flex-direction: column;
