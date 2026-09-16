@@ -20,7 +20,7 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config) => {
-    const token = sessionStorage.getItem('accessToken');
+    const token = sessionStorage.getItem('accessToken') || localStorage.getItem('accessToken');
 
     if (
       token &&
@@ -65,7 +65,7 @@ const processQueue = (error, token = null) => {
 /* ------------------------------------------------------------------ */
 
 async function refreshToken() {
-  const refreshTokenValue = sessionStorage.getItem('refreshToken');
+  const refreshTokenValue = sessionStorage.getItem('refreshToken') || localStorage.getItem('refreshToken');
 
   if (
     !refreshTokenValue ||
@@ -101,7 +101,12 @@ apiClient.interceptors.response.use(
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      originalRequest.url !== '/auth/login'
+      originalRequest.url !== '/auth/login' &&
+      (() => {
+        const at = sessionStorage.getItem('accessToken') || localStorage.getItem('accessToken');
+        const rt = sessionStorage.getItem('refreshToken') || localStorage.getItem('refreshToken');
+        return at && rt && rt !== 'undefined' && rt !== 'null';
+      })()
     ) {
       if (
         window.__prmsHydrating === true &&
@@ -146,13 +151,13 @@ apiClient.interceptors.response.use(
           );
         }
 
-        sessionStorage.setItem(
+        localStorage.setItem(
           'accessToken',
           newAccessToken
         );
 
         if (tokens.refreshToken) {
-          sessionStorage.setItem(
+          localStorage.setItem(
             'refreshToken',
             tokens.refreshToken
           );
@@ -189,6 +194,8 @@ function logoutUser() {
   isLoggingOut = true;
 
   sessionStorage.clear();
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
   
   setTimeout(() => {
     isLoggingOut = false;

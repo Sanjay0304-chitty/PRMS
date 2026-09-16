@@ -23,7 +23,7 @@ function Login() {
     clearError();
     setSubmitting(true);
 
-    const result = await login({ email, password }, navigate);
+    const result = await login({ email, password, remember }, navigate);
 
     /* Remember-me: persist refresh token to localStorage longer */
     if (result.success && remember) {

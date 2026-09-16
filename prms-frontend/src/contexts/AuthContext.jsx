@@ -97,17 +97,23 @@ function AuthProvider({ children }) {
   /* ------ Login ------ */
 
   const login = useCallback(
-    async ({ email, password }, navigate) => {
+    async ({ email, password, remember }, navigate) => {
       dispatch({ type: ACTIONS.SET_LOADING, payload: true });
       dispatch({ type: ACTIONS.CLEAR_ERROR });
       try {
         const { data } = await authApi.login({ email, password });
-
-        // Store tokens — successResponse wraps in {success, message, data: {user, tokens}}
         const tokens = data?.data?.tokens;
         if (tokens) {
-          sessionStorage.setItem('accessToken', tokens.accessToken);
-          sessionStorage.setItem('refreshToken', tokens.refreshToken);
+          // Remember me → localStorage (persists after browser close)
+          // Not checked → sessionStorage (clears on tab close)
+          // Always clear the OTHER store so the request interceptor
+          // (which checks sessionStorage first) doesn't read a stale token.
+          const store = remember ? localStorage : sessionStorage;
+          const otherStore = remember ? sessionStorage : localStorage;
+          otherStore.removeItem('accessToken');
+          otherStore.removeItem('refreshToken');
+          store.setItem('accessToken', tokens.accessToken);
+          store.setItem('refreshToken', tokens.refreshToken);
         }
 
         // Fetch current user with normalized shape
@@ -190,6 +196,8 @@ function AuthProvider({ children }) {
       // Clear ALL auth-related storage
       sessionStorage.removeItem('accessToken');
       sessionStorage.removeItem('refreshToken');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
       localStorage.removeItem('prmsDashboardPath');
       sessionStorage.removeItem('prmsSelectedRole');
       localStorage.removeItem('prmsOnboarding');
@@ -260,7 +268,7 @@ function AuthProvider({ children }) {
   /* ------ Hydration — restore session (AUTH-003/004) ------ */
 
   useEffect(() => {
-    if (!sessionStorage.getItem('accessToken')) {
+    if (!sessionStorage.getItem('accessToken') && !localStorage.getItem('accessToken')) {
       dispatch({ type: ACTIONS.SET_LOADING, payload: false });
       return;
     }
@@ -280,6 +288,8 @@ function AuthProvider({ children }) {
       .catch(() => {
         sessionStorage.removeItem('accessToken');
         sessionStorage.removeItem('refreshToken');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
         dispatch({ type: ACTIONS.SET_LOADING, payload: false });
       })
       .finally(() => {
