@@ -31,34 +31,40 @@ const DEFAULT_CONFIG = {
 
 export class CustomizerService {
   /**
-   * Each user has their own independent branding - an Admin's colors only
-   * ever paint that Admin's own session, never another Admin's or any
-   * other role's. A guest (no userId - not logged in yet) gets the plain
-   * defaults rather than any particular user's config, since there's no
-   * "site-wide" owner anymore.
+   * Site-wide config: one single row serves every page, guest or logged-in.
    */
-  async getConfig(userId?: string) {
-    if (!userId) return { id: null, userId: null, ...DEFAULT_CONFIG };
-
-    let config = await (prisma as any).websiteCustomizer.findUnique({ where: { userId } });
+  async getConfig(_userId?: string) {
+    let config = await (prisma as any).websiteCustomizer.findFirst({
+      orderBy: { created_at: 'asc' },
+    });
     if (!config) {
       config = await (prisma as any).websiteCustomizer.create({
-        data: { userId, ...DEFAULT_CONFIG },
+        data: { ...DEFAULT_CONFIG },
       });
     }
     return config;
   }
 
-  async updateConfig(userId: string, data: Record<string, string | null>) {
-    await this.getConfig(userId); // ensures a row exists to update
-    return (prisma as any).websiteCustomizer.update({
-      where: { userId },
-      data,
+  /**
+   * Update the single site-wide config row.
+   */
+  async updateConfig(_userId: string, data: Record<string, string | null>) {
+    let config = await (prisma as any).websiteCustomizer.findFirst({
+      orderBy: { created_at: 'asc' },
+    });
+    if (config) {
+      return (prisma as any).websiteCustomizer.update({
+        where: { id: config.id },
+        data,
+      });
+    }
+    return (prisma as any).websiteCustomizer.create({
+      data: { ...DEFAULT_CONFIG, ...data },
     });
   }
 
   async uploadLogo(userId: string, buffer: Buffer, originalname: string) {
-    const config = await this.getConfig(userId);
+    const config = await this.getConfig();
 
     // Delete old files
     const safeDel = (url: string | null) => {
@@ -95,7 +101,7 @@ export class CustomizerService {
   }
 
   async removeLogo(userId: string) {
-    const config = await this.getConfig(userId);
+    const config = await this.getConfig();
     const safeDel = (url: string | null) => {
       if (url) {
         const p = path.join(LOGOS_DIR, path.basename(url));
