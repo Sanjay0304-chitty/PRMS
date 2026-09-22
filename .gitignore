@@ -35,6 +35,8 @@ dev.db
 
 # Uploads
 uploads/
+prms-backend/public/images/logo-*
+prms-backend/public/images/logo-thumb-*
 
 # Typescript build cache
 tsconfig.tsbuildinfo

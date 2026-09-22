@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate, Outlet } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  CircleHelp,
   LogOut,
   Search,
 } from 'lucide-react'
@@ -25,10 +24,9 @@ function getTopbarTitle(activePage) {
     properties: 'Property Management',
     bookings: 'Rental Applications',
     viewings: 'Viewing Appointments',
-    finance: 'Finance Console',
+    finance: 'Finance & Reports',
     maintenance: 'Maintenance Center',
     messages: 'Admin Messages',
-    reports: 'Reports & Audit',
     categories: 'Category Management',
     'audit-logs': 'Audit Logs',
     settings: 'Admin Settings',
@@ -37,7 +35,6 @@ function getTopbarTitle(activePage) {
     'privacy-requests': 'Privacy Requests',
     retention: 'Data Retention',
     'breach-register': 'Data Breach Register',
-    help: 'Admin Help Center',
   }
   return titles[activePage] || 'Admin Dashboard'
 }
@@ -138,17 +135,6 @@ function AdminLayout() {
         })}
 
         <div className="admin-layout-side-spacer"></div>
-
-        <motion.button
-          type="button"
-          className={`admin-layout-side-btn ${activePage === 'help' ? 'active' : ''}`}
-          onClick={() => safeNavigate('/admin/help')}
-          title="Help"
-          whileTap={{ scale: 0.96 }}
-        >
-          <CircleHelp size={24} />
-          <span>Help</span>
-        </motion.button>
 
         <motion.button
           type="button"

@@ -10,6 +10,10 @@ export const customizerApi = {
     return apiClient.put('/customizer/config', payload).then(r => r.data);
   },
 
+  async resetConfig() {
+    return apiClient.delete('/customizer/config').then(r => r.data);
+  },
+
   async uploadLogo(formData) {
     return apiClient.post('/customizer/upload-logo', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },

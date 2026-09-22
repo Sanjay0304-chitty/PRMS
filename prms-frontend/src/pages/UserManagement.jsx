@@ -11,7 +11,6 @@ import {
   X,
   Eye,
   Edit2,
-  Trash2,
   Loader2,
   AlertCircle,
   CheckCircle2,
@@ -219,17 +218,6 @@ export default function UserManagement() {
     }
   }
 
-  async function handleDelete(user) {
-    if (!confirm(`Delete user "${user.full_name || user.email}"? This will deactivate their account.`)) return
-    try {
-      await userApi.remove(user.id)
-      showToast('User deactivated')
-      loadUsers(pagination.page)
-    } catch (e) {
-      showToast(e.message || 'Delete failed', 'error')
-    }
-  }
-
   async function handleChangeRole(user, newRole) {
     if (!confirm(`Change role to ${newRole}?`)) return
     try {
@@ -389,9 +377,6 @@ export default function UserManagement() {
                   </button>
                   <button title={u.is_active ? 'Suspend' : 'Activate'} onClick={() => handleToggleActive(u)}>
                     {u.is_active ? <UserX size={15} /> : <UserCheck size={15} />}
-                  </button>
-                  <button title="Delete" onClick={() => handleDelete(u)} className="danger">
-                    <Trash2 size={15} />
                   </button>
                   {/* Role changer dropdown */}
                   <select

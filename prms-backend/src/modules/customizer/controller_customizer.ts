@@ -8,7 +8,9 @@ const service = new CustomizerService();
 export class CustomizerController {
   getConfig = async (req: AuthRequest, res: Response) => {
     try {
-      const config = await service.getConfig(req.user?.id);
+      const role = (req.user?.role || '').toLowerCase();
+      const inheritAdminBranding = role !== '' && role !== 'admin' && role !== 'landlord';
+      const config = await service.getConfig(req.user?.id, inheritAdminBranding);
       res.json({ success: true, data: config });
     } catch (err: any) {
       res.status(500).json({ success: false, error: err.message });
@@ -19,8 +21,10 @@ export class CustomizerController {
     try {
       const payload: Record<string, string | null> = {};
       const errors: string[] = [];
+      const role = (req.user!.role || '').toLowerCase();
+      const canManageBranding = role === 'admin' || role === 'landlord';
 
-      if ('company_name' in req.body && req.body.company_name) {
+      if (canManageBranding && 'company_name' in req.body && req.body.company_name) {
         payload.company_name = req.body.company_name;
       }
 
@@ -57,6 +61,10 @@ export class CustomizerController {
 
   uploadLogo = async (req: AuthRequest, res: Response) => {
     try {
+      const role = (req.user!.role || '').toLowerCase();
+      if (role !== 'admin' && role !== 'landlord') {
+        return res.status(403).json({ success: false, error: 'Only administrators and landlords can upload branding logos' });
+      }
       if (!req.file) {
         return res.status(400).json({ success: false, error: 'No file uploaded' });
       }
@@ -73,7 +81,22 @@ export class CustomizerController {
 
   removeLogo = async (req: AuthRequest, res: Response) => {
     try {
+      const role = (req.user!.role || '').toLowerCase();
+      if (role !== 'admin' && role !== 'landlord') {
+        return res.status(403).json({ success: false, error: 'Only administrators and landlords can remove branding logos' });
+      }
       const config = await service.removeLogo(req.user!.id);
+      res.json({ success: true, data: config });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  };
+
+  resetConfig = async (req: AuthRequest, res: Response) => {
+    try {
+      await service.resetConfig(req.user!.id);
+      const role = (req.user!.role || '').toLowerCase();
+      const config = await service.getConfig(req.user!.id, role !== 'admin' && role !== 'landlord');
       res.json({ success: true, data: config });
     } catch (err: any) {
       res.status(500).json({ success: false, error: err.message });
@@ -82,7 +105,8 @@ export class CustomizerController {
 
   getPreview = async (req: AuthRequest, res: Response) => {
     try {
-      const config = await service.getConfig(req.user?.id);
+      const role = (req.user?.role || '').toLowerCase();
+      const config = await service.getConfig(req.user?.id, role !== '' && role !== 'admin' && role !== 'landlord');
       const theme = config.active_theme === 'dark' ? 'dark' : 'light';
       const headerBg = theme === 'dark' ? config.dark_header_bg : config.light_header_bg;
       const bodyBg = theme === 'dark' ? config.dark_body_bg : config.light_body_bg;

@@ -15,19 +15,17 @@ const logoUpload = multer({
   },
 });
 
-// Branding is per-user now (each account has its own), so /config and
-// /preview use optionalAuth: a logged-in caller gets their own config, a
-// guest (no token yet, e.g. the public landing page before sign-in) gets
-// the plain defaults rather than any particular user's customization.
+// A logged-in caller gets their personal config. Guests and accounts that
+// have not customized yet receive the administrator's system defaults.
 router.get('/config', optionalAuth, ctrl.getConfig);
 router.get('/preview', optionalAuth, ctrl.getPreview);
 router.get('/health', (_req, res) => res.json({ success: true, service: 'customizer', status: 'ok' }));
 
-// Every authenticated user manages their own branding - not admin-only,
-// since each role (and each individual account within a role) has its
-// own independent customizer.
+// Every authenticated user can manage personal colours. The controller
+// limits company-name and logo changes to administrators and landlords.
 router.use(authenticate);
 router.put('/config', ctrl.updateConfig);
+router.delete('/config', ctrl.resetConfig);
 router.post('/upload-logo', logoUpload.single('logo'), ctrl.uploadLogo);
 router.delete('/logo', ctrl.removeLogo);
 

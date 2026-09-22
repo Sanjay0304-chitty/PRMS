@@ -154,13 +154,12 @@ export function getMessagesRoute(role: string | null | undefined): string {
   return ROUTES.public.login;
 }
 
-/** Get the correct add-property route for the role that has it (Landlord / Admin) */
+/** Only landlords create listings; administrators review and manage them. */
 export function getAddPropertyRoute(
   role: string | null | undefined,
 ): string | null {
   if (!role) return null;
   const lower = role.toLowerCase();
-  if (lower.includes('admin')) return ROUTES.admin.propertyAdd;
   if (lower.includes('landlord')) return ROUTES.landlord.propertyAdd;
   return null;
 }

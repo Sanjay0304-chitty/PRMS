@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams, Link as RouterLink } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { motion } from 'framer-motion'
 import {
@@ -9,7 +9,6 @@ import {
   Search,
   Filter,
   Plus,
-  RotateCw,
   Grid3x3,
   List,
   ChevronLeft,
@@ -17,7 +16,7 @@ import {
 } from 'lucide-react'
 import { getImageUrl } from '../config/imageHelper';
 import { propertyApi, getApiError } from '../api'
-import { ROUTES, getAddPropertyRoute, getPropertyDetailPath } from '../config/routes'
+import { getAddPropertyRoute, getPropertyDetailPath } from '../config/routes'
 import { PROPERTY_TYPES as CANONICAL_PROPERTY_TYPES, propertyTypeLabel } from '../config/propertyTypes'
 import './Properties.css'
 
@@ -103,6 +102,7 @@ function Properties() {
   }
 
   const totalPages = Math.max(Math.ceil(totalCount / perPage), 1)
+  const isAdmin = (user?.role || '').toLowerCase().includes('admin')
 
   function statusColor(status) {
     const s = (status || '').toLowerCase()
@@ -126,7 +126,11 @@ function Properties() {
       <div className="properties-titlebar">
         <div>
           <h1 className="page-title">Properties</h1>
-          <p className="page-subtitle">Browse and manage all property listings in your portfolio.</p>
+          <p className="page-subtitle">
+            {isAdmin
+              ? 'Review and manage property listings across the platform.'
+              : 'Browse and manage all property listings in your portfolio.'}
+          </p>
         </div>
         {getAddPropertyRoute(user?.role) && (
           <motion.button

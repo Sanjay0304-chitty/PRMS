@@ -42,7 +42,7 @@ export default function AdminAuditLogs() {
     <>
       <section className="admin-simple-hero">
         <div>
-          <h1>Reports &amp; Audit</h1>
+          <h1>Audit Logs</h1>
           <p>Review security logs, user activity, and system audit events.</p>
         </div>
       </section>

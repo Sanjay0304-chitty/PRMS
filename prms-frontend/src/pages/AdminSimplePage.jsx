@@ -15,13 +15,12 @@ const subPages = {
     subtitle: 'Track maintenance tickets, priorities, progress, and assigned staff.',
     icon: Wrench,
     cardLabels: ['Open Tickets', 'High Priority', 'In Progress', 'Completed'],
-    columns: ['Ticket', 'Property', 'Issue', 'Priority', 'Action'],
+    columns: ['Ticket', 'Property', 'Issue', 'Priority'],
     renderRow: (m, i, ctx) => [
       m.id ? 'TCK-' + m.id.slice(-4) : '—',
       ctx?.propertyNames?.[m.propertyId] || m.propertyId || '—',
       m.issue || m.description || '—',
       m.priority || 'MEDIUM',
-      m.status === 'OPEN' ? 'Assign' : 'View',
     ],
   },
   help: {
@@ -175,11 +174,7 @@ export default function AdminSimplePage({ type = 'maintenance' }) {
                 >
                   {cells.map((cell, ci) => (
                     <div key={`${ci}-${row.id || i}`}>
-                      {ci === cells.length - 1 ? (
-                        <button type="button" disabled title="Not yet available">{cell}</button>
-                      ) : (
-                        <span>{cell}</span>
-                      )}
+                      <span>{cell}</span>
                     </div>
                   ))}
                 </div>

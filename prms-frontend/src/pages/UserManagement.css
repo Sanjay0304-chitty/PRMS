@@ -158,7 +158,12 @@
 
 .user-mgmt-th {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1.5fr;
+  grid-template-columns:
+    minmax(200px, 2fr)
+    minmax(90px, 1fr)
+    minmax(90px, 1fr)
+    minmax(90px, 1fr)
+    minmax(210px, 1.5fr);
   min-height: 48px;
   padding: 0 var(--spacing-lg);
   background: var(--surface-container);
@@ -176,11 +181,21 @@
 
 .user-mgmt-tr {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1.5fr;
+  grid-template-columns:
+    minmax(200px, 2fr)
+    minmax(90px, 1fr)
+    minmax(90px, 1fr)
+    minmax(90px, 1fr)
+    minmax(210px, 1.5fr);
   min-height: 68px;
   padding: 0 var(--spacing-lg);
   border-bottom: 1px solid var(--border-color);
   align-items: center;
+}
+
+.user-mgmt-th > *,
+.user-mgmt-tr > * {
+  min-width: 0;
 }
 
 .user-mgmt-tr:last-child {

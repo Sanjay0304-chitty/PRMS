@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { customizerApi } from '../api/customizer'
 import { getFullUrl } from '../config/apiBaseUrl'
+import { useAuth } from './AuthContext'
 
 /**
  * Maps customizer DB fields to the CSS custom properties every layout's
@@ -10,8 +11,7 @@ import { getFullUrl } from '../config/apiBaseUrl'
  *
  * customizer field         -> CSS variable(s)
  * ---------------------    -> --------------------------------
- * light_header_bg         -> --header-background-color  (sidebar bg)
- *                         -> --card-bg                  (topbar bg)
+ * light_header_bg         -> --header-background-color  (topbar bg)
  * light_body_bg           -> --background-color         (shell bg)
  *                         -> --page-bg                  (inner page backgrounds)
  * light_accent_color      -> --primary-color            (active-gradient, avatar border)
@@ -68,6 +68,7 @@ const BrandingContext = createContext({ name: 'PRMS', logoUrl: null, colors: {} 
  * need to be un-painted on navigation - there's nowhere to leak from.
  */
 export function BrandingProvider({ children }) {
+  const { user } = useAuth()
   const [name, setName] = useState('PRMS')
   const [logoUrl, setLogoUrl] = useState(null)
   const [colors, setColors] = useState({})
@@ -83,10 +84,8 @@ export function BrandingProvider({ children }) {
         const data = r?.data ?? r
         if (!data) return
 
-        if (data.company_name) setName(data.company_name)
-        if (data.logo_url) {
-          setLogoUrl(getFullUrl(data.logo_url))
-        }
+        setName(data.company_name || 'PRMS')
+        setLogoUrl(data.logo_url ? getFullUrl(data.logo_url) : null)
 
         setColors(data)
         paintTheme(data, getTheme())
@@ -109,7 +108,7 @@ export function BrandingProvider({ children }) {
       cancelled = true
       if (observer) observer.disconnect()
     }
-  }, [])
+  }, [user?.id])
 
   return (
     <BrandingContext.Provider value={{ name, logoUrl, colors }}>

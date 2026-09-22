@@ -25,7 +25,7 @@ const roleRoutes = {
   Tenant:    { prefix: '/tenant',   pages: ['dashboard', 'notifications', 'properties', 'bookings', 'viewings', 'payments', 'maintenance', 'messages', 'settings'] },
   Landlord:  { prefix: '/landlord', pages: ['dashboard', 'notifications', 'properties', 'bookings', 'viewings', 'finance', 'heatmap', 'categories', 'maintenance', 'messages', 'settings'] },
   Agent:     { prefix: '/agent',    pages: ['dashboard', 'notifications', 'properties', 'bookings', 'viewings', 'maintenance', 'messages', 'categories', 'reports', 'finance', 'settings'] },
-  Admin:     { prefix: '/admin',    pages: ['dashboard', 'notifications', 'users', 'properties', 'bookings', 'viewings', 'finance', 'maintenance', 'messages', 'reports', 'categories', 'audit-logs', 'privacy-requests', 'retention', 'breach-register', 'settings'] },
+  Admin:     { prefix: '/admin',    pages: ['dashboard', 'notifications', 'users', 'properties', 'bookings', 'viewings', 'finance', 'maintenance', 'messages', 'categories', 'audit-logs', 'privacy-requests', 'retention', 'breach-register', 'settings'] },
 }
 
 // Reachable only via Settings (e.g. "System Preferences", "Privacy & Personal

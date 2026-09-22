@@ -408,6 +408,7 @@ function PropertyDetail() {
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterStatus, setNewsletterStatus] = useState(null); // null | 'success' | 'error'
+  const canApplyToRent = !user || (user.role || '').toLowerCase() === 'tenant';
 
   function handleBack() {
     // Prefer real browser history (works from any properties list —
@@ -608,7 +609,7 @@ function PropertyDetail() {
         />
 
         {/* ── Two-column layout ── */}
-        <div className="pd-body" data-customize-id="detail.body">
+        <div className={`pd-body ${canApplyToRent ? '' : 'pd-body-management'}`} data-customize-id="detail.body">
           {/* LEFT COLUMN */}
           <div className="pd-left" data-customize-id="detail.left">
             {/* Hosted by section */}
@@ -853,12 +854,14 @@ function PropertyDetail() {
           </div>
 
           {/* RIGHT COLUMN — Sticky Booking Card */}
-          <div className="pd-right">
-            <BookingCard
-              property={property}
-              onBookClick={() => setShowBookingModal(true)}
-            />
-          </div>
+          {canApplyToRent && (
+            <div className="pd-right">
+              <BookingCard
+                property={property}
+                onBookClick={() => setShowBookingModal(true)}
+              />
+            </div>
+          )}
         </div>
       </motion.div>
 
@@ -930,11 +933,13 @@ function PropertyDetail() {
       </button>
 
       {/* Booking Modal */}
-      <TenantBookingModal
-        property={property}
-        isOpen={showBookingModal}
-        onClose={() => setShowBookingModal(false)}
-      />
+      {canApplyToRent && (
+        <TenantBookingModal
+          property={property}
+          isOpen={showBookingModal}
+          onClose={() => setShowBookingModal(false)}
+        />
+      )}
     </main>
   );
 }

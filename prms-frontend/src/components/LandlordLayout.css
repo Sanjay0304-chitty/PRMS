@@ -112,7 +112,7 @@
   grid-template-columns: minmax(220px, max-content) minmax(180px, 430px) 1fr;
   align-items: center;
   gap: 30px;
-  background: var(--card-bg);
+  background: var(--header-background-color);
   border-bottom: 2px solid var(--border-color);
 }
 

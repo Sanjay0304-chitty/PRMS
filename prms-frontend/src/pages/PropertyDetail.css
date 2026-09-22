@@ -245,6 +245,10 @@
   padding-bottom: 64px;
 }
 
+.pd-body-management .pd-left {
+  max-width: none;
+}
+
 .pd-left {
   flex: 1;
   min-width: 0;

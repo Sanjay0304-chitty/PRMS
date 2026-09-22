@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { RegistrationProvider } from './contexts/RegistrationContext';
 import { SettingsProvider } from './contexts/SettingsContext';
@@ -226,7 +226,6 @@ function AppRoutes() {
             </SuspenseWrapper>
           }
         />
-        <Route path="properties/add" element={<AddProperty />} />
         <Route path="properties/edit" element={<PropertyEdit />} />
         <Route path="properties/edit/:id" element={<PropertyEdit />} />
         <Route
@@ -249,7 +248,7 @@ function AppRoutes() {
         />
         <Route path="maintenance" element={<AdminSimplePage type="maintenance" />} />
         <Route path="messages" element={<CommunicationHub />} />
-        <Route path="reports" element={<AdminReports />} />
+        <Route path="reports" element={<Navigate to="/admin/finance" replace />} />
         <Route path="audit-logs" element={<AdminAuditLogs />} />
         <Route
           path="categories"
@@ -268,7 +267,7 @@ function AppRoutes() {
             </SuspenseWrapper>
           }
         />
-        <Route path="help" element={<AdminSimplePage type="help" />} />
+        <Route path="help" element={<Navigate to="/admin/settings" replace />} />
       </Route>
 
       {/*  Landlord routes (AUTH-006: role-protected)  */}
@@ -476,9 +475,9 @@ function App() {
     <BrowserRouter>
       <ErrorBoundary>
         <SettingsProvider>
-          <BrandingProvider>
-            <CustomizationProvider>
-              <AuthProvider>
+          <AuthProvider>
+            <BrandingProvider>
+              <CustomizationProvider>
                 <UserPreferencesProvider>
                   <FeatureFlagsProvider>
                     <RegistrationProvider>
@@ -486,9 +485,9 @@ function App() {
                     </RegistrationProvider>
                   </FeatureFlagsProvider>
                 </UserPreferencesProvider>
-              </AuthProvider>
-            </CustomizationProvider>
-          </BrandingProvider>
+              </CustomizationProvider>
+            </BrandingProvider>
+          </AuthProvider>
         </SettingsProvider>
       </ErrorBoundary>
     </BrowserRouter>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { customizerApi } from '../api/customizer';
 import { getFullUrl } from '../config/apiBaseUrl';
+import { useAuth } from '../contexts/AuthContext';
 import './WebsiteCustomizer.css';
 
 /* ── defaults ──
@@ -207,6 +208,8 @@ function pick(obj, prefix) {
 
 /* ── Main ── */
 export default function WebsiteCustomizer() {
+  const { user } = useAuth();
+  const canManageBranding = ['admin', 'landlord'].includes((user?.role || '').toLowerCase());
   const [config, setConfig] = useState(DEFAULTS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -220,7 +223,7 @@ export default function WebsiteCustomizer() {
     try {
       const res = await customizerApi.getConfig();
       const body = res?.data ?? res;
-      setConfig((prev) => ({ ...DEFAULTS, ...body }));
+      setConfig({ ...DEFAULTS, ...body });
       origRef.current = { ...DEFAULTS, ...body };
       setDirty(false);
     } catch (err) {
@@ -296,9 +299,10 @@ export default function WebsiteCustomizer() {
   const handleReset = async () => {
     setSaving(true);
     try {
-      await customizerApi.updateConfig(DEFAULTS);
-      setConfig((p) => ({ ...p, ...DEFAULTS }));
-      origRef.current = { ...origRef.current, ...DEFAULTS };
+      const result = await customizerApi.resetConfig();
+      const inherited = result?.data ?? result;
+      setConfig({ ...DEFAULTS, ...inherited });
+      origRef.current = { ...DEFAULTS, ...inherited };
       setDirty(false);
       setStatus({ type: 'success', msg: 'Reset to defaults. Refreshing...' });
       setTimeout(() => window.location.reload(), 400);
@@ -340,7 +344,7 @@ export default function WebsiteCustomizer() {
       )}
 
       <p className="customizer-hint">
-        Only Light Mode can be customized here — Dark Mode always keeps its own built-in look.
+        Your preferences apply only to your account. Only Light Mode can be customized here — Dark Mode keeps its built-in look.
       </p>
 
       {/* Body */}
@@ -350,15 +354,19 @@ export default function WebsiteCustomizer() {
 
         {/* Right: Editor */}
         <div className="editor-panel">
-          <BrandingSection
-            company_name={config.company_name}
-            logo_url={config.logo_url}
-            onCompanyChange={onCompanyChange}
-            onLogoUpload={onLogoUpload}
-            onLogoRemove={onLogoRemove}
-            disabled={saving}
-          />
-          <hr className="customizer-divider" />
+          {canManageBranding && (
+            <>
+              <BrandingSection
+                company_name={config.company_name}
+                logo_url={config.logo_url}
+                onCompanyChange={onCompanyChange}
+                onLogoUpload={onLogoUpload}
+                onLogoRemove={onLogoRemove}
+                disabled={saving}
+              />
+              <hr className="customizer-divider" />
+            </>
+          )}
           <ColorsSection
             colors={config}
             onChange={onColorChange}

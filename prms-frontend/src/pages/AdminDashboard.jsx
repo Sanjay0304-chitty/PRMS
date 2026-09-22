@@ -6,13 +6,9 @@ import {
   ArrowDown,
   ArrowUp,
   Database,
-  Download,
-  Loader,
   Minus,
   Search,
-  Server,
   ShieldCheck,
-  Users,
   WalletCards,
 } from 'lucide-react'
 import './AdminDashboard.css'
@@ -151,11 +147,9 @@ function AdminDashboard() {
       {
         icon: ShieldCheck,
         iconBg: 'icon-rose',
-        label: 'System Integrity',
-        value: 'Secure',
+        label: 'Recent Audit Activity',
+        value: formatCompact(Array.isArray(auditLogs) ? auditLogs.length : 0),
         sublabel: `${Array.isArray(auditLogs) ? auditLogs.length : 0} recent audit events`,
-        trend: 'OK',
-        trendDir: 'up',
       },
     ]
   }, [stats, occupancy, auditLogs])
@@ -240,29 +234,6 @@ function AdminDashboard() {
     return 'user-role--tenant'
   }
 
-  function exportUsersCsv() {
-    const header = 'Name,Email,Role,Status,Last Seen'
-    const rows = users.map((u) =>
-      [
-        u.full_name || '',
-        u.email || '',
-        getRoleName(u),
-        u.is_active !== false ? 'Active' : 'Suspended',
-        u.updated_at || '',
-      ]
-        .map((v) => `"${String(v).replace(/"/g, '""')}"`)
-        .join(',')
-    )
-    const csv = [header, ...rows].join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'users.csv'
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
   /* ---- Audit log mapping ---- */
   const mappedLogs = auditLogs.map((log) => {
     const level = (log.level || '').toLowerCase()
@@ -290,17 +261,11 @@ function AdminDashboard() {
         <div>
           <h1>
             <span className="material-symbols-outlined brand-icon">settings_applications</span>
-            System Health Console
+            Platform Overview
           </h1>
-          <p>Infrastructure monitoring and global operations audit overview.</p>
+          <p>Users, properties, revenue, occupancy, and recent platform activity.</p>
         </div>
 
-        <div className="landlord-page-actions">
-          <button type="button" className="btn-primary-solid" onClick={exportUsersCsv}>
-            <Download size={18} />
-            Export
-          </button>
-        </div>
       </div>
 
       {/* ---- Error banner ---- */}
@@ -343,7 +308,7 @@ function AdminDashboard() {
                   { icon: Activity, iconBg: 'icon-emerald', label: 'Active Users', value: '—', sublabel: 'No data' },
                   { icon: WalletCards, iconBg: 'icon-purple', label: 'Total Revenue', value: 'RM 0', sublabel: 'No transactions' },
                   { icon: Database, iconBg: 'icon-blue', label: 'Occupancy', value: '—', sublabel: 'No properties' },
-                  { icon: ShieldCheck, iconBg: 'icon-rose', label: 'System Integrity', value: 'Secure', sublabel: 'Monitoring active', trend: 'OK', trendDir: 'up' },
+                  { icon: ShieldCheck, iconBg: 'icon-rose', label: 'Recent Audit Activity', value: '—', sublabel: 'No audit data' },
                 ].map((kpi, i) => <KpiCard key={i} {...kpi} />)}
           </>
         )}
@@ -428,7 +393,7 @@ function AdminDashboard() {
               <h3 className="panel-title-text">Global Audit Log</h3>
               <span className="audit-live">
                 <span className="live-dot" />
-                LIVE
+                RECENT
               </span>
             </div>
 
