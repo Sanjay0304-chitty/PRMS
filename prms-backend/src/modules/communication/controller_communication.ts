@@ -6,7 +6,7 @@ import { successResponse } from '../../utils/response';
 export class CommunicationController {
   send = async (req: AuthRequest, res: Response) => {
     try {
-      const message = await communicationService.sendMessage({ ...req.body, conversationId: req.body.conversationId || `conv-${req.user!.id}-${req.body.receiverId}` }, req.user!.id);
+      const message = await communicationService.sendMessage(req.body, req.user!.id);
       res.status(201).json(successResponse(message));
     } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
   };
@@ -20,16 +20,22 @@ export class CommunicationController {
 
   getMessages = async (req: AuthRequest, res: Response) => {
     try {
-      const messages = await communicationService.getMessagesByConversation(String(req.params.conversationId));
+      const messages = await communicationService.getMessagesByConversation(String(req.params.conversationId), req.user!.id);
       res.json(successResponse(messages));
-    } catch (error: any) { res.status(500).json({ success: false, error: { message: error.message } }); }
+    } catch (error: any) {
+      const status = error.message === 'You do not have access to this conversation' ? 403 : 500;
+      res.status(status).json({ success: false, error: { message: error.message } });
+    }
   };
 
   markRead = async (req: AuthRequest, res: Response) => {
     try {
-      await communicationService.markAsRead(String(req.params.id));
+      await communicationService.markAsRead(String(req.params.id), req.user!.id);
       res.json(successResponse(null, 'Message marked as read'));
-    } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
+    } catch (error: any) {
+      const status = error.message === 'Only the receiver can mark this message as read' ? 403 : 400;
+      res.status(status).json({ success: false, error: { message: error.message } });
+    }
   };
 
   editMessage = async (req: AuthRequest, res: Response) => {

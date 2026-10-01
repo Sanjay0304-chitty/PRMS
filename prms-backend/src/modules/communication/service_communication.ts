@@ -1,8 +1,15 @@
 import { prisma } from '../../db';
 
 export async function sendMessage(data: { receiverId: string; content: string; conversationId: string }, senderId: string) {
+  if (!data.receiverId || data.receiverId === senderId) throw new Error('A different receiver is required');
+  const receiver = await prisma.user.findUnique({ where: { id: data.receiverId }, select: { id: true } });
+  if (!receiver) throw new Error('Receiver not found');
+
+  // Conversation ids are server-derived so a caller cannot inject a message
+  // into a private thread belonging to other users.
+  const conversationId = `conv-${[senderId, data.receiverId].sort().join('-')}`;
   return prisma.message.create({
-    data: { ...data, senderId, isRead: false },
+    data: { receiverId: data.receiverId, content: data.content, conversationId, senderId, isRead: false },
     include: { sender: { select: { id: true, full_name: true } }, receiver: { select: { id: true, full_name: true } } },
   });
 }
@@ -21,7 +28,12 @@ export async function getConversations(userId: string) {
   return conversations;
 }
 
-export async function getMessagesByConversation(conversationId: string) {
+export async function getMessagesByConversation(conversationId: string, userId: string) {
+  const membership = await prisma.message.findFirst({
+    where: { conversationId, OR: [{ senderId: userId }, { receiverId: userId }] },
+    select: { id: true },
+  });
+  if (!membership) throw new Error('You do not have access to this conversation');
   return prisma.message.findMany({
     where: { conversationId },
     orderBy: { created_at: 'asc' },
@@ -29,7 +41,10 @@ export async function getMessagesByConversation(conversationId: string) {
   });
 }
 
-export async function markAsRead(messageId: string) {
+export async function markAsRead(messageId: string, userId: string) {
+  const message = await prisma.message.findUnique({ where: { id: messageId }, select: { receiverId: true } });
+  if (!message) throw new Error('Message not found');
+  if (message.receiverId !== userId) throw new Error('Only the receiver can mark this message as read');
   return prisma.message.update({ where: { id: messageId }, data: { isRead: true } });
 }
 
