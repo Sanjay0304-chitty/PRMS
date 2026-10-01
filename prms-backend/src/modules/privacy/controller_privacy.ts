@@ -35,9 +35,9 @@ export class PrivacyController {
   withdrawConsent = async (req: AuthRequest, res: Response) => {
     try {
       const updated = await privacyService.withdrawConsent(String(req.params.id), req.user!.id);
-      await log(req, 'WITHDRAW_CONSENT', req.params.id, 'Withdrew consent');
+      await log(req, 'WITHDRAW_CONSENT', String(req.params.id), 'Withdrew consent');
       res.json(successResponse(updated, 'Consent withdrawn'));
-    } catch (error: any) { await log(req, 'WITHDRAW_CONSENT', req.params.id, '', 'Failed', 'error', error.message); res.status(400).json({ success: false, error: { message: error.message } }); }
+    } catch (error: any) { await log(req, 'WITHDRAW_CONSENT', String(req.params.id), '', 'Failed', 'error', error.message); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
   /* ── My stored data ── */
@@ -77,15 +77,15 @@ export class PrivacyController {
   assignRequest = async (req: AuthRequest, res: Response) => {
     try {
       const updated = await privacyService.assignRequest(String(req.params.id), req.user!.id);
-      await log(req, 'ASSIGN_PRIVACY_REQUEST', req.params.id, 'Assigned privacy request to self');
+      await log(req, 'ASSIGN_PRIVACY_REQUEST', String(req.params.id), 'Assigned privacy request to self');
       res.json(successResponse(updated));
-    } catch (error: any) { await log(req, 'ASSIGN_PRIVACY_REQUEST', req.params.id, '', 'Failed', 'error', error.message); res.status(400).json({ success: false, error: { message: error.message } }); }
+    } catch (error: any) { await log(req, 'ASSIGN_PRIVACY_REQUEST', String(req.params.id), '', 'Failed', 'error', error.message); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
   decideRequest = async (req: AuthRequest, res: Response) => {
     try {
       const updated = await privacyService.decideRequest(String(req.params.id), req.body);
-      await log(req, 'DECIDE_PRIVACY_REQUEST', req.params.id, `Decision: ${req.body.decision} - ${req.body.decisionReason}`);
+      await log(req, 'DECIDE_PRIVACY_REQUEST', String(req.params.id), `Decision: ${req.body.decision} - ${req.body.decisionReason}`);
       await createNotification({
         userId: updated.userId,
         type: 'privacy_request_decided',
@@ -93,15 +93,15 @@ export class PrivacyController {
         message: `Your privacy request has been ${req.body.decision.toLowerCase()}. Open Privacy & Personal Data for details.`,
       }).catch(() => {});
       res.json(successResponse(updated));
-    } catch (error: any) { await log(req, 'DECIDE_PRIVACY_REQUEST', req.params.id, '', 'Failed', 'error', error.message); res.status(400).json({ success: false, error: { message: error.message } }); }
+    } catch (error: any) { await log(req, 'DECIDE_PRIVACY_REQUEST', String(req.params.id), '', 'Failed', 'error', error.message); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
   completeRequest = async (req: AuthRequest, res: Response) => {
     try {
       const updated = await privacyService.completeRequest(String(req.params.id));
-      await log(req, 'COMPLETE_PRIVACY_REQUEST', req.params.id, 'Marked privacy request completed');
+      await log(req, 'COMPLETE_PRIVACY_REQUEST', String(req.params.id), 'Marked privacy request completed');
       res.json(successResponse(updated));
-    } catch (error: any) { await log(req, 'COMPLETE_PRIVACY_REQUEST', req.params.id, '', 'Failed', 'error', error.message); res.status(400).json({ success: false, error: { message: error.message } }); }
+    } catch (error: any) { await log(req, 'COMPLETE_PRIVACY_REQUEST', String(req.params.id), '', 'Failed', 'error', error.message); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
   /* ── Retention ── */
@@ -116,9 +116,9 @@ export class PrivacyController {
   updatePolicy = async (req: AuthRequest, res: Response) => {
     try {
       const updated = await privacyService.updatePolicy(String(req.params.category), Number(req.body.retentionDays));
-      await log(req, 'UPDATE_RETENTION_POLICY', req.params.category, `Set ${req.params.category} retention to ${req.body.retentionDays} days`);
+      await log(req, 'UPDATE_RETENTION_POLICY', String(req.params.category), `Set ${String(req.params.category)} retention to ${req.body.retentionDays} days`);
       res.json(successResponse(updated));
-    } catch (error: any) { await log(req, 'UPDATE_RETENTION_POLICY', req.params.category, '', 'Failed', 'error', error.message); res.status(400).json({ success: false, error: { message: error.message } }); }
+    } catch (error: any) { await log(req, 'UPDATE_RETENTION_POLICY', String(req.params.category), '', 'Failed', 'error', error.message); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
   simulateCleanup = async (req: AuthRequest, res: Response) => {
@@ -149,8 +149,8 @@ export class PrivacyController {
   updateIncident = async (req: AuthRequest, res: Response) => {
     try {
       const updated = await privacyService.updateIncident(String(req.params.id), req.body);
-      await log(req, 'UPDATE_BREACH_INCIDENT', req.params.id, 'Updated incident record');
+      await log(req, 'UPDATE_BREACH_INCIDENT', String(req.params.id), 'Updated incident record');
       res.json(successResponse(updated));
-    } catch (error: any) { await log(req, 'UPDATE_BREACH_INCIDENT', req.params.id, '', 'Failed', 'error', error.message); res.status(400).json({ success: false, error: { message: error.message } }); }
+    } catch (error: any) { await log(req, 'UPDATE_BREACH_INCIDENT', String(req.params.id), '', 'Failed', 'error', error.message); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 }
