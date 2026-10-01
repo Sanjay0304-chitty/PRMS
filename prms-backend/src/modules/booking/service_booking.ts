@@ -63,6 +63,15 @@ export async function createBooking(data: {
   pdpa_consent?: boolean;
   acknowledgement?: boolean;
 }, userId: string) {
+  if (!data.propertyId) throw new Error('propertyId is required');
+  if (!data.start_date || Number.isNaN(Date.parse(data.start_date))) throw new Error('A valid start_date is required');
+  if (data.end_date && Number.isNaN(Date.parse(data.end_date))) throw new Error('end_date must be a valid date');
+  if (data.lease_duration_months !== undefined && (!Number.isInteger(data.lease_duration_months) || data.lease_duration_months < 1)) {
+    throw new Error('lease_duration_months must be a positive whole number');
+  }
+  if (data.occupants !== undefined && (!Number.isInteger(data.occupants) || data.occupants < 1)) {
+    throw new Error('occupants must be a positive whole number');
+  }
   // totalAmount is computed server-side (nights × the property's nightly
   // rent) rather than trusted from the client — the booking UI never sends
   // it at all (every booking was silently landing at 0), and even where a
@@ -83,6 +92,7 @@ export async function createBooking(data: {
   } else {
     throw new Error('end_date or lease_duration_months is required');
   }
+  if (end.getTime() <= start.getTime()) throw new Error('end_date must be after start_date');
   // A rental application's "amount" is the monthly rent basis (confirmed
   // properly during landlord review) — not nights × rate, which is a
   // leftover from the old short-stay model and produces an absurd total
