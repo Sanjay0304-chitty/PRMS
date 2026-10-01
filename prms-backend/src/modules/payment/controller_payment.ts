@@ -3,6 +3,7 @@ import { AuthRequest } from '../../middleware/auth';
 import * as paymentService from './service_payment';
 import { successResponse, paginatedResponse } from '../../utils/response';
 import { recordAudit } from '../admin/service_audit';
+import { hasPropertyAuthority } from '../../utils/propertyAuthority';
 
 const HELPERS = (req: Request) => {
   const ip = (req as any).ip || req.socket.remoteAddress || '';
@@ -17,20 +18,26 @@ const HELPERS = (req: Request) => {
 };
 
 export class PaymentController {
-  list = async (req: Request, res: Response) => {
+  list = async (req: AuthRequest, res: Response) => {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
-      const { payments, total } = await paymentService.getPayments(page, limit);
+      const { payments, total } = req.user!.role === 'Agent'
+        ? await paymentService.getAgentPayments(req.user!.id, page, limit)
+        : await paymentService.getPayments(page, limit);
       HELPERS(req).log({ action: 'VIEW_PAYMENTS', entity: 'Payment', description: `Listed payments (page ${page})` });
       res.json(paginatedResponse(payments, page, limit, total));
     } catch (error: any) { HELPERS(req).log({ action: 'VIEW_PAYMENTS', entity: 'Payment', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(500).json({ success: false, error: { message: error.message } }); }
   };
 
-  getById = async (req: Request, res: Response) => {
+  getById = async (req: AuthRequest, res: Response) => {
     try {
       const payment = await paymentService.getPaymentById(String(req.params.id));
       if (!payment) return res.status(404).json({ success: false, error: { message: 'Payment not found' } });
+      const role = req.user!.role.toLowerCase();
+      const allowed = payment.userId === req.user!.id
+        || await hasPropertyAuthority(req.user!.id, role, payment.booking.property.ownerId, payment.booking.propertyId);
+      if (!allowed) return res.status(403).json({ success: false, error: { message: 'You do not have access to this payment' } });
       HELPERS(req).log({ action: 'VIEW_PAYMENT', entity: 'Payment', entityId: payment.id, description: `Viewed payment` });
       res.json(successResponse(payment));
     } catch (error: any) { HELPERS(req).log({ action: 'VIEW_PAYMENT', entity: 'Payment', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(500).json({ success: false, error: { message: error.message } }); }
@@ -47,14 +54,16 @@ export class PaymentController {
   markPaid = async (req: Request, res: Response) => {
     try {
       const payment = await paymentService.markAsPaid(String(req.params.id));
-      HELPERS(req).log({ action: 'MARK_PAYMENT_PAID', entity: 'Payment', entityId: req.params.id, description: `Payment marked as paid` });
+      HELPERS(req).log({ action: 'MARK_PAYMENT_PAID', entity: 'Payment', entityId: String(req.params.id), description: `Payment marked as paid` });
       res.json(successResponse(payment, 'Payment marked as paid'));
     } catch (error: any) { HELPERS(req).log({ action: 'MARK_PAYMENT_PAID', entity: 'Payment', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
   summary = async (req: AuthRequest, res: Response) => {
     try {
-      const summary = await paymentService.getFinanceSummary(req.user!.id);
+      const summary = req.user!.role === 'Agent'
+        ? await paymentService.getAgentFinanceSummary(req.user!.id)
+        : await paymentService.getFinanceSummary(req.user!.id);
       HELPERS(req).log({ action: 'VIEW_PAYMENT_SUMMARY', entity: 'Payment', description: `Viewed financial summary` });
       res.json(successResponse(summary));
     } catch (error: any) { HELPERS(req).log({ action: 'VIEW_PAYMENT_SUMMARY', entity: 'Payment', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(500).json({ success: false, error: { message: error.message } }); }

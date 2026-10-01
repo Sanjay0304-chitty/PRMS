@@ -3,6 +3,16 @@ import { AuthRequest } from '../../middleware/auth';
 import * as maintenanceService from './service_maintenance';
 import { successResponse, paginatedResponse } from '../../utils/response';
 import { recordAudit } from '../admin/service_audit';
+import { prisma } from '../../db';
+import { hasPropertyAuthority } from '../../utils/propertyAuthority';
+
+async function canAccessTicket(req: AuthRequest, ticket: { userId: string; propertyId: string | null }) {
+  const role = req.user!.role.toLowerCase();
+  if (role === 'admin' || ticket.userId === req.user!.id) return true;
+  if (!ticket.propertyId) return false;
+  const property = await prisma.property.findUnique({ where: { id: ticket.propertyId }, select: { ownerId: true } });
+  return !!property && hasPropertyAuthority(req.user!.id, role, property.ownerId, ticket.propertyId);
+}
 
 const HELPERS = (req: Request) => {
   const ip = (req as any).ip || req.socket.remoteAddress || '';
@@ -71,16 +81,22 @@ export class MaintenanceController {
 
   update = async (req: AuthRequest, res: Response) => {
     try {
+      const existing = await maintenanceService.getTicketById(String(req.params.id));
+      if (!existing) return res.status(404).json({ success: false, error: { message: 'Ticket not found' } });
+      if (!(await canAccessTicket(req, existing))) return res.status(403).json({ success: false, error: { message: 'You do not have access to this maintenance ticket' } });
       const ticket = await maintenanceService.updateTicket(String(req.params.id), req.body);
-      HELPERS(req).log({ action: 'UPDATE_TICKET', entity: 'MaintenanceTicket', entityId: req.params.id, description: `Updated ticket ${req.params.id}` });
+      HELPERS(req).log({ action: 'UPDATE_TICKET', entity: 'MaintenanceTicket', entityId: String(req.params.id), description: `Updated ticket ${req.params.id}` });
       res.json(successResponse(ticket, 'Ticket updated'));
     } catch (error: any) { HELPERS(req).log({ action: 'UPDATE_TICKET', entity: 'MaintenanceTicket', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
   resolve = async (req: AuthRequest, res: Response) => {
     try {
+      const existing = await maintenanceService.getTicketById(String(req.params.id));
+      if (!existing) return res.status(404).json({ success: false, error: { message: 'Ticket not found' } });
+      if (!(await canAccessTicket(req, existing))) return res.status(403).json({ success: false, error: { message: 'You do not have access to this maintenance ticket' } });
       await maintenanceService.resolveTicket(String(req.params.id));
-      HELPERS(req).log({ action: 'RESOLVE_TICKET', entity: 'MaintenanceTicket', entityId: req.params.id, description: `Resolved ticket ${req.params.id}` });
+      HELPERS(req).log({ action: 'RESOLVE_TICKET', entity: 'MaintenanceTicket', entityId: String(req.params.id), description: `Resolved ticket ${req.params.id}` });
       res.json(successResponse(null, 'Ticket resolved'));
     } catch (error: any) { HELPERS(req).log({ action: 'RESOLVE_TICKET', entity: 'MaintenanceTicket', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
@@ -89,6 +105,7 @@ export class MaintenanceController {
     try {
       const ticket = await maintenanceService.getTicketById(String(req.params.id));
       if (!ticket) return res.status(404).json({ success: false, error: { message: 'Ticket not found' } });
+      if (!(await canAccessTicket(req, ticket))) return res.status(403).json({ success: false, error: { message: 'You do not have access to this maintenance ticket' } });
       HELPERS(req).log({ action: 'VIEW_TICKET', entity: 'MaintenanceTicket', entityId: ticket.id, description: `Viewed ticket ${ticket.id}` });
       res.json(successResponse(ticket));
     } catch (error: any) { HELPERS(req).log({ action: 'VIEW_TICKET', entity: 'MaintenanceTicket', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(500).json({ success: false, error: { message: error.message } }); }
