@@ -2,27 +2,12 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '../config/routes'
-import {
-  ArrowUp,
-  Building2,
-  CalendarDays,
-  CheckCircle2,
-  Clock,
-  Download,
-  Home,
-  Loader,
-  Minus,
-  Search,
-  SlidersHorizontal,
-  Star,
-  Target,
-  TrendingUp,
-  Wrench,
-} from 'lucide-react'
+import { Building2, CalendarClock, CalendarDays, CheckCircle2, Clock, Home, Star, Wrench } from 'lucide-react'
 import { getImageUrl } from '../config/imageHelper';
 import { agentApi } from '../api/agents'
 import { bookingApi } from '../api/booking'
 import { maintenanceApi } from '../api/maintenance'
+import { viewingApi } from '../api/viewing'
 import './AgentDashboard.css'
 
 function AgentDashboard() {
@@ -31,7 +16,19 @@ function AgentDashboard() {
   const [loading, setLoading] = useState(true)
   const [assignedProperties, setAssignedProperties] = useState([])
   const [bookings, setBookings] = useState([])
+  const [viewings, setViewings] = useState([])
   const [maintenanceRequests, setMaintenanceRequests] = useState([])
+  const [dashboardStats, setDashboardStats] = useState({
+    assignedProperties: 0,
+    rentedProperties: 0,
+    activeTenancies: 0,
+    applicationsToReview: 0,
+    upcomingViewings: 0,
+    viewingsAwaitingResponse: 0,
+    openMaintenance: 0,
+    urgentMaintenance: 0,
+  })
+  const [loadError, setLoadError] = useState('')
 
   useEffect(() => {
     if (!user) {
@@ -42,11 +39,15 @@ function AgentDashboard() {
 
     const fetchData = async () => {
       try {
-        const [propsRes, bookingsRes, ticketsRes] = await Promise.all([
+        const [statsRes, propsRes, bookingsRes, viewingsRes, ticketsRes] = await Promise.all([
+          agentApi.dashboard(),
           agentApi.myProperties({ limit: 100 }),
-          bookingApi.assigned(),
+          bookingApi.assigned({ limit: 100 }),
+          viewingApi.assigned(),
           maintenanceApi.assigned({ limit: 100 }),
         ])
+
+        setDashboardStats(statsRes.data?.data || {})
 
         const properties = propsRes.data?.data || []
         setAssignedProperties(
@@ -65,7 +66,6 @@ function AgentDashboard() {
         const allBookings = bookingsRes.data?.data || []
         setBookings(
           allBookings
-            .filter((b) => b.status === 'CONFIRMED' || b.status === 'CHECKED_IN')
             .map((b) => ({
               id: b.id,
               propertyTitle: b.property?.title || 'Property',
@@ -73,7 +73,27 @@ function AgentDashboard() {
               startDate: b.start_date ? new Date(b.start_date).toLocaleDateString('en-MY', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A',
               endDate: b.end_date ? new Date(b.end_date).toLocaleDateString('en-MY', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A',
               status: b.status,
+              applicationStage: b.application_stage,
             }))
+        )
+
+        const activeViewingStatuses = ['REQUESTED', 'ACCEPTED', 'PROPOSED_ALTERNATE', 'CONFIRMED']
+        setViewings(
+          (viewingsRes.data?.data || [])
+            .filter((v) => {
+              const scheduledAt = v.status === 'PROPOSED_ALTERNATE' && v.proposedTime ? v.proposedTime : v.preferredTime
+              return activeViewingStatuses.includes(v.status) && scheduledAt && new Date(scheduledAt).getTime() >= Date.now()
+            })
+            .map((v) => {
+              const scheduledAt = v.status === 'PROPOSED_ALTERNATE' && v.proposedTime ? v.proposedTime : v.preferredTime
+              return {
+                id: v.id,
+                propertyTitle: v.property?.title || propertyNames[v.propertyId] || 'Property',
+                tenant: v.tenant?.full_name || v.tenant?.email || 'Tenant',
+                scheduledAt: scheduledAt ? new Date(scheduledAt).toLocaleString('en-MY', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Not scheduled',
+                status: v.status,
+              }
+            })
         )
 
         const tickets = ticketsRes.data?.data || []
@@ -89,6 +109,7 @@ function AgentDashboard() {
         )
       } catch (e) {
         console.error('Failed to load agent dashboard data:', e)
+        setLoadError('Dashboard data could not be loaded. Please refresh and try again.')
       } finally {
         setLoading(false)
       }
@@ -116,14 +137,7 @@ function AgentDashboard() {
   }
 
   /* ---- KPI Card helper ---- */
-  function KpiCard({ icon: Icon, iconBg, label, value, sublabel, trend, trendDir }) {
-    const TrendIcon =
-      trendDir === 'up' ? (
-        <ArrowUp size={14} className="text-status-success" />
-      ) : (
-        <Minus size={14} className="text-text-secondary" />
-      )
-
+  function KpiCard({ icon: Icon, iconBg, label, value, sublabel, trend }) {
     return (
       <div className="kpi-card">
         <div className="kpi-card-top">
@@ -131,10 +145,7 @@ function AgentDashboard() {
             <Icon size={20} />
           </div>
           {trend && (
-            <span className={`trend-pill ${trendDir === 'up' ? 'positive' : 'neutral'}`}>
-              {TrendIcon}
-              {trend}
-            </span>
+            <span className="trend-pill neutral">{trend}</span>
           )}
         </div>
         <div className="kpi-card-body">
@@ -158,17 +169,9 @@ function AgentDashboard() {
           <p>Welcome back, {user.full_name} — here&apos;s your portfolio overview.</p>
         </div>
 
-        <div className="landlord-page-actions">
-          <button type="button" className="btn-outline">
-            <SlidersHorizontal size={18} />
-            Filter
-          </button>
-          <button type="button" className="btn-primary-solid">
-            <Download size={18} />
-            Export
-          </button>
-        </div>
       </div>
+
+      {loadError && <div className="agent-dashboard-error" role="alert">{loadError}</div>}
 
       {/* ---- KPI Cards ---- */}
       <section className="kpi-card-grid">
@@ -177,43 +180,39 @@ function AgentDashboard() {
           icon={Home}
           iconBg="icon-blue"
           label="Assigned Properties"
-          value={String(assignedProperties.length)}
+          value={String(dashboardStats.assignedProperties || 0)}
           sublabel="Under management"
-          trend={`${assignedProperties.filter((p) => p.status === 'RENTED').length} rented`}
-          trendDir="up"
+          trend={`${dashboardStats.rentedProperties || 0} rented`}
         />
 
         {/* Active Bookings */}
         <KpiCard
           icon={CalendarDays}
           iconBg="icon-purple"
-          label="Active Bookings"
-          value={String(bookings.length)}
-          sublabel="Confirmed leases"
-          trend="All active"
-          trendDir="up"
+          label="Upcoming Viewings"
+          value={String(dashboardStats.upcomingViewings || 0)}
+          sublabel="Scheduled appointments"
+          trend={`${dashboardStats.viewingsAwaitingResponse || 0} awaiting response`}
         />
 
         {/* Maintenance */}
         <KpiCard
-          icon={Wrench}
+          icon={Clock}
           iconBg="icon-rose"
-          label="Open Maintenance"
-          value={String(maintenanceRequests.filter((m) => m.status === 'OPEN').length)}
-          sublabel="Awaiting attention"
-          trend="Urgent"
-          trendDir="neutral"
+          label="Applications to Review"
+          value={String(dashboardStats.applicationsToReview || 0)}
+          sublabel="Assigned properties"
+          trend={`${dashboardStats.activeTenancies || 0} active tenancies`}
         />
 
         {/* Revenue Estimate */}
         <KpiCard
-          icon={TrendingUp}
+          icon={Wrench}
           iconBg="icon-emerald"
-          label="Monthly Revenue"
-          value={`RM ${assignedProperties.reduce((s, p) => s + p.rent, 0).toLocaleString()}`}
-          sublabel="Estimated from active leases"
-          trend="+8%"
-          trendDir="up"
+          label="Open Maintenance"
+          value={String(dashboardStats.openMaintenance || 0)}
+          sublabel="Open and in progress"
+          trend={`${dashboardStats.urgentMaintenance || 0} high priority`}
         />
       </section>
 
@@ -234,7 +233,7 @@ function AgentDashboard() {
         </div>
 
         <div className="agent-properties-grid">
-          {assignedProperties.map((prop) => (
+          {assignedProperties.slice(0, 4).map((prop) => (
             <div className="agent-property-card" key={prop.id}>
               <div className="agent-property-img">
                 {prop.image ? (
@@ -269,13 +268,14 @@ function AgentDashboard() {
                 <button
                   type="button"
                   className="btn-outline-sm"
-                  onClick={() => navigate(ROUTES.agent.properties)}
+                  onClick={() => navigate(ROUTES.agent.propertyDetail(prop.id))}
                 >
                   View Details
                 </button>
               </div>
             </div>
           ))}
+          {!assignedProperties.length && <p className="agent-empty-state">No properties are assigned to you yet.</p>}
         </div>
       </section>
 
@@ -285,9 +285,9 @@ function AgentDashboard() {
         <div className="panel-card">
           <div className="panel-title">
             <div>
-              <h3 className="panel-title-text">Bookings</h3>
+              <h3 className="panel-title-text">Applications &amp; Tenancies</h3>
               <p className="panel-subtitle">
-                Confirmed and pending lease agreements
+                Recent applications and active lease records
               </p>
             </div>
             <button
@@ -300,7 +300,7 @@ function AgentDashboard() {
           </div>
 
           <div className="agent-bookings-list">
-            {bookings.map((booking) => (
+            {bookings.slice(0, 5).map((booking) => (
               <div className="agent-booking-item" key={booking.id}>
                 <div className="agent-booking-icon">
                   <CalendarDays size={20} />
@@ -312,12 +312,41 @@ function AgentDashboard() {
                     {booking.startDate} → {booking.endDate}
                   </p>
                 </div>
-                <span className="agent-status-badge agent-status--confirmed">
+                <span className={`agent-status-badge ${['CONFIRMED', 'CHECKED_IN'].includes(booking.status) ? 'agent-status--confirmed' : 'agent-status--pending'}`}>
                   <CheckCircle2 size={12} />
-                  {booking.status}
+                  {booking.applicationStage || booking.status}
                 </span>
               </div>
             ))}
+            {!bookings.length && <p className="agent-empty-state">No applications or tenancies for your assigned properties.</p>}
+          </div>
+        </div>
+
+        {/* Viewings */}
+        <div className="panel-card">
+          <div className="panel-title">
+            <div>
+              <h3 className="panel-title-text">Upcoming Viewings</h3>
+              <p className="panel-subtitle">Appointments for assigned properties</p>
+            </div>
+            <button type="button" className="btn-outline-sm" onClick={() => navigate(ROUTES.agent.viewings)}>
+              See All
+            </button>
+          </div>
+
+          <div className="agent-bookings-list">
+            {viewings.slice(0, 5).map((viewing) => (
+              <div className="agent-booking-item" key={viewing.id}>
+                <div className="agent-booking-icon"><CalendarClock size={20} /></div>
+                <div className="agent-booking-info">
+                  <h4>{viewing.propertyTitle}</h4>
+                  <p>Tenant: {viewing.tenant}</p>
+                  <p>{viewing.scheduledAt}</p>
+                </div>
+                <span className="agent-status-badge agent-status--pending">{viewing.status}</span>
+              </div>
+            ))}
+            {!viewings.length && <p className="agent-empty-state">No open viewing appointments.</p>}
           </div>
         </div>
 
@@ -328,18 +357,11 @@ function AgentDashboard() {
               <h3 className="panel-title-text">Maintenance Requests</h3>
               <p className="panel-subtitle">Open work orders and repair tickets</p>
             </div>
-            <button
-              type="button"
-              className="btn-primary-sm"
-              onClick={() => navigate(ROUTES.agent.maintenance)}
-            >
-              <Wrench size={16} />
-              New Request
-            </button>
+            <button type="button" className="btn-outline-sm" onClick={() => navigate(ROUTES.agent.maintenance)}>View All</button>
           </div>
 
           <div className="agent-maintenance-list">
-            {maintenanceRequests.map((req) => (
+            {maintenanceRequests.filter((req) => ['OPEN', 'IN_PROGRESS'].includes(req.status)).slice(0, 5).map((req) => (
               <div className="agent-maintenance-item" key={req.id}>
                 <div className={`agent-maint-icon ${req.priority === 'HIGH' ? 'urgent' : 'soft'}`}>
                   <Wrench size={20} />
@@ -374,6 +396,7 @@ function AgentDashboard() {
                 </div>
               </div>
             ))}
+            {!maintenanceRequests.some((req) => ['OPEN', 'IN_PROGRESS'].includes(req.status)) && <p className="agent-empty-state">No open maintenance requests.</p>}
           </div>
         </div>
       </section>

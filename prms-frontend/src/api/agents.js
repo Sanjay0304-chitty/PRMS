@@ -8,6 +8,8 @@ export const agentApi = {
   update: (id, data) => apiClient.put(`/agents/${id}`, data),
   remove: (id) => apiClient.delete(`/agents/${id}`),
   assignProperty: (agentId, propertyId) => apiClient.post(`/agents/${agentId}/assign`, { propertyId }),
+  unassignProperty: (agentId, propertyId) => apiClient.delete(`/agents/${agentId}/assign/${propertyId}`),
   getAssignedProperties: (agentId) => apiClient.get(`/agents/${agentId}/properties`),
   myProperties: (params) => apiClient.get('/agents/me/properties', { params }),
+  dashboard: () => apiClient.get('/agents/me/dashboard'),
 };

@@ -172,6 +172,27 @@
   background: rgba(220, 38, 38, 0.1);
 }
 
+.agent-status--pending {
+  color: var(--status-warning);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.agent-empty-state {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: var(--spacing-lg);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.agent-dashboard-error {
+  padding: var(--spacing-md);
+  border: 1px solid rgba(220, 38, 38, 0.25);
+  border-radius: var(--radius-md);
+  color: var(--status-error);
+  background: var(--error-state);
+}
+
 /* ---- Priority badges ---- */
 .agent-priority-badge {
   display: inline-block;

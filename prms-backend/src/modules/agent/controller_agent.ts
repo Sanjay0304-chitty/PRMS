@@ -2,23 +2,55 @@ import { Request, Response } from 'express';
 import { AuthRequest } from '../../middleware/auth';
 import * as agentService from './service_agent';
 import { successResponse, paginatedResponse } from '../../utils/response';
+import { prisma } from '../../db';
+import { recordAudit } from '../admin/service_audit';
+
+async function auditAssignment(req: AuthRequest, action: string, agentId: string, propertyId: string) {
+  await recordAudit({
+    userId: req.user!.id,
+    username: req.user!.email,
+    userRole: req.user!.role,
+    action,
+    entity: 'AgentProperty',
+    entityId: `${agentId}:${propertyId}`,
+    description: `${action === 'ASSIGN_AGENT_PROPERTY' ? 'Assigned' : 'Removed'} Agent ${agentId} ${action === 'ASSIGN_AGENT_PROPERTY' ? 'to' : 'from'} property ${propertyId}`,
+    status: 'Success',
+    level: 'info',
+    ipAddress: req.ip || req.socket.remoteAddress || '',
+    userAgent: req.headers['user-agent'],
+    requestUrl: req.originalUrl,
+    httpMethod: req.method,
+    module: 'Agent',
+  });
+}
 
 export class AgentController {
-  list = async (req: Request, res: Response) => {
+  list = async (req: AuthRequest, res: Response) => {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
       const { search, propertyId } = req.query as any;
-      const { agents, total } = await agentService.getAllAgents(page, limit, search, propertyId);
+      const ownerId = req.user!.role === 'Landlord' ? req.user!.id : undefined;
+      if (ownerId && propertyId) {
+        const property = await prisma.property.findUnique({ where: { id: propertyId }, select: { ownerId: true } });
+        if (!property || property.ownerId !== ownerId) return res.status(403).json({ success: false, error: { message: 'You can only filter Agents by your own properties' } });
+      }
+      const { agents, total } = await agentService.getAllAgents(page, limit, search, propertyId, ownerId);
       res.json(paginatedResponse(agents, page, limit, total));
     } catch (error: any) { 
       res.status(500).json({ success: false, error: { message: error.message } }); 
     }
   };
 
-  getById = async (req: Request, res: Response) => {
+  getById = async (req: AuthRequest, res: Response) => {
     try {
-      const agent = await agentService.getAgentById(String(req.params.id));
+      const agentId = String(req.params.id);
+      if (req.user!.role === 'Agent') {
+        const ownAgent = await prisma.agent.findUnique({ where: { userId: req.user!.id }, select: { id: true } });
+        if (!ownAgent || ownAgent.id !== agentId) return res.status(403).json({ success: false, error: { message: 'You can only view your own Agent profile' } });
+      }
+      const ownerId = req.user!.role === 'Landlord' ? req.user!.id : undefined;
+      const agent = await agentService.getAgentById(agentId, ownerId);
       if (!agent) return res.status(404).json({ success: false, error: { message: 'Agent not found' } });
       res.json(successResponse(agent));
     } catch (error: any) { 
@@ -54,13 +86,28 @@ export class AgentController {
     }
   };
 
-  assignProperty = async (req: Request, res: Response) => {
+  assignProperty = async (req: AuthRequest, res: Response) => {
     try {
       const { propertyId } = req.body;
-      await agentService.assignProperty(String(req.params.id), propertyId);
+      if (!propertyId) return res.status(400).json({ success: false, error: { message: 'propertyId is required' } });
+      const agentId = String(req.params.id);
+      await agentService.assignProperty(agentId, propertyId, req.user!.id, req.user!.role);
+      await auditAssignment(req, 'ASSIGN_AGENT_PROPERTY', agentId, propertyId);
       res.json(successResponse(null, 'Property assigned to agent'));
     } catch (error: any) { 
-      res.status(400).json({ success: false, error: { message: error.message } }); 
+      res.status(error.statusCode || 400).json({ success: false, error: { message: error.message } });
+    }
+  };
+
+  unassignProperty = async (req: AuthRequest, res: Response) => {
+    try {
+      const agentId = String(req.params.id);
+      const propertyId = String(req.params.propertyId);
+      await agentService.unassignProperty(agentId, propertyId, req.user!.id, req.user!.role);
+      await auditAssignment(req, 'UNASSIGN_AGENT_PROPERTY', agentId, propertyId);
+      res.json(successResponse(null, 'Property removed from agent'));
+    } catch (error: any) {
+      res.status(error.statusCode || 400).json({ success: false, error: { message: error.message } });
     }
   };
 
@@ -75,11 +122,26 @@ export class AgentController {
     }
   };
 
-  getAssignedProperties = async (req: Request, res: Response) => {
+  dashboard = async (req: AuthRequest, res: Response) => {
+    try {
+      const dashboard = await agentService.getAgentDashboard(req.user!.id);
+      res.json(successResponse(dashboard));
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: { message: error.message } });
+    }
+  };
+
+  getAssignedProperties = async (req: AuthRequest, res: Response) => {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
-      const { agents, total } = await agentService.getAssignedProperties(String(req.params.id), page, limit);
+      const agentId = String(req.params.id);
+      if (req.user!.role === 'Agent') {
+        const ownAgent = await prisma.agent.findUnique({ where: { userId: req.user!.id }, select: { id: true } });
+        if (!ownAgent || ownAgent.id !== agentId) return res.status(403).json({ success: false, error: { message: 'You can only view your own assignments' } });
+      }
+      const ownerId = req.user!.role === 'Landlord' ? req.user!.id : undefined;
+      const { agents, total } = await agentService.getAssignedProperties(agentId, page, limit, ownerId);
       res.json(paginatedResponse(agents, page, limit, total));
     } catch (error: any) { 
       res.status(500).json({ success: false, error: { message: error.message } }); 
