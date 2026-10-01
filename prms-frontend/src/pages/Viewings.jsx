@@ -9,6 +9,10 @@ function formatDateTime(d) {
   return new Date(d).toLocaleString('en-MY', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
+function scheduledTime(viewing) {
+  return new Date(viewing.proposedTime && viewing.status === 'PROPOSED_ALTERNATE' ? viewing.proposedTime : viewing.preferredTime).getTime();
+}
+
 const STATUS_LABEL = {
   REQUESTED: 'Requested', ACCEPTED: 'Accepted', PROPOSED_ALTERNATE: 'Alternate Proposed',
   CONFIRMED: 'Confirmed', COMPLETED: 'Completed', NO_SHOW: 'No-show', CANCELLED: 'Cancelled',
@@ -89,14 +93,18 @@ export default function Viewings() {
                     )}
                     {isManager && v.status === 'CONFIRMED' && (
                       <>
-                        <button className="btn btn-sm btn-primary" onClick={() => run(() => viewingApi.markCompleted(v.id))}>Mark Completed</button>
-                        <button className="btn btn-sm btn-outline" onClick={() => run(() => viewingApi.markNoShow(v.id))}>No-show</button>
+                        <button className="btn btn-sm btn-primary" disabled={scheduledTime(v) > Date.now()} title={scheduledTime(v) > Date.now() ? 'Available after the scheduled time' : ''} onClick={() => run(() => viewingApi.markCompleted(v.id))}>Mark Completed</button>
+                        <button className="btn btn-sm btn-outline" disabled={scheduledTime(v) + 15 * 60 * 1000 > Date.now()} title={scheduledTime(v) + 15 * 60 * 1000 > Date.now() ? 'Available 15 minutes after the scheduled time' : ''} onClick={() => run(() => viewingApi.markNoShow(v.id))}>No-show</button>
+                        <button className="btn btn-sm btn-danger" onClick={() => run(() => viewingApi.cancel(v.id))}>Cancel</button>
                       </>
+                    )}
+                    {isManager && ['ACCEPTED', 'PROPOSED_ALTERNATE'].includes(v.status) && (
+                      <button className="btn btn-sm btn-danger" onClick={() => run(() => viewingApi.cancel(v.id))}>Cancel</button>
                     )}
                     {!isManager && ['ACCEPTED', 'PROPOSED_ALTERNATE'].includes(v.status) && (
                       <button className="btn btn-sm btn-primary" onClick={() => run(() => viewingApi.confirmAttendance(v.id))}>Confirm Attendance</button>
                     )}
-                    {!isManager && ['REQUESTED', 'ACCEPTED', 'PROPOSED_ALTERNATE'].includes(v.status) && (
+                    {!isManager && ['REQUESTED', 'ACCEPTED', 'PROPOSED_ALTERNATE', 'CONFIRMED'].includes(v.status) && (
                       <>
                         <button className="btn btn-sm btn-outline" onClick={() => setRescheduleFor(v.id)}>Reschedule</button>
                         <button className="btn btn-sm btn-danger" onClick={() => run(() => viewingApi.cancel(v.id))}>Cancel</button>

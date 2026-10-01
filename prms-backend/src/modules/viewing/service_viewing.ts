@@ -71,6 +71,14 @@ export async function getAgentViewings(userId: string) {
   });
 }
 
+export async function getPropertyManagerUserIds(propertyId: string, ownerId: string) {
+  const assignments = await prisma.agentProperty.findMany({
+    where: { propertyId },
+    select: { agent: { select: { userId: true } } },
+  });
+  return Array.from(new Set([ownerId, ...assignments.map((assignment) => assignment.agent.userId)]));
+}
+
 export async function reschedule(id: string, tenantId: string, data: { preferredTime?: string; alternativeTime?: string; message?: string }) {
   const viewing = await prisma.viewingAppointment.findUnique({ where: { id } });
   if (!viewing) throw new Error('Viewing appointment not found');
@@ -78,11 +86,13 @@ export async function reschedule(id: string, tenantId: string, data: { preferred
   if (!['REQUESTED', 'ACCEPTED', 'PROPOSED_ALTERNATE'].includes(viewing.status)) {
     throw new Error('This viewing can no longer be rescheduled');
   }
-  if (data.preferredTime && new Date(data.preferredTime).getTime() <= Date.now()) {
-    throw new Error('Preferred viewing time must be in the future');
+  if (data.preferredTime) {
+    const preferred = new Date(data.preferredTime);
+    if (Number.isNaN(preferred.getTime()) || preferred.getTime() <= Date.now()) throw new Error('Preferred viewing time must be a valid date in the future');
   }
-  if (data.alternativeTime && new Date(data.alternativeTime).getTime() <= Date.now()) {
-    throw new Error('Alternative viewing time must be in the future');
+  if (data.alternativeTime) {
+    const alternative = new Date(data.alternativeTime);
+    if (Number.isNaN(alternative.getTime()) || alternative.getTime() <= Date.now()) throw new Error('Alternative viewing time must be a valid date in the future');
   }
   return prisma.viewingAppointment.update({
     where: { id },
@@ -109,6 +119,7 @@ export async function accept(id: string, respondedById: string) {
   const viewing = await prisma.viewingAppointment.findUnique({ where: { id } });
   if (!viewing) throw new Error('Viewing appointment not found');
   if (viewing.status !== 'REQUESTED') throw new Error('Only a newly requested viewing can be accepted');
+  if (viewing.preferredTime.getTime() <= Date.now()) throw new Error('A past viewing time cannot be accepted; propose a new time instead');
   return prisma.viewingAppointment.update({
     where: { id },
     data: { status: 'ACCEPTED', respondedById },
@@ -118,13 +129,14 @@ export async function accept(id: string, respondedById: string) {
 
 export async function proposeAlternate(id: string, respondedById: string, proposedTime: string) {
   if (!proposedTime) throw new Error('A proposed time is required');
-  if (new Date(proposedTime).getTime() <= Date.now()) throw new Error('Proposed viewing time must be in the future');
+  const proposed = new Date(proposedTime);
+  if (Number.isNaN(proposed.getTime()) || proposed.getTime() <= Date.now()) throw new Error('Proposed viewing time must be a valid time in the future');
   const viewing = await prisma.viewingAppointment.findUnique({ where: { id } });
   if (!viewing) throw new Error('Viewing appointment not found');
   if (!['REQUESTED', 'ACCEPTED'].includes(viewing.status)) throw new Error('An alternate time can only be proposed for a pending viewing');
   return prisma.viewingAppointment.update({
     where: { id },
-    data: { status: 'PROPOSED_ALTERNATE', proposedTime: new Date(proposedTime), respondedById },
+    data: { status: 'PROPOSED_ALTERNATE', proposedTime: proposed, respondedById },
     include: includeStandard,
   });
 }
@@ -167,6 +179,7 @@ export async function markCompleted(id: string, respondedById: string) {
   const viewing = await prisma.viewingAppointment.findUnique({ where: { id } });
   if (!viewing) throw new Error('Viewing appointment not found');
   if (viewing.status !== 'CONFIRMED') throw new Error('Only a confirmed viewing can be marked completed');
+  if (viewing.preferredTime.getTime() > Date.now()) throw new Error('A viewing cannot be completed before its scheduled time');
   return prisma.viewingAppointment.update({ where: { id }, data: { status: 'COMPLETED', respondedById }, include: includeStandard });
 }
 
@@ -174,5 +187,7 @@ export async function markNoShow(id: string, respondedById: string) {
   const viewing = await prisma.viewingAppointment.findUnique({ where: { id } });
   if (!viewing) throw new Error('Viewing appointment not found');
   if (viewing.status !== 'CONFIRMED') throw new Error('Only a confirmed viewing can be marked as a no-show');
+  const noShowGraceMs = 15 * 60 * 1000;
+  if (viewing.preferredTime.getTime() + noShowGraceMs > Date.now()) throw new Error('Wait at least 15 minutes after the scheduled time before marking a no-show');
   return prisma.viewingAppointment.update({ where: { id }, data: { status: 'NO_SHOW', respondedById }, include: includeStandard });
 }
