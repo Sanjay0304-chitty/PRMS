@@ -112,14 +112,14 @@ export async function createNotification(data: { userId: string; type: string; t
   return prisma.notification.create({ data });
 }
 
-export async function markNotificationRead(notificationId: string) {
-  return prisma.notification.update({ where: { id: notificationId }, data: { isRead: true } });
+export async function markNotificationRead(userId: string, notificationId: string) {
+  return prisma.notification.updateMany({ where: { id: notificationId, userId }, data: { isRead: true } });
 }
 
 export async function markAllNotificationsRead(userId: string) {
   return prisma.notification.updateMany({ where: { userId, isRead: false }, data: { isRead: true } });
 }
 
-export async function dismissNotification(notificationId: string) {
-  return prisma.notification.delete({ where: { id: notificationId } });
+export async function dismissNotification(userId: string, notificationId: string) {
+  return prisma.notification.deleteMany({ where: { id: notificationId, userId } });
 }

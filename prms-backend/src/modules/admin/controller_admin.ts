@@ -82,7 +82,8 @@ export class AdminController {
 
   markNotificationRead = async (req: AuthRequest, res: Response) => {
     try {
-      await adminService.markNotificationRead(String(req.params.id));
+      const result = await adminService.markNotificationRead(req.user!.id, String(req.params.id));
+      if (result.count === 0) return res.status(404).json({ success: false, error: { message: 'Notification not found' } });
       res.json(successResponse(null, 'Notification marked as read'));
     } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
   };
@@ -96,7 +97,8 @@ export class AdminController {
 
   dismissNotification = async (req: AuthRequest, res: Response) => {
     try {
-      await adminService.dismissNotification(String(req.params.id));
+      const result = await adminService.dismissNotification(req.user!.id, String(req.params.id));
+      if (result.count === 0) return res.status(404).json({ success: false, error: { message: 'Notification not found' } });
       res.json(successResponse(null, 'Notification dismissed'));
     } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
   };
