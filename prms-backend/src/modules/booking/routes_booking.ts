@@ -18,8 +18,8 @@ router.get('/check-overlap', authenticate, ctrl.checkOverlap);
 router.get('/:id', authenticate, ctrl.getById);
 router.post('/', authenticate, ctrl.create);
 router.put('/:id', authenticate, adminOrLandlord, ctrl.update);
-router.patch('/:id/confirm', authenticate, adminOrLandlordOrAgent, ctrl.confirm);
-router.patch('/:id/reject', authenticate, adminOrLandlordOrAgent, ctrl.reject);
+router.patch('/:id/confirm', authenticate, adminOrLandlord, ctrl.confirm);
+router.patch('/:id/reject', authenticate, adminOrLandlord, ctrl.reject);
 router.patch('/:id/cancel', authenticate, ctrl.cancel);
 router.delete('/:id', authenticate, adminOnly, ctrl.remove);
 

@@ -66,23 +66,40 @@ export class BookingController {
 
   update = async (req: AuthRequest, res: Response) => {
     try {
+      const existing = await bookingService.getBookingById(String(req.params.id));
+      if (!existing) return res.status(404).json({ success: false, error: { message: 'Booking not found' } });
+      const role = (req.user!.role || '').toLowerCase();
+      const allowed = role === 'admin' || (role === 'landlord' && (existing as any).property.ownerId === req.user!.id);
+      if (!allowed) return res.status(403).json({ success: false, error: { message: 'Only the property owner or an administrator can update this booking' } });
       const booking = await bookingService.updateBooking(String(req.params.id), req.body);
       HELPERS(req).log({ action: 'UPDATE_BOOKING', entity: 'Booking', entityId: booking?.id, description: `Updated booking ${req.params.id}` });
       res.json(successResponse(booking, 'Booking updated'));
     } catch (error: any) { HELPERS(req).log({ action: 'UPDATE_BOOKING', entity: 'Booking', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
-  confirm = async (req: Request, res: Response) => {
+  confirm = async (req: AuthRequest, res: Response) => {
     try {
+      const existing = await bookingService.getBookingById(String(req.params.id));
+      if (!existing) return res.status(404).json({ success: false, error: { message: 'Booking not found' } });
+      const role = (req.user!.role || '').toLowerCase();
+      const allowed = role === 'admin' || (role === 'landlord' && (existing as any).property.ownerId === req.user!.id);
+      if (!allowed) return res.status(403).json({ success: false, error: { message: 'Only the property owner or an administrator can confirm this booking' } });
       const booking = await bookingService.updateBooking(String(req.params.id), { status: 'CONFIRMED' });
+      await createNotification({ userId: existing.userId, type: 'booking_confirmed', title: 'Booking confirmed', message: `Your booking for "${(existing as any).property.title}" was confirmed.` }).catch(() => {});
       HELPERS(req).log({ action: 'CONFIRM_BOOKING', entity: 'Booking', entityId: String(req.params.id), description: `Confirmed booking ${req.params.id}` });
       res.json(successResponse(booking, 'Booking confirmed'));
     } catch (error: any) { HELPERS(req).log({ action: 'CONFIRM_BOOKING', entity: 'Booking', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
-  reject = async (req: Request, res: Response) => {
+  reject = async (req: AuthRequest, res: Response) => {
     try {
+      const existing = await bookingService.getBookingById(String(req.params.id));
+      if (!existing) return res.status(404).json({ success: false, error: { message: 'Booking not found' } });
+      const role = (req.user!.role || '').toLowerCase();
+      const allowed = role === 'admin' || (role === 'landlord' && (existing as any).property.ownerId === req.user!.id);
+      if (!allowed) return res.status(403).json({ success: false, error: { message: 'Only the property owner or an administrator can reject this booking' } });
       const booking = await bookingService.updateBooking(String(req.params.id), { status: 'CANCELLED' });
+      await createNotification({ userId: existing.userId, type: 'booking_rejected', title: 'Booking not approved', message: `Your booking for "${(existing as any).property.title}" was not approved.` }).catch(() => {});
       HELPERS(req).log({ action: 'REJECT_BOOKING', entity: 'Booking', entityId: String(req.params.id), description: `Rejected booking ${req.params.id}` });
       res.json(successResponse(booking, 'Booking rejected'));
     } catch (error: any) { HELPERS(req).log({ action: 'REJECT_BOOKING', entity: 'Booking', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
