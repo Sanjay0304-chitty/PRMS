@@ -23,3 +23,15 @@ Scope: Booking, notification, authentication, authorization, property, agent, vi
 | Frontend production build | Pass | Vite production build completed successfully |
 
 The frontend build reports a non-blocking bundle-size warning. It does not prevent compilation or affect the tested workflow behavior.
+
+## Final regression review
+
+The final Sprint 5 regression pass confirmed:
+
+- All 66 backend tests pass across 11 suites.
+- Backend and frontend production builds complete successfully.
+- Booking, agreement, notification, dashboard, and role-protection files pass their targeted lint checks.
+- Booking pages now schedule their initial asynchronous refresh without a synchronous effect update.
+- Agreement draft and signing state resets no longer run synchronously during an effect.
+
+No critical or high-severity defect remains in the active Sprint 5 scope. The repository-wide frontend lint still reports 130 errors and 12 warnings in older or deferred modules. These do not block the production build and are recorded as technical debt rather than being included in the Sprint 5 booking and notification fixes. Payment and maintenance findings remain deferred to Sprint 6.
