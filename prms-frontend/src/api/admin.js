@@ -35,16 +35,16 @@ export const adminApi = {
 
   /* Notifications */
   getNotifications(params) {
-    return apiClient.get('/admin/notifications', { params });
+    return apiClient.get('/notifications', { params });
   },
   markAsRead(id) {
-    return apiClient.patch(`/admin/notifications/${id}/read`);
+    return apiClient.patch(`/notifications/${id}/read`);
   },
   markAllAsRead() {
-    return apiClient.post('/admin/notifications/read-all');
+    return apiClient.patch('/notifications/read-all');
   },
   dismiss(id) {
-    return apiClient.delete(`/admin/notifications/${id}`);
+    return apiClient.delete(`/notifications/${id}`);
   },
 
   /* Dashboard / Reporting (proxied through /reports) */

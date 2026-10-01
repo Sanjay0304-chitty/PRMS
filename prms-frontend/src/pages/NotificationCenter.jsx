@@ -1,10 +1,9 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bell,
   Check,
   CheckCheck,
-  Archive,
   Trash2,
   Mail,
   MailOpen,
@@ -14,7 +13,6 @@ import {
   DollarSign,
   MessageSquare,
   Search,
-  ChevronLeft,
 } from 'lucide-react';
 import { communicationApi } from '../api/communication';
 import './NotificationCenter.css';
@@ -39,41 +37,41 @@ const TYPE_COLORS = {
 };
 
 function NotificationCenter() {
-  const [tabs, setTabs] = useState([
+  const tabs = [
     { key: 'all', label: 'All', icon: Bell },
     { key: 'unread', label: 'Unread', icon: Mail },
     { key: 'read', label: 'Read', icon: MailOpen },
-    { key: 'archived', label: 'Archived', icon: Archive },
-  ]);
+  ];
   const [activeTab, setActiveTab] = useState('all');
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  const loadNotifications = useCallback(async () => {
-    try {
-      const filterMap = {
-        all: {},
-        unread: { isRead: false, archived: false },
-        read: { isRead: true, archived: false },
-        archived: { archived: true },
-      };
-      const params = filterMap[activeTab] || {};
-      const res = await communicationApi.getNotifications(params);
-      const items = res.data?.data || res.data || [];
-      setNotifications(Array.isArray(items) ? items : []);
-    } catch {
-      /* ignore */
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTab]);
-
   useEffect(() => {
+    let cancelled = false;
+    const filterMap = {
+      all: {},
+      unread: { isRead: false },
+      read: { isRead: true },
+    };
+    const loadNotifications = () => {
+      communicationApi.getNotifications(filterMap[activeTab] || {})
+        .then((res) => {
+          const items = res.data?.data || res.data || [];
+          if (!cancelled) setNotifications(Array.isArray(items) ? items : []);
+        })
+        .catch(() => { /* ignore */ })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    };
     loadNotifications();
     const interval = setInterval(loadNotifications, 30000);
-    return () => clearInterval(interval);
-  }, [loadNotifications]);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [activeTab]);
 
   const handleMarkAsRead = async (id) => {
     try {
@@ -120,16 +118,9 @@ function NotificationCenter() {
     return <Icon size={18} style={{ color: TYPE_COLORS[not.type] || '#6b7280' }} />;
   };
 
-  const getTimeAgo = (dateStr) => {
+  const formatTime = (dateStr) => {
     if (!dateStr) return '';
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'just now';
-    if (mins < 60) return `${mins}m ago`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
+    return new Date(dateStr).toLocaleString();
   };
 
   if (loading) {
@@ -219,7 +210,7 @@ function NotificationCenter() {
                   <div className="notif-content" onClick={() => !not.isRead && handleMarkAsRead(not.id)}>
                     <div className="notif-title-row">
                       <span className="notif-title">{not.title}</span>
-                      <span className="notif-time">{getTimeAgo(not.created_at)}</span>
+                      <span className="notif-time">{formatTime(not.created_at)}</span>
                     </div>
                     <div className="notif-message">{not.message}</div>
                     <div className="notif-meta">

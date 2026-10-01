@@ -22,19 +22,19 @@ export const communicationApi = {
     return apiClient.delete(`/communication/${id}`);
   },
 
-  /* Notifications -- routes live under /admin */
+  /* Notifications */
   getNotifications(params) {
-    return apiClient.get('/admin/notifications', { params });
+    return apiClient.get('/notifications', { params });
   },
   markRead(id) {
-    return apiClient.patch(`/admin/notifications/${id}/read`);
+    return apiClient.patch(`/notifications/${id}/read`);
   },
-  markNotificationRead: (id) => apiClient.patch(`/admin/notifications/${id}/read`),
+  markNotificationRead: (id) => apiClient.patch(`/notifications/${id}/read`),
   markAllRead() {
-    return apiClient.patch('/admin/notifications/read-all');
+    return apiClient.patch('/notifications/read-all');
   },
-  markAllNotificationsRead: () => apiClient.patch('/admin/notifications/read-all'),
+  markAllNotificationsRead: () => apiClient.patch('/notifications/read-all'),
   deleteNotification(id) {
-    return apiClient.delete(`/admin/notifications/${id}`);
+    return apiClient.delete(`/notifications/${id}`);
   },
 };
