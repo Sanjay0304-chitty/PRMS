@@ -48,7 +48,9 @@ export default function AdminBookings() {
     }
   }, [tab]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    Promise.resolve().then(load);
+  }, [load]);
 
   const cancelBooking = async (id) => {
     if (!confirm('Cancel this booking?')) return;

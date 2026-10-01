@@ -72,7 +72,9 @@ export default function MyBookings() {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    Promise.resolve().then(load);
+  }, [load]);
 
   const bookings = allBookings.filter(b => matchesTab(b, tab));
 

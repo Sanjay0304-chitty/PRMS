@@ -54,7 +54,9 @@ export default function LandlordBookings() {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    Promise.resolve().then(load);
+  }, [load]);
 
   const visibleBookings = bookings.filter((b) => (b.status || '').toUpperCase() === tab.toUpperCase());
 
@@ -63,7 +65,7 @@ export default function LandlordBookings() {
     setError('');
   }
 
-  async function runAction(fn, successMsg) {
+  async function runAction(fn) {
     setError('');
     try {
       await fn();
