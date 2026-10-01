@@ -30,7 +30,7 @@ export class ThemeController {
   getDraft = async (req: Request, res: Response) => {
     try {
       const draft = await this.service.getDraft(String(req.params.themeId));
-      HELPERS(req).log({ action: 'VIEW_THEME_DRAFT', entity: 'Theme', entityId: req.params.id, description: 'Viewed theme draft' });
+      HELPERS(req).log({ action: 'VIEW_THEME_DRAFT', entity: 'Theme', entityId: String(req.params.themeId), description: 'Viewed theme draft' });
       res.json(successResponse(draft));
     } catch (error: any) { HELPERS(req).log({ action: 'VIEW_THEME_DRAFT', entity: 'Theme', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(500).json({ success: false, error: { message: error.message } }); }
   };
@@ -38,7 +38,7 @@ export class ThemeController {
   saveDraft = async (req: AuthRequest, res: Response) => {
     try {
       await this.service.saveDraft(String(req.params.themeId), req.body.lightConfig, req.body.darkConfig);
-      HELPERS(req).log({ action: 'SAVE_THEME_DRAFT', entity: 'Theme', entityId: req.params.id, description: 'Saved theme draft' });
+      HELPERS(req).log({ action: 'SAVE_THEME_DRAFT', entity: 'Theme', entityId: String(req.params.themeId), description: 'Saved theme draft' });
       res.json(successResponse(null, 'Draft saved'));
     } catch (error: any) { HELPERS(req).log({ action: 'SAVE_THEME_DRAFT', entity: 'Theme', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
@@ -46,7 +46,7 @@ export class ThemeController {
   publishDraft = async (req: AuthRequest, res: Response) => {
     try {
       await this.service.publishDraft(String(req.params.themeId));
-      HELPERS(req).log({ action: 'PUBLISH_THEME', entity: 'Theme', entityId: req.params.id, description: 'Published theme configuration' });
+      HELPERS(req).log({ action: 'PUBLISH_THEME', entity: 'Theme', entityId: String(req.params.themeId), description: 'Published theme configuration' });
       res.json(successResponse(null, 'Theme published'));
     } catch (error: any) { HELPERS(req).log({ action: 'PUBLISH_THEME', entity: 'Theme', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
@@ -62,7 +62,7 @@ export class ThemeController {
   restoreVersion = async (req: AuthRequest, res: Response) => {
     try {
       await this.service.restoreVersion(String(req.params.themeId), parseInt(req.body.version as string));
-      HELPERS(req).log({ action: 'RESTORE_THEME_VERSION', entity: 'Theme', entityId: req.params.id, description: 'Restored theme version' });
+      HELPERS(req).log({ action: 'RESTORE_THEME_VERSION', entity: 'Theme', entityId: String(req.params.themeId), description: 'Restored theme version' });
       res.json(successResponse(null, 'Version restored'));
     } catch (error: any) { HELPERS(req).log({ action: 'RESTORE_THEME_VERSION', entity: 'Theme', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
