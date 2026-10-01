@@ -19,6 +19,9 @@ export const propertyApi = {
   update(id, data) {
     return apiClient.put(`/properties/${id}`, data);
   },
+  updateOperational(id, data) {
+    return apiClient.patch(`/properties/${id}/operational`, data);
+  },
   deactivate(id) {
     return apiClient.delete(`/properties/${id}`);
   },

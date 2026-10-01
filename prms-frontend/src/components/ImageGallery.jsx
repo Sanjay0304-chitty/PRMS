@@ -53,6 +53,7 @@ export default function ImageGallery({
   images,
   propertyId,
   userRole,
+  canManage,
   onImagesChange,
   wrapperProps,
 }) {
@@ -64,7 +65,9 @@ export default function ImageGallery({
   const fileInputRef = useRef(null);
 
   // Check if user can edit images (Admin or Landlord)
-  const canEdit = userRole === 'Admin' || userRole === 'Landlord' || userRole === 'admin' || userRole === 'landlord';
+  const canEdit = typeof canManage === 'boolean'
+    ? canManage
+    : userRole === 'Admin' || userRole === 'Landlord' || userRole === 'admin' || userRole === 'landlord';
 
   // Use actual images or fallback to placeholders
   const displayImages = (images && images.length > 0) ? images : PLACEHOLDER_IMAGES;

@@ -24,6 +24,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { propertyApi, viewingApi } from '../api';
+import { agentApi } from '../api/agents';
 import { useAuth } from '../contexts/AuthContext';
 import TenantBookingModal from '../components/TenantBookingModal';
 import ImageGallery from '../components/ImageGallery';
@@ -408,6 +409,7 @@ function PropertyDetail() {
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterStatus, setNewsletterStatus] = useState(null); // null | 'success' | 'error'
+  const [agentAssigned, setAgentAssigned] = useState(false);
   const canApplyToRent = !user || (user.role || '').toLowerCase() === 'tenant';
 
   function handleBack() {
@@ -468,6 +470,10 @@ function PropertyDetail() {
           const propData = res.data.data;
           setProperty(propData);
           setImages(propData.images || []);
+          if ((user?.role || '').toLowerCase() === 'agent') {
+            const assignedRes = await agentApi.myProperties({ limit: 100 });
+            if (!cancelled) setAgentAssigned((assignedRes.data?.data || []).some((item) => item.id === id));
+          }
         }
         setLoading(false);
       } catch (err) {
@@ -479,7 +485,9 @@ function PropertyDetail() {
     }
     fetch();
     return () => { cancelled = true; };
-  }, [id]);
+  }, [id, user?.role]);
+
+  const canManageProperty = isPropertyOwner || agentAssigned;
 
   /* Owner info */
   const owner = property?.owner;
@@ -601,6 +609,7 @@ function PropertyDetail() {
           images={images.length > 0 ? images : property?.images}
           propertyId={id}
           userRole={user?.role}
+          canManage={canManageProperty}
           onImagesChange={(updatedImages) => {
             setImages(updatedImages);
             setProperty((prev) => (prev ? { ...prev, images: updatedImages } : prev));
@@ -633,23 +642,25 @@ function PropertyDetail() {
                       <UserCircle size={48} />
                     </div>
                   )}
-                  {isPropertyOwner && (
+                  {canManageProperty && (
                     <motion.button
                       className="pd-edit-btn"
                       onClick={() => {
                         const lower = (user?.role || '').toLowerCase();
-                        const prefix = lower.includes('admin')
+                        const prefix = lower.includes('agent')
+                          ? `/agent/properties/${id}/edit`
+                          : lower.includes('admin')
                           ? '/admin/properties/edit'
                           : lower.includes('landlord')
                             ? '/landlord/properties/edit'
                             : '/properties/edit';
-                        navigate(`${prefix}/${id}`);
+                        navigate(lower.includes('agent') ? prefix : `${prefix}/${id}`);
                       }}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.97 }}
                     >
                       <Edit3 size={16} />
-                      Edit Property
+                      {(user?.role || '').toLowerCase().includes('agent') ? 'Manage Listing' : 'Edit Property'}
                     </motion.button>
                   )}
                 </div>
@@ -761,7 +772,7 @@ function PropertyDetail() {
             )}
 
             {/* Video & Document sections (visible when logged in and can edit) */}
-            {(user?.role === "Landlord" || user?.role === "Admin" || user?.role === "landlord" || user?.role === "admin") && (
+            {canManageProperty && (
               <>
                 <div className="pd-divider" />
                 <div className="pd-section">

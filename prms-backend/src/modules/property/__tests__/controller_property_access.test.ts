@@ -1,0 +1,78 @@
+import { PropertyController } from '../controller_property';
+
+const propertyFindUnique = jest.fn();
+const hasPropertyAuthority = jest.fn();
+const updateProperty = jest.fn();
+const recordAudit = jest.fn();
+
+jest.mock('../../../db', () => ({
+  prisma: { property: { findUnique: (...args: any[]) => propertyFindUnique(...args) } },
+}));
+jest.mock('../../../utils/propertyAuthority', () => ({
+  hasPropertyAuthority: (...args: any[]) => hasPropertyAuthority(...args),
+}));
+jest.mock('../service_property', () => ({
+  updateProperty: (...args: any[]) => updateProperty(...args),
+}));
+jest.mock('../../admin/service_audit', () => ({
+  recordAudit: (...args: any[]) => recordAudit(...args),
+}));
+jest.mock('../../../middleware/responseCache', () => ({ clearCache: jest.fn() }));
+
+function response() {
+  const res: any = {};
+  res.status = jest.fn(() => res);
+  res.json = jest.fn(() => res);
+  return res;
+}
+
+function request(body: any, role = 'Agent', userId = 'agent-user') {
+  return {
+    body,
+    params: { id: 'property-1' },
+    user: { id: userId, email: 'agent@prms.com', role },
+    headers: {},
+    socket: {},
+    originalUrl: '/properties/property-1/operational',
+    method: 'PATCH',
+  } as any;
+}
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  propertyFindUnique.mockResolvedValue({ ownerId: 'landlord-1' });
+  updateProperty.mockResolvedValue({ id: 'property-1', title: 'Updated title' });
+});
+
+test('assigned Agents cannot change protected commercial fields', async () => {
+  hasPropertyAuthority.mockResolvedValue(true);
+  const res = response();
+  await new PropertyController().updateOperational(request({ rent: 1, status: 'INACTIVE' }), res);
+  expect(res.status).toHaveBeenCalledWith(403);
+  expect(updateProperty).not.toHaveBeenCalled();
+});
+
+test('unassigned Agents cannot change operational fields', async () => {
+  hasPropertyAuthority.mockResolvedValue(false);
+  const res = response();
+  await new PropertyController().updateOperational(request({ title: 'Updated title' }), res);
+  expect(res.status).toHaveBeenCalledWith(403);
+  expect(updateProperty).not.toHaveBeenCalled();
+});
+
+test('assigned Agents can update only approved operational fields', async () => {
+  hasPropertyAuthority.mockResolvedValue(true);
+  const res = response();
+  const body = { title: 'Updated title', description: 'Updated description', city: 'Kuala Lumpur' };
+  await new PropertyController().updateOperational(request(body), res);
+  expect(updateProperty).toHaveBeenCalledWith('property-1', body);
+  expect(res.json).toHaveBeenCalled();
+});
+
+test('a Landlord cannot update another Landlord property', async () => {
+  hasPropertyAuthority.mockResolvedValue(false);
+  const res = response();
+  await new PropertyController().update(request({ title: 'Updated title' }, 'Landlord', 'landlord-2'), res);
+  expect(res.status).toHaveBeenCalledWith(403);
+  expect(updateProperty).not.toHaveBeenCalled();
+});

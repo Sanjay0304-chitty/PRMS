@@ -86,6 +86,7 @@ const LandlordMaintenance = lazy(() => import('./pages/LandlordMaintenance'));
 const AgentMaintenance = lazy(() => import('./pages/AgentMaintenance'));
 const AgentProperties = lazy(() => import('./pages/AgentProperties'));
 const AgentBookings = lazy(() => import('./pages/AgentBookings'));
+const AgentPropertyEdit = lazy(() => import('./pages/AgentPropertyEdit'));
 const AdminReports = lazy(() => import('./pages/AdminReports'));
 const AdminAuditLogs = lazy(() => import('./pages/AdminAuditLogs'));
 const NotificationCenter = lazy(() => import('./pages/NotificationCenter'));
@@ -304,6 +305,7 @@ function AppRoutes() {
         <Route path="properties/edit" element={<PropertyEdit />} />
         <Route path="properties/edit/:id" element={<PropertyEdit />} />
         <Route path="properties/:id" element={<PropertyDetail />} />
+        <Route path="properties/:id/edit" element={<AgentPropertyEdit />} />
         <Route path="bookings" element={<LandlordBookings />} />
         <Route path="viewings" element={<Viewings />} />
         <Route path="privacy" element={<PrivacyPersonalData />} />

@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { validationResult } from 'express-validator';
 import { AuthRequest } from '../../middleware/auth';
 import * as propertyService from './service_property';
@@ -6,6 +6,15 @@ import { successResponse, paginatedResponse } from '../../utils/response';
 import { recordAudit } from '../admin/service_audit';
 import { prisma } from '../../db';
 import { clearCache } from '../../middleware/responseCache';
+import { hasPropertyAuthority } from '../../utils/propertyAuthority';
+
+async function canManageProperty(req: AuthRequest, propertyId: string, allowAssignedAgent = true) {
+  const property = await prisma.property.findUnique({ where: { id: propertyId }, select: { ownerId: true } });
+  if (!property) return { exists: false, allowed: false };
+  const role = req.user!.role.toLowerCase();
+  if (!allowAssignedAgent && role === 'agent') return { exists: true, allowed: false };
+  return { exists: true, allowed: await hasPropertyAuthority(req.user!.id, role, property.ownerId, propertyId) };
+}
 
 const HELPERS = (req: Request) => {
   const ip = (req as any).ip || req.socket.remoteAddress || '';
@@ -20,6 +29,17 @@ const HELPERS = (req: Request) => {
 };
 
 export class PropertyController {
+  requireManagedProperty = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const access = await canManageProperty(req, String(req.params.id));
+      if (!access.exists) return res.status(404).json({ success: false, error: { message: 'Property not found' } });
+      if (!access.allowed) return res.status(403).json({ success: false, error: { message: 'You do not manage this property' } });
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+
   list = async (req: Request, res: Response) => {
     try {
       const page = parseInt(req.query.page as string) || 1;
@@ -54,6 +74,9 @@ export class PropertyController {
 
   update = async (req: AuthRequest, res: Response) => {
     try {
+      const access = await canManageProperty(req, String(req.params.id), false);
+      if (!access.exists) return res.status(404).json({ success: false, error: { message: 'Property not found' } });
+      if (!access.allowed) return res.status(403).json({ success: false, error: { message: 'Only the property owner or an administrator can update this property' } });
       const property = await propertyService.updateProperty(String(req.params.id), req.body);
       clearCache('^/properties');
       HELPERS(req).log({ action: 'UPDATE_PROPERTY', entity: 'Property', entityId: property?.id, description: `Updated property ${property?.title || req.params.id}` });
@@ -61,8 +84,45 @@ export class PropertyController {
     } catch (error: any) { HELPERS(req).log({ action: 'UPDATE_PROPERTY', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
-  deactivate = async (req: Request, res: Response) => {
+  updateOperational = async (req: AuthRequest, res: Response) => {
+    const allowedFields = ['title', 'address', 'property_type', 'description', 'city', 'state', 'amenities'];
     try {
+      const access = await canManageProperty(req, String(req.params.id));
+      if (!access.exists) return res.status(404).json({ success: false, error: { message: 'Property not found' } });
+      if (!access.allowed) return res.status(403).json({ success: false, error: { message: 'You are not assigned to this property' } });
+
+      const suppliedFields = Object.keys(req.body || {});
+      const forbiddenFields = suppliedFields.filter((field) => !allowedFields.includes(field));
+      if (forbiddenFields.length) {
+        return res.status(403).json({ success: false, error: { message: `Agents cannot change protected property fields: ${forbiddenFields.join(', ')}` } });
+      }
+      if (!suppliedFields.length) return res.status(400).json({ success: false, error: { message: 'At least one operational field is required' } });
+      if (req.body.title !== undefined && (typeof req.body.title !== 'string' || req.body.title.trim().length < 3 || req.body.title.trim().length > 150)) {
+        return res.status(400).json({ success: false, error: { message: 'Title must be 3-150 characters' } });
+      }
+      if (req.body.address !== undefined && (typeof req.body.address !== 'string' || req.body.address.trim().length < 5)) {
+        return res.status(400).json({ success: false, error: { message: 'Address must be at least 5 characters' } });
+      }
+      if (req.body.amenities !== undefined && !Array.isArray(req.body.amenities)) {
+        return res.status(400).json({ success: false, error: { message: 'Amenities must be an array' } });
+      }
+
+      const operationalData = Object.fromEntries(allowedFields.filter((field) => req.body[field] !== undefined).map((field) => [field, req.body[field]]));
+      const property = await propertyService.updateProperty(String(req.params.id), operationalData);
+      clearCache('^/properties');
+      HELPERS(req).log({ action: 'AGENT_UPDATE_PROPERTY_CONTENT', entity: 'Property', entityId: property?.id, description: `Agent updated operational fields: ${suppliedFields.join(', ')}` });
+      res.json(successResponse(property, 'Property operational details updated'));
+    } catch (error: any) {
+      HELPERS(req).log({ action: 'AGENT_UPDATE_PROPERTY_CONTENT', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message });
+      res.status(400).json({ success: false, error: { message: error.message } });
+    }
+  };
+
+  deactivate = async (req: AuthRequest, res: Response) => {
+    try {
+      const access = await canManageProperty(req, String(req.params.id), false);
+      if (!access.exists) return res.status(404).json({ success: false, error: { message: 'Property not found' } });
+      if (!access.allowed) return res.status(403).json({ success: false, error: { message: 'Only the property owner or an administrator can deactivate this property' } });
       const prop = await propertyService.getPropertyById(String(req.params.id));
       await propertyService.deactivateProperty(String(req.params.id));
       clearCache('^/properties');
@@ -71,8 +131,11 @@ export class PropertyController {
     } catch (error: any) { HELPERS(req).log({ action: 'DEACTIVATE_PROPERTY', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
-  addImage = async (req: Request, res: Response) => {
+  addImage = async (req: AuthRequest, res: Response) => {
     try {
+      const access = await canManageProperty(req, String(req.params.id));
+      if (!access.exists) return res.status(404).json({ success: false, error: { message: 'Property not found' } });
+      if (!access.allowed) return res.status(403).json({ success: false, error: { message: 'You do not manage this property' } });
       const file = (req as any).file;
       if (!file) return res.status(400).json({ success: false, error: { message: 'No image file provided' } });
       const url = `/uploads/properties/${file.filename}`;
@@ -83,9 +146,12 @@ export class PropertyController {
     } catch (error: any) { HELPERS(req).log({ action: 'ADD_PROPERTY_IMAGE', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
-  deleteImage = async (req: Request, res: Response) => {
+  deleteImage = async (req: AuthRequest, res: Response) => {
     try {
       const image = await propertyService.getImageById(String(req.params.imageId));
+      if (!image) return res.status(404).json({ success: false, error: { message: 'Property image not found' } });
+      const access = await canManageProperty(req, image.propertyId);
+      if (!access.allowed) return res.status(403).json({ success: false, error: { message: 'You do not manage this property' } });
       await propertyService.deleteImage(String(req.params.imageId));
       if (image?.url) {
         const fs = await import('fs');
@@ -107,8 +173,11 @@ export class PropertyController {
     } catch (error: any) { HELPERS(req).log({ action: 'VIEW_MY_PROPERTIES', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(500).json({ success: false, error: { message: error.message } }); }
   };
 
-  addVideo = async (req: Request, res: Response) => {
+  addVideo = async (req: AuthRequest, res: Response) => {
     try {
+      const access = await canManageProperty(req, String(req.params.id));
+      if (!access.exists) return res.status(404).json({ success: false, error: { message: 'Property not found' } });
+      if (!access.allowed) return res.status(403).json({ success: false, error: { message: 'You do not manage this property' } });
       const file = (req as any).file;
       if (!file) return res.status(400).json({ success: false, error: { message: 'No video file provided' } });
       const url = `/uploads/properties/${file.filename}`;
@@ -133,8 +202,11 @@ export class PropertyController {
     } catch (error: any) { HELPERS(req).log({ action: 'ADD_PROPERTY_VIDEO', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
-  deleteVideo = async (req: Request, res: Response) => {
+  deleteVideo = async (req: AuthRequest, res: Response) => {
     try {
+      const access = await canManageProperty(req, String(req.params.id));
+      if (!access.exists) return res.status(404).json({ success: false, error: { message: 'Property not found' } });
+      if (!access.allowed) return res.status(403).json({ success: false, error: { message: 'You do not manage this property' } });
       const urlToRemove = (req as any).body?.url || req.query.url as string;
       if (!urlToRemove) return res.status(400).json({ success: false, error: { message: 'Video URL required in body or query' } });
       const prop = await propertyService.removeVideoFromProperty(String(req.params.id), urlToRemove);
@@ -152,8 +224,11 @@ export class PropertyController {
     } catch (error: any) { HELPERS(req).log({ action: 'DELETE_PROPERTY_VIDEO', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
-  addDocument = async (req: Request, res: Response) => {
+  addDocument = async (req: AuthRequest, res: Response) => {
     try {
+      const access = await canManageProperty(req, String(req.params.id));
+      if (!access.exists) return res.status(404).json({ success: false, error: { message: 'Property not found' } });
+      if (!access.allowed) return res.status(403).json({ success: false, error: { message: 'You do not manage this property' } });
       const file = (req as any).file;
       if (!file) return res.status(400).json({ success: false, error: { message: 'No document file provided' } });
       const url = `/uploads/properties/${file.filename}`;
@@ -172,8 +247,11 @@ export class PropertyController {
     } catch (error: any) { HELPERS(req).log({ action: 'ADD_PROPERTY_DOCUMENT', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
-  deleteDocument = async (req: Request, res: Response) => {
+  deleteDocument = async (req: AuthRequest, res: Response) => {
     try {
+      const access = await canManageProperty(req, String(req.params.id));
+      if (!access.exists) return res.status(404).json({ success: false, error: { message: 'Property not found' } });
+      if (!access.allowed) return res.status(403).json({ success: false, error: { message: 'You do not manage this property' } });
       const urlToRemove = (req as any).body?.url || req.query.url as string;
       if (!urlToRemove) return res.status(400).json({ success: false, error: { message: 'Document URL required in body or query' } });
       const prop = await propertyService.removeDocumentFromProperty(String(req.params.id), urlToRemove);
