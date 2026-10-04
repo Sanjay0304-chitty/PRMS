@@ -585,45 +585,26 @@
   font-weight: 600;
 }
 
-/* Inputs */
-.booking-inputs {
-  border: 1px solid var(--border-color, #d1d5db);
-  border-radius: 8px;
-  overflow: hidden;
-  margin-bottom: 16px;
-}
-
-.booking-input-row {
+.booking-rental-summary {
   display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  background: var(--surface-container-low, #f8fafc);
 }
 
-.booking-input-col {
-  flex: 1;
-  padding: 10px 12px;
+.booking-rental-summary strong {
+  color: var(--status-success, #16a34a);
+  font-size: 13px;
 }
 
-.booking-input-row .booking-input-col:first-child {
-  border-right: 1px solid var(--border-color, #e5e7eb);
-}
-
-.booking-input-label {
-  display: block;
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 4px;
-  color: var(--text-color, #1a1a1a);
-}
-
-.booking-date-input {
-  width: 100%;
-  border: none;
-  outline: none;
-  font-size: 14px;
-  color: var(--text-color, #1a1a1a);
-  background: transparent;
-  padding: 0;
+.booking-rental-summary span {
+  color: var(--text-secondary, #64748b);
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 /* Book Now button */
@@ -658,29 +639,6 @@
   margin-bottom: 16px;
 }
 
-/* Price breakdown */
-.booking-breakdown {
-  margin-bottom: 16px;
-}
-
-.breakdown-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 14px;
-  color: var(--text-color, #1a1a1a);
-  padding: 4px 0;
-}
-
-.breakdown-total {
-  display: flex;
-  justify-content: space-between;
-  font-size: 15px;
-  font-weight: 700;
-  padding-top: 12px;
-  margin-top: 8px;
-  border-top: 1px solid var(--border-color, #e5e7eb);
-}
-
 /* Message Owner */
 .message-owner-btn {
   width: 100%;
@@ -701,103 +659,6 @@
 
 .message-owner-btn:hover {
   opacity: 0.7;
-}
-
-/* ── Mini Calendar in Booking Card ── */
-.booking-minical {
-  padding: 12px 0;
-  border-top: 1px solid var(--border-color, #e5e7eb);
-  border-bottom: 1px solid var(--border-color, #e5e7eb);
-  margin: 8px 0;
-}
-
-.booking-minical-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 4px 8px;
-}
-
-.booking-minical-header span:nth-child(2) {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-color, #1a1a1a);
-}
-
-.booking-minical-nav {
-  cursor: pointer;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text-secondary, #64748b);
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: background 0.2s;
-}
-
-.booking-minical-nav:hover {
-  background: var(--surface-container, #f3f4f6);
-}
-
-.booking-minical-weekdays {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 0;
-  margin-bottom: 4px;
-}
-
-.booking-minical-weekdays span {
-  text-align: center;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-secondary, #64748b);
-  padding: 4px 0;
-}
-
-.booking-minical-days {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 0;
-}
-
-.booking-minical-day {
-  text-align: center;
-  font-size: 13px;
-  padding: 6px 0;
-  cursor: pointer;
-  border-radius: 50%;
-  color: var(--text-color, #1a1a1a);
-  transition: background 0.15s;
-}
-.booking-minical-day:not(.cal-disabled):hover {
-  background: var(--surface-container);
-}
-
-.booking-minical-other {
-  color: var(--text-disabled, #94a3b8);
-}
-
-.cal-past {
-  color: var(--text-disabled, #cbd5e1);
-  text-decoration: line-through;
-}
-
-.cal-disabled {
-  pointer-events: none;
-  cursor: not-allowed;
-}
-
-.cal-selected {
-  background: var(--primary-color, #1a1a1a);
-  color: #fff;
-}
-
-.cal-boundary {
-  border: 2px solid var(--text-color, #1a1a1a);
-  font-weight: 600;
 }
 
 /* ── Payment Methods Banner ── */
