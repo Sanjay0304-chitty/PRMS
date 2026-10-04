@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { motion } from 'framer-motion'
@@ -50,17 +50,22 @@ function Properties() {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
   const perPage = 12
+  const role = (user?.role || '').toLowerCase()
+  const isAdmin = role.includes('admin')
+  const isLandlord = role.includes('landlord')
 
-  async function fetchProperties() {
+  const fetchProperties = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const { data } = await propertyApi.list({
-        page: currentPage,
-        limit: perPage,
-        type: activeType === 'all' ? undefined : activeType,
-        search: debouncedSearch || undefined,
-      })
+      const { data } = isLandlord
+        ? await propertyApi.myProperties()
+        : await propertyApi.list({
+            page: currentPage,
+            limit: perPage,
+            type: activeType === 'all' ? undefined : activeType,
+            search: debouncedSearch || undefined,
+          })
       const list = data?.data || data?.properties || data
       setProperties(Array.isArray(list) ? list : [])
 
@@ -68,7 +73,7 @@ function Properties() {
         data?.pagination?.total ??
           data?.totalCount ??
           data?.total ??
-          list.length
+          (Array.isArray(list) ? list.length : 0)
       )
     } catch (err) {
       setError(getApiError(err))
@@ -76,33 +81,27 @@ function Properties() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [activeType, currentPage, debouncedSearch, isLandlord])
 
   // Debounce the raw search input into `debouncedSearch`
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm.trim())
+      setCurrentPage(1)
     }, 400)
     return () => clearTimeout(timer)
   }, [searchTerm])
 
-  // Any filter change goes back to page 1
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [activeType, debouncedSearch])
-
   // Fetch whenever the page, type filter, or committed search term changes
   useEffect(() => {
-    fetchProperties()
-  }, [currentPage, activeType, debouncedSearch])
+    Promise.resolve().then(fetchProperties)
+  }, [fetchProperties])
 
   function handleSearch(e) {
     if (e) e.preventDefault()
     setDebouncedSearch(searchTerm.trim())
+    setCurrentPage(1)
   }
-
-  const totalPages = Math.max(Math.ceil(totalCount / perPage), 1)
-  const isAdmin = (user?.role || '').toLowerCase().includes('admin')
 
   function statusColor(status) {
     const s = (status || '').toLowerCase()
@@ -113,12 +112,33 @@ function Properties() {
     return 'gray'
   }
 
-  /* Client-side status filtering */
+  /*
+   * Landlords receive their complete ownership-scoped collection from the
+   * backend, then search/filter/page it locally. Other roles keep using the
+   * public paginated property catalogue.
+   */
   const filteredProperties = properties.filter((p) => {
-    if (activeStatus === 'all') return true
     const pStatus = (p.status || '').toLowerCase()
-    return pStatus === activeStatus.toLowerCase()
+    if (activeStatus !== 'all' && pStatus !== activeStatus.toLowerCase()) return false
+    if (!isLandlord) return true
+
+    if (activeType !== 'all' && (p.property_type || '').toLowerCase() !== activeType.toLowerCase()) return false
+    if (debouncedSearch) {
+      const searchable = [p.title, p.name, p.address, p.city, p.location]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+      if (!searchable.includes(debouncedSearch.toLowerCase())) return false
+    }
+    return true
   })
+  const totalPages = Math.max(
+    Math.ceil((isLandlord ? filteredProperties.length : totalCount) / perPage),
+    1
+  )
+  const displayedProperties = isLandlord
+    ? filteredProperties.slice((currentPage - 1) * perPage, currentPage * perPage)
+    : filteredProperties
 
   return (
     <div className="properties-page">
@@ -129,7 +149,9 @@ function Properties() {
           <p className="page-subtitle">
             {isAdmin
               ? 'Review and manage property listings across the platform.'
-              : 'Browse and manage all property listings in your portfolio.'}
+              : isLandlord
+                ? 'Browse and manage only the property listings in your portfolio.'
+                : 'Browse available property listings.'}
           </p>
         </div>
         {getAddPropertyRoute(user?.role) && (
@@ -238,7 +260,7 @@ function Properties() {
       {/* ── Properties grid / list ── */}
       {!loading && !error && (
         <>
-          {filteredProperties.length === 0 ? (
+          {displayedProperties.length === 0 ? (
             <div className="panel-card empty-state">
               <div className="empty-icon">
                 <Building2 size={56} />
@@ -262,13 +284,13 @@ function Properties() {
               {/* Filtered count when a filter is active */}
               {(activeStatus !== 'all' || activeType !== 'all' || searchTerm) && (
                 <div className="filter-count">
-                  Showing {filteredProperties.length} of {properties.length} properties
+                  Showing {displayedProperties.length} of {filteredProperties.length} properties
                 </div>
               )}
 
               {/* ── Grid / List ── */}
               <div className={`properties-${viewMode}`} role="list">
-                {filteredProperties.map((p, i) => {
+                {displayedProperties.map((p, i) => {
                   const pid = p._id || p.id || i
                   const stype = statusColor(p.status || 'available')
                   return (

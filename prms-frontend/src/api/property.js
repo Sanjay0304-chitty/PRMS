@@ -10,8 +10,8 @@ export const propertyApi = {
   },
 
   /* Authenticated */
-  myProperties() {
-    return apiClient.get('/properties/my-properties');
+  myProperties(params) {
+    return apiClient.get('/properties/my-properties', { params });
   },
   create(data) {
     return apiClient.post('/properties', data);
