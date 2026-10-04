@@ -5,6 +5,8 @@ import {
   ArrowDown,
   ArrowUp,
   Bell,
+  Building2,
+  ChevronRight,
   Download,
   Loader,
   Plus,
@@ -58,14 +60,11 @@ function LandlordDashboard() {
   const [loading, setLoading] = useState(true)
   const [errors, setErrors] = useState(0)
   const [stats, setStats] = useState({
-    totalRevenue: 0,
     occupancyRate: 0,
     totalProperties: 0,
     activeProperties: 0,
     pendingBookings: 0,
     approvedBookings: 0,
-    rejectedBookings: 0,
-    cancelledBookings: 0,
     openTickets: 0,
     urgentTickets: 0,
   })
@@ -75,18 +74,15 @@ function LandlordDashboard() {
   async function loadDashboard() {
     setLoading(true)
     let errCount = 0
-    let landlordBookings = []
 
     try {
       /* ---- Booking stats (pending / confirmed / cancelled counts) ---- */
       try {
         const res = await bookingApi.landlordBookings({ limit: 100 })
         const bookings = res?.data?.data ?? []
-        landlordBookings = bookings
         const pending = bookings.filter((b) => b.status === 'PENDING').length
         const confirmed = bookings.filter((b) => b.status === 'CONFIRMED').length
-        const cancelled = bookings.filter((b) => b.status === 'CANCELLED').length
-        setStats((s) => ({ ...s, pendingBookings: pending, approvedBookings: confirmed, rejectedBookings: 0, cancelledBookings: cancelled }))
+        setStats((s) => ({ ...s, pendingBookings: pending, approvedBookings: confirmed }))
 
         /* Pending bookings become the approval queue */
         const pendingArr = bookings.filter((b) => b.status === 'PENDING').slice(0, 4)
@@ -111,18 +107,14 @@ function LandlordDashboard() {
         const propsRes = await propertyApi.myProperties()
         const props = propsRes?.data?.data ?? []
         const total = props.length
-        const ownedPropertyIds = new Set(props.map((p) => p.id))
-        const occupiedPropertyIds = new Set(
-          landlordBookings
-            .filter((b) => ['CONFIRMED', 'CHECKED_IN'].includes(b.status) && ownedPropertyIds.has(b.propertyId))
-            .map((b) => b.propertyId)
-        )
-        const occupied = occupiedPropertyIds.size
+        const occupied = props.filter((p) => p.status === 'RENTED').length
         const rate = total > 0 ? Math.round((occupied / total) * 100) : 0
         setStats((s) => ({ ...s, totalProperties: total, activeProperties: occupied, occupancyRate: rate }))
 
-        /* Property summary — the landlord's first three properties */
-        const top3 = props.slice(0, 3)
+        /* Property summary — the landlord's three most recently updated properties */
+        const top3 = [...props]
+          .sort((a, b) => new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0))
+          .slice(0, 3)
         setPropertiesList(top3)
       } catch {
         errCount++
@@ -133,7 +125,9 @@ function LandlordDashboard() {
         const maintRes = await maintenanceApi.list({ limit: 100 })
         const tickets = maintRes?.data?.data ?? []
         const open = tickets.filter((m) => m.status === 'OPEN' || m.status === 'IN_PROGRESS').length
-        const urgent = tickets.filter((m) => m.priority === 'HIGH').length
+        const urgent = tickets.filter(
+          (m) => ['OPEN', 'IN_PROGRESS'].includes(m.status) && ['HIGH', 'URGENT'].includes(m.priority)
+        ).length
         setStats((s) => ({ ...s, openTickets: open, urgentTickets: urgent }))
       } catch {
         errCount++
@@ -208,14 +202,14 @@ function LandlordDashboard() {
         </div>
 
         <div className="landlord-page-actions">
-          <button type="button" className="btn-outline">
+          <button type="button" className="btn-outline" disabled title="Export will be available with Sprint 6 finance reporting">
             <Download size={18} />
             Export
           </button>
           <button
             type="button"
             className="btn-primary-solid"
-            onClick={() => navigate(ROUTES.landlord.properties)}
+            onClick={() => navigate(ROUTES.landlord.propertyAdd)}
           >
             <Plus size={18} />
             New Listing
@@ -252,7 +246,7 @@ function LandlordDashboard() {
               iconBg="icon-blue"
               label="Occupancy"
               value={`${stats.occupancyRate}%`}
-              sublabel={`${stats.activeProperties} occupied / ${stats.totalProperties} owned units`}
+              sublabel={`${stats.activeProperties} rented / ${stats.totalProperties} owned properties`}
               trend={null}
               trendDir="neutral"
             />
@@ -291,7 +285,7 @@ function LandlordDashboard() {
               <h3 className="panel-title-text">Revenue Growth</h3>
               <p className="panel-subtitle">Monthly performance comparison</p>
             </div>
-            <button type="button" className="btn-ghost">
+            <button type="button" className="btn-ghost" disabled title="Revenue reporting is planned for Sprint 6">
               <TrendingUp size={16} />
               Last 6 Months
             </button>
@@ -367,29 +361,67 @@ function LandlordDashboard() {
       </section>
 
       {/* ---- Property summary from real data ---- */}
-      {propertiesList.length > 0 && (
-        <section className="property-summary">
-          <h3 className="property-summary-title">
-            <span className="material-symbols-outlined">apartment</span>
-            Asset Summary
-          </h3>
-          {propertiesList.map((p) => (
-            <div className="summary-card" key={p.id}>
-              <div className="summary-image" style={{
-                backgroundImage: p.images?.[0]?.url ? `url(${getImageUrl(p.images[0].url)})` : 'none'
-              }} />
-              <div className="summary-body">
-                <h4 className="summary-title">{p.title}</h4>
-                <p className="summary-detail">{p.city || p.address || '—'} · {propertyStatusInfo(p.status).label}</p>
-              </div>
-              <span className="summary-price">RM {(p.rent || 0).toLocaleString()}</span>
-            </div>
-          ))}
+      <section className="property-summary">
+        <div className="property-summary-header">
+          <div>
+            <h3 className="property-summary-title">
+              <span className="material-symbols-outlined">apartment</span>
+              Asset Summary
+            </h3>
+            <p>Your three most recently updated properties.</p>
+          </div>
+          <button type="button" className="property-summary-view-all" onClick={() => navigate(ROUTES.landlord.properties)}>
+            View all properties <ChevronRight size={16} />
+          </button>
+        </div>
+
+        {propertiesList.length > 0 ? (
+          <div className="property-summary-grid">
+            {propertiesList.map((p) => {
+              const status = propertyStatusInfo(p.status)
+              const imageUrl = p.images?.[0]?.url
+              return (
+                <div
+                  className="summary-card"
+                  key={p.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => navigate(ROUTES.landlord.propertyDetail(p.id))}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      navigate(ROUTES.landlord.propertyDetail(p.id))
+                    }
+                  }}
+                >
+                  <div className={`summary-image ${imageUrl ? '' : 'summary-image-empty'}`} style={{
+                    backgroundImage: imageUrl ? `url(${getImageUrl(imageUrl)})` : 'none'
+                  }}>
+                    {!imageUrl && <Building2 size={28} />}
+                  </div>
+                  <div className="summary-body">
+                    <h4 className="summary-title">{p.title}</h4>
+                    <p className="summary-detail">{p.city || p.address || 'Location not provided'}</p>
+                    <span className={`summary-status status-${status.tone}`}>{status.label}</span>
+                  </div>
+                  <span className="summary-price">RM {Number(p.rent || 0).toLocaleString()}<small>/month</small></span>
+                </div>
+              )
+            })}
+          </div>
+        ) : !loading ? (
+          <div className="property-summary-empty">
+            <Building2 size={32} />
+            <p>No properties in your portfolio yet.</p>
+            <button type="button" className="btn-primary-solid" onClick={() => navigate(ROUTES.landlord.propertyAdd)}>
+              <Plus size={16} /> Add your first property
+            </button>
+          </div>
+        ) : null}
         </section>
-      )}
 
       {/* Error indicator */}
-      {errors > 1 && (
+      {errors > 0 && (
         <div className="dashboard-warn">
           ⚠ Some dashboard data may be incomplete ({errors}/3 endpoints failed)
         </div>
