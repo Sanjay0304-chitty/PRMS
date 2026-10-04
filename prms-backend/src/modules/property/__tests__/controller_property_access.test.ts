@@ -3,6 +3,7 @@ import { PropertyController } from '../controller_property';
 const propertyFindUnique = jest.fn();
 const hasPropertyAuthority = jest.fn();
 const updateProperty = jest.fn();
+const getLandlordProperties = jest.fn();
 const recordAudit = jest.fn();
 
 jest.mock('../../../db', () => ({
@@ -13,6 +14,7 @@ jest.mock('../../../utils/propertyAuthority', () => ({
 }));
 jest.mock('../service_property', () => ({
   updateProperty: (...args: any[]) => updateProperty(...args),
+  getLandlordProperties: (...args: any[]) => getLandlordProperties(...args),
 }));
 jest.mock('../../admin/service_audit', () => ({
   recordAudit: (...args: any[]) => recordAudit(...args),
@@ -42,6 +44,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   propertyFindUnique.mockResolvedValue({ ownerId: 'landlord-1' });
   updateProperty.mockResolvedValue({ id: 'property-1', title: 'Updated title' });
+  getLandlordProperties.mockResolvedValue([{ id: 'property-1', ownerId: 'landlord-1' }]);
 });
 
 test('assigned Agents cannot change protected commercial fields', async () => {
@@ -75,4 +78,19 @@ test('a Landlord cannot update another Landlord property', async () => {
   await new PropertyController().update(request({ title: 'Updated title' }, 'Landlord', 'landlord-2'), res);
   expect(res.status).toHaveBeenCalledWith(403);
   expect(updateProperty).not.toHaveBeenCalled();
+});
+
+test('Landlord property listing is scoped to the authenticated Landlord id', async () => {
+  const res = response();
+  const req = request({}, 'Landlord', 'landlord-current');
+  req.originalUrl = '/properties/my-properties';
+  req.method = 'GET';
+
+  await new PropertyController().myProperties(req, res);
+
+  expect(getLandlordProperties).toHaveBeenCalledWith('landlord-current');
+  expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+    success: true,
+    data: [{ id: 'property-1', ownerId: 'landlord-1' }],
+  }));
 });
