@@ -1,6 +1,7 @@
 import * as service from '../service_communication';
 
 const findUser = jest.fn();
+const findUsers = jest.fn();
 const findMessage = jest.fn();
 const findFirstMessage = jest.fn();
 const findMessages = jest.fn();
@@ -9,7 +10,10 @@ const updateMessage = jest.fn();
 
 jest.mock('../../../db', () => ({
   prisma: {
-    user: { findUnique: (...args: any[]) => findUser(...args) },
+    user: {
+      findUnique: (...args: any[]) => findUser(...args),
+      findMany: (...args: any[]) => findUsers(...args),
+    },
     message: {
       findUnique: (...args: any[]) => findMessage(...args),
       findFirst: (...args: any[]) => findFirstMessage(...args),
@@ -21,6 +25,25 @@ jest.mock('../../../db', () => ({
 }));
 
 beforeEach(() => jest.clearAllMocks());
+
+test('returns active administrators as messaging contacts for any authenticated user', async () => {
+  findUsers.mockResolvedValue([
+    { id: 'admin-1', full_name: 'System Admin', email: 'admin@prms.com' },
+  ]);
+
+  await expect(service.getAdminContacts('landlord-new')).resolves.toEqual([
+    { id: 'admin-1', name: 'System Admin (Admin)', role: 'Admin' },
+  ]);
+  expect(findUsers).toHaveBeenCalledWith({
+    where: {
+      id: { not: 'landlord-new' },
+      is_active: true,
+      UserRole: { some: { role: { name: 'Admin' } } },
+    },
+    orderBy: { full_name: 'asc' },
+    select: { id: true, full_name: true, email: true },
+  });
+});
 
 test('rejects reading a conversation when the caller is not a participant', async () => {
   findFirstMessage.mockResolvedValue(null);

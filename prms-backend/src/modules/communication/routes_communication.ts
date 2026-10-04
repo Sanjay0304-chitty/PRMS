@@ -6,6 +6,7 @@ const router = express.Router();
 const ctrl = new CommunicationController();
 
 router.use(authenticate);
+router.get('/contacts', ctrl.getContacts);
 router.post('/send', ctrl.send);
 router.get('/', ctrl.getConversations);
 router.get('/conversation/:conversationId', ctrl.getMessages);

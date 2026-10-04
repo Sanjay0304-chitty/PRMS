@@ -1,5 +1,23 @@
 import { prisma } from '../../db';
 
+export async function getAdminContacts(userId: string) {
+  const administrators = await prisma.user.findMany({
+    where: {
+      id: { not: userId },
+      is_active: true,
+      UserRole: { some: { role: { name: 'Admin' } } },
+    },
+    orderBy: { full_name: 'asc' },
+    select: { id: true, full_name: true, email: true },
+  });
+
+  return administrators.map((admin) => ({
+    id: admin.id,
+    name: `${admin.full_name || admin.email || 'System Administrator'} (Admin)`,
+    role: 'Admin',
+  }));
+}
+
 export async function sendMessage(data: { receiverId: string; content: string; conversationId: string }, senderId: string) {
   if (!data.receiverId || data.receiverId === senderId) throw new Error('A different receiver is required');
   const receiver = await prisma.user.findUnique({ where: { id: data.receiverId }, select: { id: true } });

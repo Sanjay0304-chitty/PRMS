@@ -4,6 +4,15 @@ import * as communicationService from './service_communication';
 import { successResponse } from '../../utils/response';
 
 export class CommunicationController {
+  getContacts = async (req: AuthRequest, res: Response) => {
+    try {
+      const contacts = await communicationService.getAdminContacts(req.user!.id);
+      res.json(successResponse(contacts));
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: { message: error.message } });
+    }
+  };
+
   send = async (req: AuthRequest, res: Response) => {
     try {
       const message = await communicationService.sendMessage(req.body, req.user!.id);

@@ -6,6 +6,9 @@ export const communicationApi = {
   list(params) {
     return apiClient.get('/communication', { params });
   },
+  contacts() {
+    return apiClient.get('/communication/contacts');
+  },
   send(data) {
     return apiClient.post('/communication/send', data);
   },

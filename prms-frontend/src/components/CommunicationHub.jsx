@@ -90,9 +90,19 @@ function CommunicationHub() {
   async function openCompose() {
     setComposing(true);
     setContactsLoading(true);
+    const role = (user?.role || '').toLowerCase();
+    const map = {};
     try {
-      const role = (user?.role || '').toLowerCase();
-      const map = {};
+      if (role !== 'admin') {
+        const { data } = await communicationApi.contacts();
+        const administrators = data?.data || data || [];
+        administrators.forEach((admin) => {
+          if (admin.id && admin.id !== user?.id) {
+            map[admin.id] = { id: admin.id, name: admin.name || 'System Administrator (Admin)' };
+          }
+        });
+      }
+
       if (role === 'landlord') {
         const { data } = await bookingApi.landlordBookings();
         const items = data?.data || data || [];
@@ -133,11 +143,10 @@ function CommunicationHub() {
           }
         });
       }
-      setContacts(Object.values(map));
     } catch (e) {
       console.error(e);
-      setContacts([]);
     } finally {
+      setContacts(Object.values(map));
       setContactsLoading(false);
     }
   }
@@ -221,7 +230,7 @@ function CommunicationHub() {
     if (!newMessage.trim() || !selectedConv) return;
     const isNewConversation = !selectedConv.id;
     try {
-      await communicationApi.send({
+      const response = await communicationApi.send({
         content: newMessage,
         // Omit conversationId for a brand-new thread - the backend derives
         // a deterministic `conv-<senderId>-<receiverId>` id when none is
@@ -232,7 +241,10 @@ function CommunicationHub() {
       setNewMessage('');
       if (isNewConversation) {
         await loadConversations();
-        setSelectedConv((prev) => ({ ...prev, id: `conv-${user?.id}-${prev.partner.id}` }));
+        const createdConversationId = response.data?.data?.conversationId;
+        if (createdConversationId) {
+          setSelectedConv((prev) => ({ ...prev, id: createdConversationId }));
+        }
       } else {
         loadMessages();
       }
