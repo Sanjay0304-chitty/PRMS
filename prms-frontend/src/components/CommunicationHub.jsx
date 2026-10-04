@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { communicationApi } from '../api';
 import { bookingApi } from '../api/booking';
@@ -24,7 +24,6 @@ const EDIT_WINDOW_MS = 2 * 60 * 1000;
 function CommunicationHub() {
   const { user } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
   const [conversations, setConversations] = useState([]);
   const [selectedConv, setSelectedConv] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -42,6 +41,7 @@ function CommunicationHub() {
   // only updating on the next 5s poll.
   const [nowTick, setNowTick] = useState(() => Date.now());
   const messagesEndRef = useRef(null);
+  const pendingContactRef = useRef(location.state?.startConversationWith || null);
 
   useEffect(() => {
     loadConversations();
@@ -153,21 +153,11 @@ function CommunicationHub() {
 
   function startConversation(contact) {
     setComposing(false);
-    setSelectedConv({ id: null, partner: { id: contact.id, full_name: contact.name } });
+    const existingConversation = conversations.find((conversation) => conversation.partner?.id === contact.id);
+    setSelectedConv(
+      existingConversation || { id: null, partner: { id: contact.id, full_name: contact.name } }
+    );
   }
-
-  // Arrives from "Message Owner" on a property page (or any other caller
-  // that wants to deep-link straight into a thread) via navigate(..., {
-  // state: { startConversationWith } }). Consumed once, then cleared from
-  // history so it doesn't re-fire on a later back/forward navigation.
-  useEffect(() => {
-    const target = location.state?.startConversationWith;
-    if (target?.id) {
-      startConversation(target);
-      navigate(location.pathname, { replace: true, state: {} });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.state]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -198,7 +188,22 @@ function CommunicationHub() {
           }
         }
       });
-      setConversations(Object.values(convMap).sort((a, b) => new Date(b.lastAt) - new Date(a.lastAt)));
+      const loadedConversations = Object.values(convMap).sort((a, b) => new Date(b.lastAt) - new Date(a.lastAt));
+      setConversations(loadedConversations);
+
+      const pendingContact = pendingContactRef.current;
+      if (pendingContact?.id) {
+        const existingConversation = loadedConversations.find(
+          (conversation) => conversation.partner?.id === pendingContact.id
+        );
+        setSelectedConv(
+          existingConversation || {
+            id: null,
+            partner: { id: pendingContact.id, full_name: pendingContact.name || 'Property Owner' },
+          }
+        );
+        pendingContactRef.current = null;
+      }
     } catch (e) {
       console.error(e);
     } finally {
