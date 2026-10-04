@@ -1,8 +1,31 @@
+.viewings-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.viewings-table {
+  min-width: 920px;
+}
+
+.viewings-actions-heading,
+.viewings-actions-cell {
+  min-width: 300px;
+}
+
+.viewings-actions-cell {
+  vertical-align: top !important;
+}
+
 .viewings-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  align-items: center;
+  align-items: flex-start;
+}
+
+.viewings-actions > .btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .viewings-inline-form {
@@ -14,8 +37,20 @@
 }
 
 .viewings-inline-form input {
+  min-width: 190px;
   padding: 6px 8px;
   border: 1px solid var(--border-color);
   border-radius: 6px;
   font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .viewings-table {
+    min-width: 840px;
+  }
+
+  .viewings-actions-heading,
+  .viewings-actions-cell {
+    min-width: 260px;
+  }
 }

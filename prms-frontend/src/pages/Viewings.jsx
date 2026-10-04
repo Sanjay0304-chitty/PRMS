@@ -64,7 +64,8 @@ export default function Viewings() {
 
       <div className="card-table">
         {loading ? <p>Loading...</p> : (
-          <table className="table">
+          <div className="viewings-table-scroll">
+            <table className="table viewings-table">
             <thead>
               <tr>
                 <th>Property</th>
@@ -72,7 +73,7 @@ export default function Viewings() {
                 <th>Preferred</th>
                 <th>Alternative</th>
                 <th>Status</th>
-                <th>Actions</th>
+                <th className="viewings-actions-heading">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -83,7 +84,8 @@ export default function Viewings() {
                   <td>{formatDateTime(v.proposedTime && v.status === 'PROPOSED_ALTERNATE' ? v.proposedTime : v.preferredTime)}</td>
                   <td>{formatDateTime(v.alternativeTime)}</td>
                   <td><span className={`shell-status-badge status-${v.status.toLowerCase()}`}>{STATUS_LABEL[v.status] || v.status}</span></td>
-                  <td className="viewings-actions">
+                  <td className="viewings-actions-cell">
+                    <div className="viewings-actions">
                     {isManager && v.status === 'REQUESTED' && (
                       <>
                         <button className="btn btn-sm btn-primary" onClick={() => run(() => viewingApi.accept(v.id))}>Accept</button>
@@ -123,12 +125,14 @@ export default function Viewings() {
                         <button className="btn btn-sm btn-primary" onClick={() => run(() => viewingApi.reschedule(v.id, { preferredTime: rescheduleTime })).then(() => setRescheduleFor(null))}>Save</button>
                       </div>
                     )}
+                    </div>
                   </td>
                 </tr>
               ))}
               {!viewings.length && <tr><td colSpan={isManager ? 6 : 5}>No viewing appointments.</td></tr>}
             </tbody>
-          </table>
+            </table>
+          </div>
         )}
       </div>
     </div>
