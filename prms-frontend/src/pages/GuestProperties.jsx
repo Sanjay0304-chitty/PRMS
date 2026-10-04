@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { getImageUrl } from '../config/imageHelper';
 import { propertyApi, searchApi } from '../api';
+import { PROPERTY_STATUSES, propertyStatusInfo } from '../config/propertyStatus';
 import './GuestProperties.css';
 
 const PRICE_RANGES = [
@@ -52,7 +53,10 @@ function GuestProperties() {
     setLoading(true);
     setError(null);
     try {
-      const res = await propertyApi.list({ limit: 50 });
+      const res = await propertyApi.list({
+        limit: 50,
+        status: statusFilter || undefined,
+      });
       if (res?.data?.data) {
         setProperties(res.data.data);
       }
@@ -61,7 +65,7 @@ function GuestProperties() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [statusFilter]);
 
    
   useEffect(() => {
@@ -127,11 +131,8 @@ function GuestProperties() {
 
   /* Status display */
   const statusInfo = (status) => {
-    const s = (status || '').toLowerCase();
-    if (s === 'available') return { text: 'Available now', color: 'var(--status-success, #3C9B4D)' };
-    if (s === 'occupied') return { text: 'Occupied', color: 'var(--status-warning, #F29F05)' };
-    if (s === 'maintenance') return { text: 'Maintenance', color: 'var(--error-state, #D8554F)' };
-    return { text: 'Unknown', color: 'var(--text-secondary, #666)' };
+    const info = propertyStatusInfo(status);
+    return { text: info.label, color: info.color };
   };
 
   /* Reset filters */
@@ -302,13 +303,16 @@ function GuestProperties() {
                 >
                   Any status
                 </button>
-                <button
-                  type="button"
-                  className={statusFilter === 'AVAILABLE' ? 'active' : ''}
-                  onClick={() => setStatusFilter(statusFilter === 'AVAILABLE' ? null : 'AVAILABLE')}
-                >
-                  Available only
-                </button>
+                {PROPERTY_STATUSES.map((status) => (
+                  <button
+                    type="button"
+                    key={status.value}
+                    className={statusFilter === status.value ? 'active' : ''}
+                    onClick={() => setStatusFilter(statusFilter === status.value ? null : status.value)}
+                  >
+                    {status.label}
+                  </button>
+                ))}
               </div>
             </div>
 

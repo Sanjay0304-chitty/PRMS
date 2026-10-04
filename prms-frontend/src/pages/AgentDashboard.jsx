@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '../config/routes'
 import { Building2, CalendarClock, CalendarDays, CheckCircle2, Clock, Home, Star, Wrench } from 'lucide-react'
 import { getImageUrl } from '../config/imageHelper';
+import { propertyStatusInfo } from '../config/propertyStatus'
 import { agentApi } from '../api/agents'
 import { bookingApi } from '../api/booking'
 import { maintenanceApi } from '../api/maintenance'
@@ -257,7 +258,7 @@ function AgentDashboard() {
                     ) : (
                       <Home size={10} />
                     )}
-                    {prop.status}
+                    {propertyStatusInfo(prop.status).label}
                   </span>
                 </div>
                 <p className="agent-location">{prop.address}</p>

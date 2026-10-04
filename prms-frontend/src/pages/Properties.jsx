@@ -18,6 +18,7 @@ import { getImageUrl } from '../config/imageHelper';
 import { propertyApi, getApiError } from '../api'
 import { getAddPropertyRoute, getPropertyDetailPath } from '../config/routes'
 import { PROPERTY_TYPES as CANONICAL_PROPERTY_TYPES, propertyTypeLabel } from '../config/propertyTypes'
+import { PROPERTY_STATUSES, propertyStatusInfo } from '../config/propertyStatus'
 import './Properties.css'
 
 const TYPE_FILTERS = [
@@ -27,10 +28,7 @@ const TYPE_FILTERS = [
 
 const STATUS_FILTERS = [
   { key: 'all', label: 'All' },
-  { key: 'available', label: 'Available' },
-  { key: 'occupied', label: 'Occupied' },
-  { key: 'maintenance', label: 'Maintenance' },
-  { key: 'inactive', label: 'Inactive' },
+  ...PROPERTY_STATUSES.map((status) => ({ key: status.value, label: status.label })),
 ]
 
 function Properties() {
@@ -65,6 +63,7 @@ function Properties() {
             limit: perPage,
             type: activeType === 'all' ? undefined : activeType,
             search: debouncedSearch || undefined,
+            status: activeStatus === 'all' ? undefined : activeStatus,
           })
       const list = data?.data || data?.properties || data
       setProperties(Array.isArray(list) ? list : [])
@@ -81,7 +80,7 @@ function Properties() {
     } finally {
       setLoading(false)
     }
-  }, [activeType, currentPage, debouncedSearch, isLandlord])
+  }, [activeStatus, activeType, currentPage, debouncedSearch, isLandlord])
 
   // Debounce the raw search input into `debouncedSearch`
   useEffect(() => {
@@ -104,12 +103,7 @@ function Properties() {
   }
 
   function statusColor(status) {
-    const s = (status || '').toLowerCase()
-    if (s === 'available') return 'green'
-    if (s === 'pending') return 'yellow'
-    if (s === 'rented' || s === 'approved' || s === 'active') return 'blue'
-    if (s === 'rejected' || s === 'inactive') return 'red'
-    return 'gray'
+    return propertyStatusInfo(status).tone
   }
 
   /*
@@ -118,8 +112,7 @@ function Properties() {
    * public paginated property catalogue.
    */
   const filteredProperties = properties.filter((p) => {
-    const pStatus = (p.status || '').toLowerCase()
-    if (activeStatus !== 'all' && pStatus !== activeStatus.toLowerCase()) return false
+    if (activeStatus !== 'all' && propertyStatusInfo(p.status).value !== activeStatus) return false
     if (!isLandlord) return true
 
     if (activeType !== 'all' && (p.property_type || '').toLowerCase() !== activeType.toLowerCase()) return false
@@ -284,7 +277,7 @@ function Properties() {
               {/* Filtered count when a filter is active */}
               {(activeStatus !== 'all' || activeType !== 'all' || searchTerm) && (
                 <div className="filter-count">
-                  Showing {displayedProperties.length} of {filteredProperties.length} properties
+                  Showing {displayedProperties.length} of {isLandlord ? filteredProperties.length : totalCount} properties
                 </div>
               )}
 
@@ -321,7 +314,7 @@ function Properties() {
                             );
                           })()}
                           <span className={`status-badge status-${stype}`}>
-                            {p.status || 'Available'}
+                            {propertyStatusInfo(p.status).label}
                           </span>
                         </div>
 

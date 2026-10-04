@@ -18,6 +18,7 @@ import { bookingApi } from '../api/booking'
 import { maintenanceApi } from '../api/maintenance'
 import { propertyApi } from '../api/property'
 import { getImageUrl } from '../config/imageHelper'
+import { propertyStatusInfo } from '../config/propertyStatus'
 import './LandlordDashboard.css'
 
 function KpiCard({ icon: Icon, iconBg, label, value, sublabel, trend, trendDir }) {
@@ -379,7 +380,7 @@ function LandlordDashboard() {
               }} />
               <div className="summary-body">
                 <h4 className="summary-title">{p.title}</h4>
-                <p className="summary-detail">{p.city || p.address || '—'} · {p.status}</p>
+                <p className="summary-detail">{p.city || p.address || '—'} · {propertyStatusInfo(p.status).label}</p>
               </div>
               <span className="summary-price">RM {(p.rent || 0).toLocaleString()}</span>
             </div>

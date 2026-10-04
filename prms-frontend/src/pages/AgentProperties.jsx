@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Building2 } from 'lucide-react';
 import { agentApi } from '../api/agents';
 import { getImageUrl } from '../config/imageHelper';
+import { propertyStatusInfo } from '../config/propertyStatus';
 import './SharedPageShell.css';
 
 function formatAmount(amount) {
@@ -64,7 +65,9 @@ export default function AgentProperties() {
                       <Building2 size={32} />
                     </div>
                   )}
-                  <span className={`shell-status-badge status-${(p.status || '').toLowerCase()}`}>{p.status}</span>
+                  <span className={`shell-status-badge status-${propertyStatusInfo(p.status).value.toLowerCase()}`}>
+                    {propertyStatusInfo(p.status).label}
+                  </span>
                 </div>
                 <h3>{p.title}</h3>
                 <p>{p.address || '—'}</p>

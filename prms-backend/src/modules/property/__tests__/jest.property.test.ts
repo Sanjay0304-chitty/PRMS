@@ -71,6 +71,19 @@ function stubPropertyData(overrides = {}) {
 
 beforeEach(clearAll);
 
+describe('getAllProperties - status filtering', () => {
+  test('applies the canonical status to both the property query and total count', async () => {
+    await service.getAllProperties(2, 12, { status: 'MAINTENANCE' });
+
+    expect(mockFindMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { status: 'MAINTENANCE' },
+      skip: 12,
+      take: 12,
+    }));
+    expect(mockCount).toHaveBeenCalledWith({ where: { status: 'MAINTENANCE' } });
+  });
+});
+
 /* ============================================================
    normalizeDate
    ============================================================ */

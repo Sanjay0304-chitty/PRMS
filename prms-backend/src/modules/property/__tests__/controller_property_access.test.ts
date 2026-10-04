@@ -4,6 +4,7 @@ const propertyFindUnique = jest.fn();
 const hasPropertyAuthority = jest.fn();
 const updateProperty = jest.fn();
 const getLandlordProperties = jest.fn();
+const getAllProperties = jest.fn();
 const recordAudit = jest.fn();
 
 jest.mock('../../../db', () => ({
@@ -15,6 +16,7 @@ jest.mock('../../../utils/propertyAuthority', () => ({
 jest.mock('../service_property', () => ({
   updateProperty: (...args: any[]) => updateProperty(...args),
   getLandlordProperties: (...args: any[]) => getLandlordProperties(...args),
+  getAllProperties: (...args: any[]) => getAllProperties(...args),
 }));
 jest.mock('../../admin/service_audit', () => ({
   recordAudit: (...args: any[]) => recordAudit(...args),
@@ -45,6 +47,7 @@ beforeEach(() => {
   propertyFindUnique.mockResolvedValue({ ownerId: 'landlord-1' });
   updateProperty.mockResolvedValue({ id: 'property-1', title: 'Updated title' });
   getLandlordProperties.mockResolvedValue([{ id: 'property-1', ownerId: 'landlord-1' }]);
+  getAllProperties.mockResolvedValue({ properties: [], total: 0 });
 });
 
 test('assigned Agents cannot change protected commercial fields', async () => {
@@ -93,4 +96,34 @@ test('Landlord property listing is scoped to the authenticated Landlord id', asy
     success: true,
     data: [{ id: 'property-1', ownerId: 'landlord-1' }],
   }));
+});
+
+test('property listing normalizes and forwards a valid status filter', async () => {
+  const res = response();
+  const req: any = request({});
+  req.query = { page: '1', limit: '12', status: 'maintenance' };
+  req.originalUrl = '/properties?status=maintenance';
+  req.method = 'GET';
+
+  await new PropertyController().list(req, res);
+
+  expect(getAllProperties).toHaveBeenCalledWith(1, 12, {
+    type: undefined,
+    search: undefined,
+    status: 'MAINTENANCE',
+  });
+  expect(res.json).toHaveBeenCalled();
+});
+
+test('property listing rejects an unsupported status filter', async () => {
+  const res = response();
+  const req: any = request({});
+  req.query = { status: 'occupied' };
+  req.originalUrl = '/properties?status=occupied';
+  req.method = 'GET';
+
+  await new PropertyController().list(req, res);
+
+  expect(res.status).toHaveBeenCalledWith(400);
+  expect(getAllProperties).not.toHaveBeenCalled();
 });

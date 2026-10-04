@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { propertyApi } from '../api';
 import { agentApi } from '../api/agents';
 import { PROPERTY_TYPES } from '../config/propertyTypes';
+import { propertyStatusInfo } from '../config/propertyStatus';
 import './PropertyEdit.css';
 
 export default function AgentPropertyEdit() {
@@ -117,7 +118,7 @@ export default function AgentPropertyEdit() {
           <section className="pe-section">
             <h2 className="pe-section-title">Landlord-controlled fields</h2>
             <p><strong>Rent:</strong> RM {Number(property?.rent || 0).toLocaleString()}</p>
-            <p><strong>Status:</strong> {property?.status}</p>
+            <p><strong>Status:</strong> {propertyStatusInfo(property?.status).label}</p>
             <p><strong>Available from:</strong> {property?.availableFrom ? new Date(property.availableFrom).toLocaleDateString('en-MY') : 'Not set'}</p>
             <p><strong>Available to:</strong> {property?.availableTo ? new Date(property.availableTo).toLocaleDateString('en-MY') : 'Not set'}</p>
             <p>Contact the property owner when one of these values needs to change.</p>

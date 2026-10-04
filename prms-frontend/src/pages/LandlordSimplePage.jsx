@@ -15,6 +15,7 @@ import { bookingApi } from '../api/booking'
 import { paymentApi } from '../api/payment'
 import { maintenanceApi } from '../api/maintenance'
 import { adminApi } from '../api/admin'
+import { propertyStatusInfo } from '../config/propertyStatus'
 import './LandlordSimplePage.css'
 
 const subPages = {
@@ -23,13 +24,13 @@ const subPages = {
     subtitle: 'Manage your listings, unit status, rental pricing, and approval progress.',
     icon: Building2,
     primaryBtn: 'Add Property',
-    cardLabels: ['Total Listings', 'Occupied', 'Vacant', 'Pending Approval'],
+    cardLabels: ['Total Listings', 'Rented', 'Available', 'Maintenance'],
     columns: ['Property', 'Location', 'Monthly Rent', 'Status', 'Action'],
     renderRow: (p) => [
       p.title || '—',
       p.city || '—',
       typeof p.monthly_rent === 'number' ? 'RM ' + p.monthly_rent.toLocaleString() : (p.rent || '—'),
-      p.status || 'Active',
+      propertyStatusInfo(p.status).label,
       'View',
     ],
   },
@@ -138,9 +139,9 @@ export default function LandlordSimplePage({ type, label }) {
           setRows(items)
           setCards([
             { label: 'Total Listings', value: items.length },
-            { label: 'Occupied', value: items.filter((p) => p.status === 'Occupied' || p.status === 'Active').length },
-            { label: 'Vacant', value: items.filter((p) => p.status === 'Vacant').length },
-            { label: 'Pending Approval', value: items.filter((p) => p.status === 'Pending').length },
+            { label: 'Rented', value: items.filter((p) => p.status === 'RENTED').length },
+            { label: 'Available', value: items.filter((p) => p.status === 'AVAILABLE').length },
+            { label: 'Maintenance', value: items.filter((p) => p.status === 'MAINTENANCE').length },
           ])
         } else if (resolvedType === 'bookings') {
           const { data } = await bookingApi.list()

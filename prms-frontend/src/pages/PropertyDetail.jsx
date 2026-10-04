@@ -31,6 +31,7 @@ import ImageGallery from '../components/ImageGallery';
 import Modal from '../components/Modal';
 import { VideoUploader, DocumentUploader } from '../components/MediaUploader';
 import { getPropertyRoute, getMessagesRoute } from '../config/routes';
+import { isPropertyAvailable, propertyStatusInfo } from '../config/propertyStatus';
 import './PropertyDetail.css';
 
 /* ================= AMENITY ICON MAP ================= */
@@ -289,12 +290,12 @@ function BookingCard({ property, onBookClick }) {
         <button
           className="book-now-btn"
           onClick={() => {
-            if (property.status === 'OCCUPIED' || property.status === 'MAINTENANCE') return;
+            if (!isPropertyAvailable(property.status)) return;
             onBookClick();
           }}
-          disabled={property.status === 'OCCUPIED' || property.status === 'MAINTENANCE'}
+          disabled={!isPropertyAvailable(property.status)}
         >
-          {property.status === 'OCCUPIED' ? 'Occupied' : property.status === 'MAINTENANCE' ? 'Maintenance' : 'Apply to Rent'}
+          {isPropertyAvailable(property.status) ? 'Apply to Rent' : propertyStatusInfo(property.status).label}
         </button>
 
         {/* Approximate price */}
@@ -499,12 +500,7 @@ function PropertyDetail() {
   const rating = property?.rating || '4.9';
 
   /* Status badge */
-  const statusConfig =
-    {
-      AVAILABLE: { text: 'Available', color: '#22c55e' },
-      OCCUPIED: { text: 'Occupied', color: '#f59e0b' },
-      MAINTENANCE: { text: 'Maintenance', color: '#ef4444' },
-    }[property?.status];
+  const statusConfig = propertyStatusInfo(property?.status);
 
   const todayStr = new Date().toISOString().slice(0, 10);
 
@@ -710,11 +706,11 @@ function PropertyDetail() {
               </div>
               {/* Status pill */}
               <div className="pd-status-pill" style={{
-                color: statusConfig?.color || '#22c55e',
-                borderColor: statusConfig?.color || '#22c55e',
+                color: statusConfig.color,
+                borderColor: statusConfig.color,
               }}>
                 <ShieldCheck size={14} />
-                {statusConfig?.text || 'Available'}
+                {statusConfig.label}
               </div>
             </div>
 

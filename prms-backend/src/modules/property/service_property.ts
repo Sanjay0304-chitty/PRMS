@@ -8,7 +8,7 @@ export function normalizeDate(val: any): Date | undefined {
   return isNaN(d.getTime()) ? undefined : d;
 }
 
-export async function getAllProperties(page = 1, limit = 10, filters: { type?: string; search?: string } = {}) {
+export async function getAllProperties(page = 1, limit = 10, filters: { type?: string; search?: string; status?: string } = {}) {
   const where: any = {};
 
   // SQLite has no case-insensitive `mode` option, and stored property_type
@@ -26,6 +26,10 @@ export async function getAllProperties(page = 1, limit = 10, filters: { type?: s
       { address: { contains: s } },
       { city: { contains: s } },
     ];
+  }
+
+  if (filters.status) {
+    where.status = filters.status;
   }
 
   const [properties, total] = await Promise.all([

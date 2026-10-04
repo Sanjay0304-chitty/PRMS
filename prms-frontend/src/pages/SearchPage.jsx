@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { getImageUrl } from '../config/imageHelper';
 import { searchApi } from '../api/search'
 import { ROUTES } from '../config/routes'
+import { isPropertyAvailable } from '../config/propertyStatus'
 import {
   ArrowRight,
   Building2,
@@ -244,7 +245,7 @@ function SearchPage() {
                       <Building2 size={32} />
                     </div>
                   )}
-                  {property.status === 'available' && (
+                  {isPropertyAvailable(property.status) && (
                     <span className="status-badge available">Available</span>
                   )}
                 </div>

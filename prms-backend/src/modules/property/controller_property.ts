@@ -46,7 +46,12 @@ export class PropertyController {
       const limit = parseInt(req.query.limit as string) || 10;
       const type = typeof req.query.type === 'string' ? req.query.type : undefined;
       const search = typeof req.query.search === 'string' ? req.query.search : undefined;
-      const { properties, total } = await propertyService.getAllProperties(page, limit, { type, search });
+      const requestedStatus = typeof req.query.status === 'string' ? req.query.status.toUpperCase() : undefined;
+      const validStatuses = ['AVAILABLE', 'RENTED', 'MAINTENANCE', 'INACTIVE'];
+      if (requestedStatus && !validStatuses.includes(requestedStatus)) {
+        return res.status(400).json({ success: false, error: { message: 'Invalid property status' } });
+      }
+      const { properties, total } = await propertyService.getAllProperties(page, limit, { type, search, status: requestedStatus });
       HELPERS(req).log({ action: 'VIEW_PROPERTIES', entity: 'Property', description: `Listed properties (page ${page})` });
       res.json(paginatedResponse(properties, page, limit, total));
     } catch (error: any) { HELPERS(req).log({ action: 'VIEW_PROPERTIES', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(500).json({ success: false, error: { message: error.message } }); }
