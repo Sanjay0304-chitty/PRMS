@@ -79,6 +79,39 @@ test('a tenant cannot withdraw another tenant application', async () => {
   expect(bookingUpdate).not.toHaveBeenCalled();
 });
 
+test('an agent recommendation records advice without approving the application', async () => {
+  const result = await service.recordAgentRecommendation('booking-1', 'APPROVE', 'Documents are complete');
+
+  expect(bookingUpdate).toHaveBeenCalledWith(expect.objectContaining({
+    where: { id: 'booking-1' },
+    data: {
+      application_stage: 'UNDER_REVIEW',
+      reviewer_notes: '[AGENT RECOMMENDATION: APPROVAL] Documents are complete',
+    },
+  }));
+  expect(result.status).toBe('PENDING');
+  expect(result.application_stage).toBe('UNDER_REVIEW');
+});
+
+test('recommending rejection requires an explanation', async () => {
+  await expect(service.recordAgentRecommendation('booking-1', 'REJECT', ''))
+    .rejects.toThrow('reason is required');
+
+  expect(bookingFindUnique).not.toHaveBeenCalled();
+  expect(bookingUpdate).not.toHaveBeenCalled();
+});
+
+test('closed application decisions cannot be reopened through agent review', async () => {
+  bookingFindUnique.mockResolvedValue({ ...pendingApplication, status: 'CONFIRMED' });
+
+  await expect(service.setUnderReview('booking-1', 'Review again'))
+    .rejects.toThrow('Only a pending application');
+  await expect(service.recordAgentRecommendation('booking-1', 'APPROVE'))
+    .rejects.toThrow('Only a pending application');
+
+  expect(bookingUpdate).not.toHaveBeenCalled();
+});
+
 test('move-in requires a signed agreement before activating the tenancy', async () => {
   bookingFindUnique.mockResolvedValue({ ...pendingApplication, status: 'CONFIRMED', property: { id: 'property-1' } });
   agreementFindFirst.mockResolvedValue(null);

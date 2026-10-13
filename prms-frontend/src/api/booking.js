@@ -56,6 +56,9 @@ export const bookingApi = {
   requestInfo(id, reviewer_notes) {
     return apiClient.patch(`/bookings/${id}/request-info`, { reviewer_notes });
   },
+  recommend(id, recommendation, reviewer_notes) {
+    return apiClient.patch(`/bookings/${id}/recommend`, { recommendation, reviewer_notes });
+  },
   approve(id, data) {
     return apiClient.patch(`/bookings/${id}/approve`, data);
   },

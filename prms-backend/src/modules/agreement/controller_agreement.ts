@@ -16,9 +16,8 @@ const log = async (req: AuthRequest, action: string, entityId?: string, descript
 };
 
 // The tenant and landlord always have access to their own agreement; an
-// Agent assigned to the property may also view (and, while still a draft,
-// help correct) it, but never sign for either party — that stays gated
-// separately to the actual tenant/landlord in service_agreement.ts.
+// Agent assigned to the property may also view it and send signature
+// reminders, but agreement terms and signatures remain with the parties.
 async function canAccess(agreement: any, userId: string, role: string) {
   if (role === 'admin') return true;
   if (agreement.booking.userId === userId) return true;
@@ -35,8 +34,8 @@ export class AgreementController {
       const booking = await prisma.booking.findUnique({ where: { id: bookingId }, include: { property: true } });
       if (!booking) return res.status(404).json({ success: false, error: { message: 'Application not found' } });
       const role = (req.user!.role || '').toLowerCase();
-      const allowed = role === 'admin' || (role === 'landlord' && booking.property.ownerId === req.user!.id);
-      if (!allowed) return res.status(403).json({ success: false, error: { message: 'Only the property owner or an administrator can generate an agreement' } });
+      const allowed = await hasPropertyAuthority(req.user!.id, role, booking.property.ownerId, booking.propertyId);
+      if (!allowed) return res.status(403).json({ success: false, error: { message: 'Only the property owner, an assigned agent, or an administrator can generate an agreement' } });
       const agreement = await agreementService.generateAgreement(bookingId, req.body?.terms);
       await createNotification({ userId: booking.userId, type: 'agreement_ready', title: 'Tenancy agreement ready', message: `A tenancy agreement (${agreement.reference}) is ready for your review and signature.` }).catch(() => {});
       await log(req, 'GENERATE_AGREEMENT', agreement.id, `Generated agreement ${agreement.reference} v${agreement.version}`);
@@ -73,7 +72,7 @@ export class AgreementController {
       const agreement = await agreementService.getById(String(req.params.id));
       if (!agreement) return res.status(404).json({ success: false, error: { message: 'Agreement not found' } });
       const role = (req.user!.role || '').toLowerCase();
-      const allowed = await canAccess(agreement, req.user!.id, role) && role !== 'tenant';
+      const allowed = await hasPropertyAuthority(req.user!.id, role, (agreement as any).booking.property.ownerId, (agreement as any).booking.propertyId);
       if (!allowed) return res.status(403).json({ success: false, error: { message: 'Only the property owner, an assigned agent, or an administrator can edit this agreement' } });
       const updated = await agreementService.updateDraft(String(req.params.id), req.body);
       await log(req, 'UPDATE_AGREEMENT', String(req.params.id), 'Edited draft agreement');
@@ -126,8 +125,8 @@ export class AgreementController {
       const agreement = await agreementService.getById(String(req.params.id));
       if (!agreement) return res.status(404).json({ success: false, error: { message: 'Agreement not found' } });
       const role = (req.user!.role || '').toLowerCase();
-      const allowed = role === 'admin' || (agreement as any).booking.property.ownerId === req.user!.id;
-      if (!allowed) return res.status(403).json({ success: false, error: { message: 'Only the property owner or an administrator can verify a physical copy' } });
+      const allowed = await hasPropertyAuthority(req.user!.id, role, (agreement as any).booking.property.ownerId, (agreement as any).booking.propertyId);
+      if (!allowed) return res.status(403).json({ success: false, error: { message: 'Only the property owner, an assigned agent, or an administrator can verify a physical copy' } });
       const updated = await agreementService.verifyPhysicalCopy(String(req.params.id), req.user!.id);
       await log(req, 'AGREEMENT_PHYSICAL_VERIFIED', String(req.params.id), 'Verified physically signed copy');
       await createNotification({ userId: (updated as any).booking.userId, type: 'agreement_fully_signed', title: 'Agreement verified', message: `Your physically signed agreement ${updated.reference} has been verified.` }).catch(() => {});

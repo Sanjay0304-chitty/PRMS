@@ -9,7 +9,7 @@ const ctrl = new AgreementController();
 
 router.use(authenticate);
 
-router.post('/', adminOrLandlord, ctrl.generate);
+router.post('/', adminOrLandlordOrAgent, ctrl.generate);
 router.get('/booking/:bookingId', ctrl.getByBooking);
 router.get('/:id', ctrl.getById);
 router.put('/:id', adminOrLandlordOrAgent, ctrl.update);
@@ -21,7 +21,7 @@ router.post('/:id/landlord-sign', ctrl.landlordSign);
 
 // Physical signing
 router.post('/:id/physical-copy', uploadAgreement.single('file'), ctrl.uploadPhysical);
-router.post('/:id/verify-physical', adminOrLandlord, ctrl.verifyPhysical);
+router.post('/:id/verify-physical', adminOrLandlordOrAgent, ctrl.verifyPhysical);
 
 router.patch('/:id/cancel', adminOrLandlord, ctrl.cancel);
 router.post('/:id/remind', adminOrLandlordOrAgent, ctrl.remind);

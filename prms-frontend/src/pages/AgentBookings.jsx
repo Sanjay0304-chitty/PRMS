@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import AgreementPanel from '../components/AgreementPanel';
 import { bookingStatusLabel } from '../config/bookingStatus';
 import './SharedPageShell.css';
+import './LandlordBookings.css';
 
 const ALL_TABS = ['pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled'];
 const TAB_LABELS = { pending: 'Applications', confirmed: 'Approved', checked_in: 'Active', checked_out: 'Completed', cancelled: 'Closed' };
@@ -35,6 +36,10 @@ export default function AgentBookings() {
   const [error, setError] = useState('');
   const [notes, setNotes] = useState({});
   const [expandedId, setExpandedId] = useState(null);
+  const [offerForms, setOfferForms] = useState({});
+  const [declineReasons, setDeclineReasons] = useState({});
+  const [moveInForms, setMoveInForms] = useState({});
+  const [moveOutForms, setMoveOutForms] = useState({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -56,8 +61,33 @@ export default function AgentBookings() {
   }
 
   const markReviewed = (id) => run(() => bookingApi.review(id, notes[id]));
-  const recommend = (id, decision) => run(() => bookingApi.review(id, `Recommend: ${decision}. ${notes[id] || ''}`.trim()));
+  const recommend = (id, decision) => run(() => bookingApi.recommend(id, decision, notes[id] || ''));
   const requestInfo = (id) => run(() => bookingApi.requestInfo(id, notes[id] || 'Please provide more information.'));
+  const approve = (id) => {
+    const form = offerForms[id] || {};
+    if (!form.security_deposit || !form.utility_deposit || !form.offer_expiry) {
+      setError('Security deposit, utility deposit and an offer expiry date are required to approve');
+      return;
+    }
+    return run(() => bookingApi.approve(id, {
+      monthlyRent: form.monthlyRent ? Number(form.monthlyRent) : undefined,
+      security_deposit: Number(form.security_deposit),
+      utility_deposit: Number(form.utility_deposit),
+      offer_expiry: form.offer_expiry,
+    }));
+  };
+  const decline = (id) => {
+    if (!declineReasons[id]?.trim()) { setError('A rejection reason is required'); return; }
+    return run(() => bookingApi.decline(id, declineReasons[id]));
+  };
+  const moveIn = (id) => {
+    const form = moveInForms[id] || {};
+    return run(() => bookingApi.moveIn(id, { conditionReport: form.conditionReport, keyHandover: !!form.keyHandover }));
+  };
+  const moveOut = (id) => {
+    const form = moveOutForms[id] || {};
+    return run(() => bookingApi.moveOut(id, { conditionReport: form.conditionReport }));
+  };
 
   return (
     <div className="page-shell">
@@ -117,23 +147,77 @@ export default function AgentBookings() {
                             <button className="btn btn-sm btn-outline" onClick={() => requestInfo(b.id)}>Request Info</button>
                           </div>
                           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                            <button className="btn btn-sm btn-primary" onClick={() => recommend(b.id, 'Approve')}>Recommend Approval</button>
-                            <button className="btn btn-sm btn-danger" onClick={() => recommend(b.id, 'Reject')}>Recommend Rejection</button>
+                            <button className="btn btn-sm btn-primary" onClick={() => recommend(b.id, 'APPROVE')}>Recommend Approval</button>
+                            <button className="btn btn-sm btn-danger" onClick={() => recommend(b.id, 'REJECT')}>Recommend Rejection</button>
                           </div>
+                          <button className="btn btn-sm btn-primary" onClick={() => setExpandedId((p) => (p === b.id ? null : b.id))}>
+                            {expandedId === b.id ? 'Hide Decision Form' : 'Manage Application'}
+                          </button>
                         </div>
                       )}
-                      {(b.status === 'CONFIRMED' || b.status === 'CHECKED_IN') && (
+                      {b.status === 'CONFIRMED' && (
                         <button className="btn btn-sm btn-outline" onClick={() => setExpandedId((p) => (p === b.id ? null : b.id))}>
                           {expandedId === b.id ? 'Hide Agreement' : 'View Agreement'}
                         </button>
                       )}
                       {b.status === 'CHECKED_OUT' && <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Tenancy closed</span>}
+                      {b.status === 'CHECKED_IN' && (
+                        <button className="btn btn-sm btn-outline" onClick={() => setExpandedId((p) => (p === b.id ? null : b.id))}>
+                          {expandedId === b.id ? 'Hide Tenancy' : 'Manage Tenancy'}
+                        </button>
+                      )}
                     </td>
                   </tr>
-                  {expandedId === b.id && (b.status === 'CONFIRMED' || b.status === 'CHECKED_IN') && (
+                  {expandedId === b.id && ['PENDING', 'CONFIRMED', 'CHECKED_IN'].includes(b.status) && (
                     <tr>
                       <td colSpan={7} style={{ background: 'var(--surface-container-low, #f8fafc)' }}>
-                        <AgreementPanel bookingId={b.id} booking={b} role="agent" userId={user?.id} />
+                        {b.status === 'PENDING' && (
+                          <div className="lb-actions-block">
+                            <h4>Final Application Decision</h4>
+                            <div className="lb-offer-form">
+                              <div className="lb-offer-grid">
+                                <label>Monthly Rent (RM)
+                                  <input type="number" placeholder={b.property?.rent} value={offerForms[b.id]?.monthlyRent || ''} onChange={(e) => setOfferForms((p) => ({ ...p, [b.id]: { ...p[b.id], monthlyRent: e.target.value } }))} />
+                                </label>
+                                <label>Security Deposit (RM) *
+                                  <input type="number" value={offerForms[b.id]?.security_deposit || ''} onChange={(e) => setOfferForms((p) => ({ ...p, [b.id]: { ...p[b.id], security_deposit: e.target.value } }))} />
+                                </label>
+                                <label>Utility Deposit (RM) *
+                                  <input type="number" value={offerForms[b.id]?.utility_deposit || ''} onChange={(e) => setOfferForms((p) => ({ ...p, [b.id]: { ...p[b.id], utility_deposit: e.target.value } }))} />
+                                </label>
+                                <label>Offer Expiry *
+                                  <input type="date" value={offerForms[b.id]?.offer_expiry || ''} onChange={(e) => setOfferForms((p) => ({ ...p, [b.id]: { ...p[b.id], offer_expiry: e.target.value } }))} />
+                                </label>
+                              </div>
+                              <button className="btn btn-sm btn-primary" onClick={() => approve(b.id)}>Approve Application</button>
+                            </div>
+                            <div className="lb-inline-form">
+                              <input placeholder="Reason for rejection…" value={declineReasons[b.id] || ''} onChange={(e) => setDeclineReasons((p) => ({ ...p, [b.id]: e.target.value }))} />
+                              <button className="btn btn-sm btn-danger" onClick={() => decline(b.id)}>Reject Application</button>
+                            </div>
+                          </div>
+                        )}
+                        {(b.status === 'CONFIRMED' || b.status === 'CHECKED_IN') && (
+                          <AgreementPanel bookingId={b.id} booking={b} role="agent" userId={user?.id} />
+                        )}
+                        {b.status === 'CONFIRMED' && (
+                          <div className="lb-actions-block">
+                            <h4>Move-In</h4>
+                            <textarea rows={2} placeholder="Move-in condition report…" value={moveInForms[b.id]?.conditionReport || ''} onChange={(e) => setMoveInForms((p) => ({ ...p, [b.id]: { ...p[b.id], conditionReport: e.target.value } }))} />
+                            <label className="lb-checkbox">
+                              <input type="checkbox" checked={!!moveInForms[b.id]?.keyHandover} onChange={(e) => setMoveInForms((p) => ({ ...p, [b.id]: { ...p[b.id], keyHandover: e.target.checked } }))} />
+                              Keys handed over
+                            </label>
+                            <button className="btn btn-sm btn-primary" onClick={() => moveIn(b.id)}>Confirm Move-In</button>
+                          </div>
+                        )}
+                        {b.status === 'CHECKED_IN' && (
+                          <div className="lb-actions-block">
+                            <h4>Move-Out</h4>
+                            <textarea rows={2} placeholder="Move-out inspection / condition report…" value={moveOutForms[b.id]?.conditionReport || ''} onChange={(e) => setMoveOutForms((p) => ({ ...p, [b.id]: { ...p[b.id], conditionReport: e.target.value } }))} />
+                            <button className="btn btn-sm btn-primary" onClick={() => moveOut(b.id)}>Confirm Move-Out & Close Tenancy</button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   )}

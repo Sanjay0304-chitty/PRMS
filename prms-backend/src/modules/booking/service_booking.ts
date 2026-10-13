@@ -128,7 +128,7 @@ export async function createBooking(data: {
 export async function setUnderReview(id: string, reviewerNotes?: string) {
   const booking = await prisma.booking.findUnique({ where: { id } });
   if (!booking) throw new Error('Application not found');
-  if (booking.status === 'CANCELLED') throw new Error('This application is closed and cannot be reviewed');
+  if (booking.status !== 'PENDING') throw new Error('Only a pending application can be reviewed');
   return prisma.booking.update({
     where: { id },
     data: { application_stage: 'UNDER_REVIEW', reviewer_notes: reviewerNotes },
@@ -140,10 +140,28 @@ export async function requestInformation(id: string, reviewerNotes: string) {
   if (!reviewerNotes || !reviewerNotes.trim()) throw new Error('A note explaining what information is needed is required');
   const booking = await prisma.booking.findUnique({ where: { id } });
   if (!booking) throw new Error('Application not found');
-  if (booking.status === 'CANCELLED') throw new Error('This application is closed');
+  if (booking.status !== 'PENDING') throw new Error('Information can only be requested for a pending application');
   return prisma.booking.update({
     where: { id },
     data: { application_stage: 'NEEDS_INFORMATION', reviewer_notes: reviewerNotes },
+    include: { user: { select: { id: true, full_name: true, email: true } }, property: true },
+  });
+}
+
+export async function recordAgentRecommendation(id: string, recommendation: string, reviewerNotes?: string) {
+  const decision = String(recommendation || '').toUpperCase();
+  if (!['APPROVE', 'REJECT'].includes(decision)) throw new Error('Recommendation must be APPROVE or REJECT');
+  if (decision === 'REJECT' && !reviewerNotes?.trim()) throw new Error('A reason is required when recommending rejection');
+
+  const booking = await prisma.booking.findUnique({ where: { id } });
+  if (!booking) throw new Error('Application not found');
+  if (booking.status !== 'PENDING') throw new Error('Only a pending application can receive a recommendation');
+
+  const label = decision === 'APPROVE' ? 'APPROVAL' : 'REJECTION';
+  const note = `[AGENT RECOMMENDATION: ${label}]${reviewerNotes?.trim() ? ` ${reviewerNotes.trim()}` : ''}`;
+  return prisma.booking.update({
+    where: { id },
+    data: { application_stage: 'UNDER_REVIEW', reviewer_notes: note },
     include: { user: { select: { id: true, full_name: true, email: true } }, property: true },
   });
 }

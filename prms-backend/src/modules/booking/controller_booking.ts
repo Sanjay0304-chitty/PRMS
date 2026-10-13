@@ -211,10 +211,31 @@ export class BookingController {
       const allowed = await hasPropertyAuthority(req.user!.id, role, (booking as any).property.ownerId, booking.propertyId);
       if (!allowed) return res.status(403).json({ success: false, error: { message: 'You do not have authority over this property' } });
       const updated = await bookingService.requestInformation(String(req.params.id), req.body?.reviewer_notes);
-      await createNotification({ userId: booking.userId, type: 'application_needs_info', title: 'More information needed', message: `The landlord needs more information for your application on "${(booking as any).property.title}": ${req.body?.reviewer_notes || ''}` }).catch(() => {});
+      await createNotification({ userId: booking.userId, type: 'application_needs_info', title: 'More information needed', message: `The property manager needs more information for your application on "${(booking as any).property.title}": ${req.body?.reviewer_notes || ''}` }).catch(() => {});
       HELPERS(req).log({ action: 'REQUEST_APPLICATION_INFO', entity: 'Booking', entityId: String(req.params.id), description: 'Requested more information from applicant' });
       res.json(successResponse(updated, 'Requested more information'));
     } catch (error: any) { HELPERS(req).log({ action: 'REQUEST_APPLICATION_INFO', entity: 'Booking', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
+  };
+
+  recommend = async (req: AuthRequest, res: Response) => {
+    try {
+      const booking = await bookingService.getBookingById(String(req.params.id));
+      if (!booking) return res.status(404).json({ success: false, error: { message: 'Application not found' } });
+      const role = (req.user!.role || '').toLowerCase();
+      const allowed = role === 'agent' && await hasPropertyAuthority(req.user!.id, role, (booking as any).property.ownerId, booking.propertyId);
+      if (!allowed) return res.status(403).json({ success: false, error: { message: 'Only an assigned agent can recommend a decision for this application' } });
+
+      const updated = await bookingService.recordAgentRecommendation(String(req.params.id), req.body?.recommendation, req.body?.reviewer_notes);
+      const recommendation = String(req.body?.recommendation || '').toUpperCase();
+      await createNotification({
+        userId: (booking as any).property.ownerId,
+        type: 'application_recommendation',
+        title: 'Agent application recommendation',
+        message: `An assigned agent recommends ${recommendation === 'APPROVE' ? 'approval' : 'rejection'} for the application on "${(booking as any).property.title}". The final decision remains with you.`,
+      }).catch(() => {});
+      HELPERS(req).log({ action: 'RECOMMEND_APPLICATION_DECISION', entity: 'Booking', entityId: String(req.params.id), description: `Recommended ${recommendation}; final decision remains with landlord/admin` });
+      res.json(successResponse(updated, 'Recommendation recorded for landlord review'));
+    } catch (error: any) { HELPERS(req).log({ action: 'RECOMMEND_APPLICATION_DECISION', entity: 'Booking', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
   approve = async (req: AuthRequest, res: Response) => {
@@ -222,12 +243,8 @@ export class BookingController {
       const booking = await bookingService.getBookingById(String(req.params.id));
       if (!booking) return res.status(404).json({ success: false, error: { message: 'Application not found' } });
       const role = (req.user!.role || '').toLowerCase();
-      // Approval authority is intentionally narrower than review authority —
-      // an Agent may recommend a decision but not make it (per the workflow
-      // plan: "An Agent can approve only when explicitly authorised", and
-      // this codebase has no such explicit-authorisation flag yet).
-      const allowed = role === 'admin' || (role === 'landlord' && (booking as any).property.ownerId === req.user!.id);
-      if (!allowed) return res.status(403).json({ success: false, error: { message: 'Only the property owner or an administrator can approve this application' } });
+      const allowed = await hasPropertyAuthority(req.user!.id, role, (booking as any).property.ownerId, booking.propertyId);
+      if (!allowed) return res.status(403).json({ success: false, error: { message: 'Only the property owner, an assigned agent, or an administrator can approve this application' } });
       const updated = await bookingService.approveApplication(String(req.params.id), req.body);
       await createNotification({ userId: booking.userId, type: 'application_approved', title: 'Application approved', message: `Your application for "${(booking as any).property.title}" was approved. Review the offer terms and sign the tenancy agreement.` }).catch(() => {});
       HELPERS(req).log({ action: 'APPROVE_APPLICATION', entity: 'Booking', entityId: String(req.params.id), description: 'Approved application and issued rental offer' });
@@ -240,8 +257,8 @@ export class BookingController {
       const booking = await bookingService.getBookingById(String(req.params.id));
       if (!booking) return res.status(404).json({ success: false, error: { message: 'Application not found' } });
       const role = (req.user!.role || '').toLowerCase();
-      const allowed = role === 'admin' || (role === 'landlord' && (booking as any).property.ownerId === req.user!.id);
-      if (!allowed) return res.status(403).json({ success: false, error: { message: 'Only the property owner or an administrator can reject this application' } });
+      const allowed = await hasPropertyAuthority(req.user!.id, role, (booking as any).property.ownerId, booking.propertyId);
+      if (!allowed) return res.status(403).json({ success: false, error: { message: 'Only the property owner, an assigned agent, or an administrator can reject this application' } });
       const updated = await bookingService.rejectApplication(String(req.params.id), req.body?.reason);
       await createNotification({ userId: booking.userId, type: 'application_rejected', title: 'Application not approved', message: `Your application for "${(booking as any).property.title}" was not approved: ${req.body?.reason}` }).catch(() => {});
       HELPERS(req).log({ action: 'REJECT_APPLICATION', entity: 'Booking', entityId: String(req.params.id), description: `Rejected application: ${req.body?.reason}` });
@@ -264,8 +281,8 @@ export class BookingController {
       const booking = await bookingService.getBookingById(String(req.params.id));
       if (!booking) return res.status(404).json({ success: false, error: { message: 'Booking not found' } });
       const role = (req.user!.role || '').toLowerCase();
-      const allowed = role === 'admin' || (role === 'landlord' && (booking as any).property.ownerId === req.user!.id);
-      if (!allowed) return res.status(403).json({ success: false, error: { message: 'Only the property owner or an administrator can confirm move-in' } });
+      const allowed = await hasPropertyAuthority(req.user!.id, role, (booking as any).property.ownerId, booking.propertyId);
+      if (!allowed) return res.status(403).json({ success: false, error: { message: 'Only the property owner, an assigned agent, or an administrator can confirm move-in' } });
       const updated = await bookingService.confirmMoveIn(String(req.params.id), req.body || {});
       await createNotification({ userId: booking.userId, type: 'move_in_confirmed', title: 'Move-in confirmed', message: `Move-in for "${(booking as any).property.title}" has been confirmed. Your tenancy is now active.` }).catch(() => {});
       HELPERS(req).log({ action: 'CONFIRM_MOVE_IN', entity: 'Booking', entityId: String(req.params.id), description: 'Confirmed move-in; tenancy is now active' });
@@ -293,8 +310,8 @@ export class BookingController {
       const booking = await bookingService.getBookingById(String(req.params.id));
       if (!booking) return res.status(404).json({ success: false, error: { message: 'Booking not found' } });
       const role = (req.user!.role || '').toLowerCase();
-      const allowed = role === 'admin' || (role === 'landlord' && (booking as any).property.ownerId === req.user!.id);
-      if (!allowed) return res.status(403).json({ success: false, error: { message: 'Only the property owner or an administrator can confirm move-out' } });
+      const allowed = await hasPropertyAuthority(req.user!.id, role, (booking as any).property.ownerId, booking.propertyId);
+      if (!allowed) return res.status(403).json({ success: false, error: { message: 'Only the property owner, an assigned agent, or an administrator can confirm move-out' } });
       const updated = await bookingService.confirmMoveOut(String(req.params.id), req.body || {});
       await createNotification({ userId: booking.userId, type: 'tenancy_closed', title: 'Tenancy closed', message: `Move-out for "${(booking as any).property.title}" has been confirmed and the tenancy is now closed.` }).catch(() => {});
       HELPERS(req).log({ action: 'CONFIRM_MOVE_OUT', entity: 'Booking', entityId: String(req.params.id), description: 'Confirmed move-out; tenancy closed' });
