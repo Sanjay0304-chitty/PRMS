@@ -6,7 +6,7 @@ import {
 
 import Modal from '../components/Modal';
 import { maintenanceApi } from '../api/maintenance';
-import { propertyApi } from '../api/property';
+import { bookingApi } from '../api/booking';
 
 // Matches the real MaintenancePriority enum (LOW/MEDIUM/HIGH/URGENT) -
 // 'critical' isn't a real value, submitting it would fail at the database.
@@ -40,12 +40,10 @@ export default function MaintenanceForm({ onSuccess, onClose, initialData }) {
 
   const loadProperties = async () => {
     try {
-      // Was calling maintenanceApi.list() here - wrong endpoint entirely
-      // (fetched maintenance tickets, not properties, and 403'd for a
-      // Tenant anyway since that endpoint is admin/landlord-only).
-      const res = await propertyApi.list({ limit: 100 });
-      const data = res.data?.data;
-      setProperties(Array.isArray(data) ? data : data?.properties || []);
+      const res = await bookingApi.myBookings({ limit: 100 });
+      const bookings = res.data?.data || [];
+      const eligible = bookings.filter((booking) => ['CONFIRMED', 'CHECKED_IN'].includes(booking.status));
+      setProperties(Array.from(new Map(eligible.filter((booking) => booking.property).map((booking) => [booking.property.id, booking.property])).values()));
     } catch {}
   };
 
@@ -68,12 +66,10 @@ export default function MaintenanceForm({ onSuccess, onClose, initialData }) {
       // including it made every single ticket submission fail. Kept as a
       // form field/step for the UX flow, just not sent to the API.
       const data = { title: form.title, description: form.description, priority: form.priority.toUpperCase(), propertyId: form.propertyId || undefined };
-      // Photo attachments aren't sent - MaintenanceTicket has no photo
-      // storage on the backend (no field/relation for it), so there's
-      // nowhere for an upload to go yet. The picker stays for local
-      // preview only rather than silently failing ticket creation.
       const res = await maintenanceApi.createTicket(data);
-      onSuccess?.(res.data.data);
+      const ticket = res.data?.data;
+      if (ticket?.id && form.files.length) await maintenanceApi.addPhotos(ticket.id, form.files);
+      onSuccess?.(ticket);
       onClose?.();
     } catch (e) { alert(e.response?.data?.message || 'Failed to create ticket'); }
     finally { setUploading(false); }

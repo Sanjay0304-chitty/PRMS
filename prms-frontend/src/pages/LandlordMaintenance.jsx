@@ -12,6 +12,7 @@ export default function LandlordMaintenance() {
   const [propertyNames, setPropertyNames] = useState({});
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     propertyApi.myProperties().then((res) => {
@@ -33,9 +34,17 @@ export default function LandlordMaintenance() {
 
   const verify = async (id, approved) => {
     try {
-      await maintenanceApi.updateStatus(id, approved ? 'CLOSED' : 'IN_PROGRESS');
+      await maintenanceApi.update(id, { status: approved ? 'CLOSED' : 'IN_PROGRESS' });
       setSelected(null); load();
-    } catch (e) { alert('Failed'); }
+    } catch (e) { setError(e.response?.data?.error?.message || 'Maintenance review failed'); }
+  };
+
+  const reviewCost = async (id, approved) => {
+    try {
+      await maintenanceApi.approveCost(id, approved);
+      setSelected(null);
+      await load();
+    } catch (e) { setError(e.response?.data?.error?.message || 'Cost review failed'); }
   };
 
   const exportReport = () => {
@@ -56,6 +65,7 @@ export default function LandlordMaintenance() {
         <h1 className="page-title">Maintenance Overview</h1>
         <button className="btn btn-primary" onClick={exportReport}>Export Report</button>
       </div>
+      {error && <div className="alert alert-danger">{error}</div>}
 
       <div className="card-table">
         <div className="status-filter">
@@ -93,12 +103,33 @@ export default function LandlordMaintenance() {
           <h3>{selected.title}</h3>
           <p>{selected.description}</p>
           <p><strong>Status:</strong> {selected.status}</p>
-          <h4 className="mt-2">Agent Notes</h4>
-          {(selected.notes || []).map((n, i) => <div key={i} className="note-item">{n.note || n.message}</div>)}
-          <div className="flex gap-2 mt-4">
-            <button className="btn btn-primary" onClick={() => verify(selected._id || selected.id, true)}>Approve</button>
-            <button className="btn btn-danger" onClick={() => verify(selected._id || selected.id, false)}>Request Revision</button>
-          </div>
+          {selected.inspectionNotes && <p><strong>Inspection notes:</strong> {selected.inspectionNotes}</p>}
+          {selected.contractorName && <p><strong>Contractor:</strong> {selected.contractorName}</p>}
+          {selected.appointmentAt && <p><strong>Appointment:</strong> {new Date(selected.appointmentAt).toLocaleString()}</p>}
+          {selected.estimatedCost != null && <p><strong>Estimated cost:</strong> RM {Number(selected.estimatedCost).toFixed(2)}</p>}
+          {selected.actualCost != null && <p><strong>Actual cost:</strong> RM {Number(selected.actualCost).toFixed(2)}</p>}
+          {selected.resolutionNotes && <p><strong>Resolution:</strong> {selected.resolutionNotes}</p>}
+          {selected.approvalRequired && (
+            <div className="mt-2">
+              <p><strong>Cost approval:</strong> {selected.approvalStatus || 'PENDING'}</p>
+              {selected.approvalStatus === 'PENDING' && (
+                <div className="flex gap-2">
+                  <button className="btn btn-primary" onClick={() => reviewCost(selected.id, true)}>Approve Repair Cost</button>
+                  <button className="btn btn-danger" onClick={() => reviewCost(selected.id, false)}>Reject Repair Cost</button>
+                </div>
+              )}
+            </div>
+          )}
+          {!!selected.attachments?.length && <div className="mt-2"><strong>Photographs:</strong> {selected.attachments.map((photo) => <a key={photo.id} href={`http://localhost:3500${photo.url}`} target="_blank" rel="noreferrer" style={{ marginLeft: 8 }}>View</a>)}</div>}
+          {!!selected.activities?.length && (
+            <details className="mt-2"><summary>Activity history ({selected.activities.length})</summary><ul>{selected.activities.map((activity) => <li key={activity.id}>{new Date(activity.created_at).toLocaleString()} — {activity.action}{activity.details ? `: ${activity.details}` : ''}</li>)}</ul></details>
+          )}
+          {selected.status === 'RESOLVED' && (
+            <div className="flex gap-2 mt-4">
+              <button className="btn btn-primary" onClick={() => verify(selected._id || selected.id, true)}>Confirm and Close</button>
+              <button className="btn btn-danger" onClick={() => verify(selected._id || selected.id, false)}>Request Revision</button>
+            </div>
+          )}
         </Modal>
       )}
     </div>

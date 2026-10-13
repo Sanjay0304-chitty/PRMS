@@ -45,6 +45,14 @@ export default function TenantMaintenance() {
 
   useEffect(() => { load(); }, [load]);
 
+  const confirmResolution = async (accepted) => {
+    try {
+      await maintenanceApi.confirmResolution(selected.id, accepted);
+      setSelected(null);
+      await load();
+    } catch (e) { setError(e.response?.data?.error?.message || 'Failed to review the resolution'); }
+  };
+
   return (
     <div className="page-shell">
       <div className="page-header">
@@ -90,6 +98,11 @@ export default function TenantMaintenance() {
           <p>{selected.description}</p>
           <p><strong>Property:</strong> {propertyNames[selected.propertyId] || selected.propertyId || 'N/A'}</p>
           <p><strong>Priority:</strong> {selected.priority} | <strong>Status:</strong> {selected.status}</p>
+          {selected.inspectionNotes && <p><strong>Inspection notes:</strong> {selected.inspectionNotes}</p>}
+          {selected.contractorName && <p><strong>Contractor:</strong> {selected.contractorName}</p>}
+          {selected.appointmentAt && <p><strong>Appointment:</strong> {new Date(selected.appointmentAt).toLocaleString()}</p>}
+          {selected.resolutionNotes && <p><strong>Resolution:</strong> {selected.resolutionNotes}</p>}
+          {!!selected.attachments?.length && <div><strong>Photographs:</strong> {selected.attachments.map((photo) => <a key={photo.id} href={`http://localhost:3500${photo.url}`} target="_blank" rel="noreferrer" style={{ marginLeft: 8 }}>View</a>)}</div>}
           <div className="notes mt-2">
             <h4>Notes</h4>
             {selected.notes?.length ? (
@@ -100,6 +113,12 @@ export default function TenantMaintenance() {
               <p>No notes available.</p>
             )}
           </div>
+          {selected.status === 'RESOLVED' && (
+            <div className="flex gap-2 mt-4">
+              <button className="btn btn-primary" onClick={() => confirmResolution(true)}>Confirm Repair</button>
+              <button className="btn btn-danger" onClick={() => confirmResolution(false)}>Request More Work</button>
+            </div>
+          )}
         </Modal>
       )}
 

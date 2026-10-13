@@ -12,6 +12,10 @@ export default function AgentMaintenance() {
   const [propertyNames, setPropertyNames] = useState({});
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [form, setForm] = useState({});
+  const [photos, setPhotos] = useState([]);
 
   useEffect(() => {
     agentApi.myProperties({ limit: 100 }).then((res) => {
@@ -31,15 +35,50 @@ export default function AgentMaintenance() {
 
   useEffect(() => { load(); }, [load]);
 
-  const updateStatus = async (id, status) => {
-    try { await maintenanceApi.updateStatus(id, status); load(); } catch (e) { alert('Failed'); }
+  const openTicket = (ticket) => {
+    setSelected(ticket);
+    setError('');
+    setPhotos([]);
+    setForm({
+      priority: ticket.priority || 'MEDIUM',
+      inspectionNotes: ticket.inspectionNotes || '',
+      contractorName: ticket.contractorName || '',
+      appointmentAt: ticket.appointmentAt ? new Date(ticket.appointmentAt).toISOString().slice(0, 16) : '',
+      estimatedCost: ticket.estimatedCost ?? '',
+      actualCost: ticket.actualCost ?? '',
+      resolutionNotes: ticket.resolutionNotes || '',
+    });
+  };
+
+  const save = async (status) => {
+    if (!selected) return;
+    setSaving(true);
+    setError('');
+    try {
+      const id = selected._id || selected.id;
+      const payload = {
+        ...form,
+        status,
+        estimatedCost: form.estimatedCost === '' ? undefined : Number(form.estimatedCost),
+        actualCost: form.actualCost === '' ? undefined : Number(form.actualCost),
+      };
+      await maintenanceApi.update(id, payload);
+      if (photos.length) await maintenanceApi.addPhotos(id, photos);
+      setSelected(null);
+      await load();
+    } catch (e) {
+      setError(e.response?.data?.error?.message || 'Maintenance update failed');
+    } finally { setSaving(false); }
   };
 
   return (
     <div className="page-shell">
       <div className="page-header">
         <h1 className="page-title">Maintenance Queue</h1>
+        <p>Coordinate inspections, contractors, appointments, costs, photographs, and repair progress for assigned properties.</p>
       </div>
+
+      {error && !selected && <div className="alert alert-danger">{error}</div>}
 
       <div className="card-table">
         <div className="status-filter">
@@ -64,9 +103,7 @@ export default function AgentMaintenance() {
                   <td><span className={`shell-status-badge status-${t.priority}`}>{t.priority}</span></td>
                   <td><span className={`shell-status-badge status-${(t.status||'').toLowerCase()}`}>{t.status}</span></td>
                   <td>
-                    <button className="btn btn-sm btn-outline" onClick={() => setSelected(t)}>Detail</button>
-                    {t.status === 'OPEN' && <button className="btn btn-sm btn-primary ml-1" onClick={() => updateStatus(t._id || t.id, 'IN_PROGRESS')}>Start Progress</button>}
-                    {t.status !== 'CLOSED' && t.status !== 'RESOLVED' && <button className="btn btn-sm btn-success ml-1" onClick={() => updateStatus(t._id || t.id, 'RESOLVED')}>Mark Resolved</button>}
+                    <button className="btn btn-sm btn-outline" onClick={() => openTicket(t)}>Manage</button>
                   </td>
                 </tr>
               ))}
@@ -77,11 +114,61 @@ export default function AgentMaintenance() {
       </div>
 
       {selected && (
-        <Modal isOpen={!!selected} onOpenChange={() => setSelected(null)} title="Ticket Detail">
+        <Modal isOpen={!!selected} onOpenChange={() => setSelected(null)} title="Manage Maintenance Ticket">
           <h3>{selected.title}</h3>
           <p>{selected.description}</p>
           <p><strong>Property:</strong> {propertyNames[selected.propertyId] || selected.propertyId || 'N/A'}</p>
           <p><strong>Priority:</strong> {selected.priority} | <strong>Status:</strong> {selected.status}</p>
+          {selected.approvalRequired && <p><strong>Cost approval:</strong> {selected.approvalStatus || 'PENDING'} (Landlord action required)</p>}
+          {error && <div className="alert alert-danger">{error}</div>}
+
+          <div style={{ display: 'grid', gap: 10 }}>
+            <label>Priority
+              <select className="input" value={form.priority || 'MEDIUM'} onChange={(e) => setForm((p) => ({ ...p, priority: e.target.value }))}>
+                {['LOW', 'MEDIUM', 'HIGH', 'URGENT'].map((value) => <option key={value}>{value}</option>)}
+              </select>
+            </label>
+            <label>Inspection notes
+              <textarea className="input" rows={3} value={form.inspectionNotes || ''} onChange={(e) => setForm((p) => ({ ...p, inspectionNotes: e.target.value }))} />
+            </label>
+            <label>Contractor / service provider
+              <input className="input" value={form.contractorName || ''} onChange={(e) => setForm((p) => ({ ...p, contractorName: e.target.value }))} />
+            </label>
+            <label>Appointment
+              <input className="input" type="datetime-local" value={form.appointmentAt || ''} onChange={(e) => setForm((p) => ({ ...p, appointmentAt: e.target.value }))} />
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <label>Estimated cost (RM)
+                <input className="input" type="number" min="0" value={form.estimatedCost ?? ''} onChange={(e) => setForm((p) => ({ ...p, estimatedCost: e.target.value }))} />
+              </label>
+              <label>Actual cost (RM)
+                <input className="input" type="number" min="0" value={form.actualCost ?? ''} onChange={(e) => setForm((p) => ({ ...p, actualCost: e.target.value }))} />
+              </label>
+            </div>
+            <label>Resolution notes
+              <textarea className="input" rows={2} value={form.resolutionNotes || ''} onChange={(e) => setForm((p) => ({ ...p, resolutionNotes: e.target.value }))} />
+            </label>
+            <label>Supporting photographs
+              <input className="input" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(e) => setPhotos(Array.from(e.target.files || []))} />
+            </label>
+            {!!selected.attachments?.length && (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {selected.attachments.map((photo) => <a key={photo.id} href={`http://localhost:3500${photo.url}`} target="_blank" rel="noreferrer">View photo</a>)}
+              </div>
+            )}
+            {!!selected.activities?.length && (
+              <details>
+                <summary>Activity history ({selected.activities.length})</summary>
+                <ul>{selected.activities.map((activity) => <li key={activity.id}>{new Date(activity.created_at).toLocaleString()} — {activity.action}{activity.details ? `: ${activity.details}` : ''}</li>)}</ul>
+              </details>
+            )}
+          </div>
+
+          <div className="footer flex gap-2 mt-4">
+            {selected.status === 'OPEN' && <button className="btn btn-primary" disabled={saving} onClick={() => save('IN_PROGRESS')}>Start Progress</button>}
+            {selected.status === 'IN_PROGRESS' && <button className="btn btn-success" disabled={saving} onClick={() => save('RESOLVED')}>Mark Ready for Confirmation</button>}
+            <button className="btn btn-outline" disabled={saving} onClick={() => save(selected.status)}>Save Details</button>
+          </div>
         </Modal>
       )}
     </div>

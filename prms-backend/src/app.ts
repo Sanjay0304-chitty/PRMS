@@ -80,6 +80,11 @@ app.use('/uploads/agreements', (req, res, next) => {
     next();
 }, express.static(path.join(__dirname, '..', 'uploads', 'agreements')));
 
+app.use('/uploads/maintenance', (req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+}, express.static(path.join(__dirname, '..', 'uploads', 'maintenance')));
+
 app.get('/health', async (req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
