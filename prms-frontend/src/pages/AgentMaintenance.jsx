@@ -42,11 +42,6 @@ export default function AgentMaintenance() {
     setForm({
       priority: ticket.priority || 'MEDIUM',
       inspectionNotes: ticket.inspectionNotes || '',
-      contractorName: ticket.contractorName || '',
-      appointmentAt: ticket.appointmentAt ? new Date(ticket.appointmentAt).toISOString().slice(0, 16) : '',
-      estimatedCost: ticket.estimatedCost ?? '',
-      actualCost: ticket.actualCost ?? '',
-      resolutionNotes: ticket.resolutionNotes || '',
     });
   };
 
@@ -56,12 +51,7 @@ export default function AgentMaintenance() {
     setError('');
     try {
       const id = selected._id || selected.id;
-      const payload = {
-        ...form,
-        status,
-        estimatedCost: form.estimatedCost === '' ? undefined : Number(form.estimatedCost),
-        actualCost: form.actualCost === '' ? undefined : Number(form.actualCost),
-      };
+      const payload = { ...form, status };
       await maintenanceApi.update(id, payload);
       if (photos.length) await maintenanceApi.addPhotos(id, photos);
       setSelected(null);
@@ -75,7 +65,7 @@ export default function AgentMaintenance() {
     <div className="page-shell">
       <div className="page-header">
         <h1 className="page-title">Maintenance Queue</h1>
-        <p>Coordinate inspections, contractors, appointments, costs, photographs, and repair progress for assigned properties.</p>
+        <p>Review and update maintenance requests for your assigned properties.</p>
       </div>
 
       {error && !selected && <div className="alert alert-danger">{error}</div>}
@@ -119,7 +109,6 @@ export default function AgentMaintenance() {
           <p>{selected.description}</p>
           <p><strong>Property:</strong> {propertyNames[selected.propertyId] || selected.propertyId || 'N/A'}</p>
           <p><strong>Priority:</strong> {selected.priority} | <strong>Status:</strong> {selected.status}</p>
-          {selected.approvalRequired && <p><strong>Cost approval:</strong> {selected.approvalStatus || 'PENDING'} (Landlord action required)</p>}
           {error && <div className="alert alert-danger">{error}</div>}
 
           <div style={{ display: 'grid', gap: 10 }}>
@@ -128,27 +117,10 @@ export default function AgentMaintenance() {
                 {['LOW', 'MEDIUM', 'HIGH', 'URGENT'].map((value) => <option key={value}>{value}</option>)}
               </select>
             </label>
-            <label>Inspection notes
+            <label>Maintenance note
               <textarea className="input" rows={3} value={form.inspectionNotes || ''} onChange={(e) => setForm((p) => ({ ...p, inspectionNotes: e.target.value }))} />
             </label>
-            <label>Contractor / service provider
-              <input className="input" value={form.contractorName || ''} onChange={(e) => setForm((p) => ({ ...p, contractorName: e.target.value }))} />
-            </label>
-            <label>Appointment
-              <input className="input" type="datetime-local" value={form.appointmentAt || ''} onChange={(e) => setForm((p) => ({ ...p, appointmentAt: e.target.value }))} />
-            </label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              <label>Estimated cost (RM)
-                <input className="input" type="number" min="0" value={form.estimatedCost ?? ''} onChange={(e) => setForm((p) => ({ ...p, estimatedCost: e.target.value }))} />
-              </label>
-              <label>Actual cost (RM)
-                <input className="input" type="number" min="0" value={form.actualCost ?? ''} onChange={(e) => setForm((p) => ({ ...p, actualCost: e.target.value }))} />
-              </label>
-            </div>
-            <label>Resolution notes
-              <textarea className="input" rows={2} value={form.resolutionNotes || ''} onChange={(e) => setForm((p) => ({ ...p, resolutionNotes: e.target.value }))} />
-            </label>
-            <label>Supporting photographs
+            <label>Optional photographs
               <input className="input" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(e) => setPhotos(Array.from(e.target.files || []))} />
             </label>
             {!!selected.attachments?.length && (
@@ -156,17 +128,11 @@ export default function AgentMaintenance() {
                 {selected.attachments.map((photo) => <a key={photo.id} href={`http://localhost:3500${photo.url}`} target="_blank" rel="noreferrer">View photo</a>)}
               </div>
             )}
-            {!!selected.activities?.length && (
-              <details>
-                <summary>Activity history ({selected.activities.length})</summary>
-                <ul>{selected.activities.map((activity) => <li key={activity.id}>{new Date(activity.created_at).toLocaleString()} — {activity.action}{activity.details ? `: ${activity.details}` : ''}</li>)}</ul>
-              </details>
-            )}
           </div>
 
           <div className="footer flex gap-2 mt-4">
             {selected.status === 'OPEN' && <button className="btn btn-primary" disabled={saving} onClick={() => save('IN_PROGRESS')}>Start Progress</button>}
-            {selected.status === 'IN_PROGRESS' && <button className="btn btn-success" disabled={saving} onClick={() => save('RESOLVED')}>Mark Ready for Confirmation</button>}
+            {['OPEN', 'IN_PROGRESS'].includes(selected.status) && <button className="btn btn-success" disabled={saving} onClick={() => save('RESOLVED')}>Mark Resolved</button>}
             <button className="btn btn-outline" disabled={saving} onClick={() => save(selected.status)}>Save Details</button>
           </div>
         </Modal>

@@ -25,19 +25,13 @@ export const maintenanceApi = {
   update(id, data) {
     return apiClient.put(`/maintenance/${id}`, data);
   },
-  resolve(id, resolutionNotes) {
-    return apiClient.patch(`/maintenance/${id}/resolve`, { resolutionNotes });
-  },
-  approveCost(id, approved, note) {
-    return apiClient.patch(`/maintenance/${id}/cost-approval`, { approved, note });
+  resolve(id, inspectionNotes) {
+    return apiClient.patch(`/maintenance/${id}/resolve`, { inspectionNotes });
   },
   addPhotos(id, files) {
     const form = new FormData();
     Array.from(files || []).forEach((file) => form.append('photos', file));
     return apiClient.post(`/maintenance/${id}/photos`, form);
-  },
-  confirmResolution(id, accepted, note) {
-    return apiClient.patch(`/maintenance/${id}/confirm-resolution`, { accepted, note });
   },
   assignToAgent(ticketId, agentId) {
     return apiClient.put(`/maintenance/${ticketId}`, { assignedTo: agentId });

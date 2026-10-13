@@ -15,8 +15,6 @@ router.get('/:id', ctrl.getById);
 router.post('/', ctrl.create);
 router.put('/:id', adminOrLandlordOrAgent, ctrl.update);
 router.patch('/:id/resolve', adminOrLandlordOrAgent, ctrl.resolve);
-router.patch('/:id/cost-approval', adminOrLandlord, ctrl.approveCost);
 router.post('/:id/photos', uploadMaintenance.array('photos', 6), ctrl.addPhotos);
-router.patch('/:id/confirm-resolution', ctrl.confirmResolution);
 
 export default router;

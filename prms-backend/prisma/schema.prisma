@@ -409,20 +409,10 @@ model MaintenanceTicket {
   priority         MaintenancePriority     @default(MEDIUM)
   assignedTo       String?
   inspectionNotes  String?
-  contractorName   String?
-  appointmentAt    DateTime?
-  estimatedCost    Float?
-  actualCost       Float?
-  approvalRequired Boolean                 @default(false)
-  approvalStatus   String? // PENDING, APPROVED, REJECTED
-  approvedAt       DateTime?
-  approvedById     String?
-  resolutionNotes  String?
   resolved_at      DateTime?
   created_at       DateTime                @default(now())
   updated_at       DateTime                @updatedAt
   attachments      MaintenanceAttachment[]
-  activities       MaintenanceActivity[]
 
   @@index([userId])
   @@index([propertyId])
@@ -440,19 +430,6 @@ model MaintenanceAttachment {
 
   @@index([ticketId])
   @@map("maintenance_attachments")
-}
-
-model MaintenanceActivity {
-  id         String            @id @default(uuid())
-  ticketId   String
-  ticket     MaintenanceTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  actorId    String
-  action     String
-  details    String?
-  created_at DateTime          @default(now())
-
-  @@index([ticketId])
-  @@map("maintenance_activities")
 }
 
 model Message {

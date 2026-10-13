@@ -21,8 +21,6 @@ const ticket = {
   userId: 'tenant-1',
   propertyId: 'property-1',
   status: 'IN_PROGRESS',
-  estimatedCost: null,
-  approvalStatus: null,
 };
 
 beforeEach(() => {
@@ -31,43 +29,30 @@ beforeEach(() => {
   ticketUpdate.mockImplementation(async ({ data }: any) => ({ ...ticket, ...data }));
 });
 
-test('an expensive repair requires landlord approval before resolution', async () => {
-  ticketFindUnique.mockResolvedValue({ ...ticket, estimatedCost: 1500, approvalStatus: 'PENDING' });
-
-  await expect(service.updateTicket('ticket-1', { status: 'RESOLVED' }, 'agent-1', 'Agent'))
-    .rejects.toThrow('require landlord approval');
-
-  expect(ticketUpdate).not.toHaveBeenCalled();
-});
-
-test('an approved expensive repair can be marked ready for confirmation', async () => {
-  ticketFindUnique.mockResolvedValue({ ...ticket, estimatedCost: 1500, approvalStatus: 'APPROVED' });
-
-  await service.updateTicket('ticket-1', { status: 'RESOLVED', resolutionNotes: 'Repair completed' }, 'agent-1', 'Agent');
+test('an assigned agent can add a note and mark work resolved', async () => {
+  await service.updateTicket('ticket-1', { status: 'RESOLVED', inspectionNotes: 'Repair completed' }, 'Agent');
 
   expect(ticketUpdate).toHaveBeenCalledWith(expect.objectContaining({
-    data: expect.objectContaining({ status: 'RESOLVED', resolved_at: expect.any(Date) }),
+    data: expect.objectContaining({ status: 'RESOLVED', inspectionNotes: 'Repair completed', resolved_at: expect.any(Date) }),
   }));
 });
 
 test('an assigned agent cannot close a resolved ticket', async () => {
   ticketFindUnique.mockResolvedValue({ ...ticket, status: 'RESOLVED' });
 
-  await expect(service.updateTicket('ticket-1', { status: 'CLOSED' }, 'agent-1', 'Agent'))
-    .rejects.toThrow('tenant, property owner');
+  await expect(service.updateTicket('ticket-1', { status: 'CLOSED' }, 'Agent'))
+    .rejects.toThrow('property owner');
 });
 
-test('agent updates cannot forge landlord approval fields', async () => {
+test('agent updates ignore unknown private fields', async () => {
   await service.updateTicket('ticket-1', {
     inspectionNotes: 'Leak inspected',
-    approvalStatus: 'APPROVED',
-    approvedById: 'agent-1',
-  } as any, 'agent-1', 'Agent');
+    privateWorkflowField: 'forged value',
+  } as any, 'Agent');
 
   const data = ticketUpdate.mock.calls[0][0].data;
   expect(data.inspectionNotes).toBe('Leak inspected');
-  expect(data.approvalStatus).toBeUndefined();
-  expect(data.approvedById).toBeUndefined();
+  expect(data.privateWorkflowField).toBeUndefined();
 });
 
 test('maintenance recipients include tenant, owner and assigned agents without duplicates', async () => {
