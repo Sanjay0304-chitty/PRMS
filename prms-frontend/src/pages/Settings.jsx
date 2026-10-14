@@ -1,13 +1,11 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { ROUTES } from '../config/routes'
-import ChangePasswordModal from '../components/ChangePasswordModal'
+
 import {
   Bell,
   Building2,
   Settings as SettingsIcon,
-  ShieldCheck,
   Lock,
 } from 'lucide-react'
 import './Settings.css'
@@ -55,7 +53,6 @@ function getPrivacyPath(role) {
 function Settings() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [securityOpen, setSecurityOpen] = useState(false)
 
   const profilePath = getProfilePath(user?.role)
   const notificationsPath = getNotificationsPath(user?.role)
@@ -106,17 +103,6 @@ function Settings() {
         </div>
 
         <div className="settings-card">
-          <div className="settings-card-icon red">
-            <ShieldCheck size={28} />
-          </div>
-
-          <h2>Security Settings</h2>
-          <p>Change your password to keep your account secure.</p>
-
-          <button type="button" onClick={() => setSecurityOpen(true)}>Manage Security</button>
-        </div>
-
-        <div className="settings-card">
           <div className="settings-card-icon green">
             <Building2 size={28} />
           </div>
@@ -138,8 +124,6 @@ function Settings() {
           <button type="button" onClick={() => navigate(privacyPath)}>Manage Privacy</button>
         </div>
       </section>
-
-      <ChangePasswordModal isOpen={securityOpen} onClose={() => setSecurityOpen(false)} />
     </div>
   )
 }
