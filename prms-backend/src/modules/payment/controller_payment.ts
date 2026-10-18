@@ -68,4 +68,60 @@ export class PaymentController {
       res.json(successResponse(summary));
     } catch (error: any) { HELPERS(req).log({ action: 'VIEW_PAYMENT_SUMMARY', entity: 'Payment', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(500).json({ success: false, error: { message: error.message } }); }
   };
+
+  // ── Mock Payment Gateway ─────────────────────────────────────────────
+
+  myPayments = async (req: AuthRequest, res: Response) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const { payments, total } = await paymentService.getMyPayments(req.user!.id, page, limit);
+      HELPERS(req).log({ action: 'VIEW_MY_PAYMENTS', entity: 'Payment', description: `Listed own payments (page ${page})` });
+      res.json(paginatedResponse(payments, page, limit, total));
+    } catch (error: any) { HELPERS(req).log({ action: 'VIEW_MY_PAYMENTS', entity: 'Payment', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(500).json({ success: false, error: { message: error.message } }); }
+  };
+
+  mockCheckout = async (req: AuthRequest, res: Response) => {
+    try {
+      const { paymentId } = req.params;
+      const { method } = req.body;
+      if (!['FPX', 'QR', 'CARD'].includes(method)) {
+        return res.status(400).json({ success: false, error: { message: 'Invalid payment method. Use FPX, QR, or CARD.' } });
+      }
+      const transaction = await paymentService.startMockCheckout(String(req.params.paymentId), req.user!.id, method);
+      HELPERS(req).log({ action: 'MOCK_CHECKOUT_START', entity: 'MockTransaction', entityId: transaction.id, description: `Mock checkout started with ${method}` });
+      res.json(successResponse(transaction));
+    } catch (error: any) {
+      HELPERS(req).log({ action: 'MOCK_CHECKOUT_START', entity: 'MockTransaction', status: 'Failed', level: error.message.includes('already') || error.message.includes('active') ? 'warn' : 'error', errorMessage: error.message });
+      const code = error.message.includes('already been paid') ? 409 : error.message.includes('active checkout') ? 409 : 400;
+      res.status(code).json({ success: false, error: { message: error.message } });
+    }
+  };
+
+  mockTransactionStatus = async (req: AuthRequest, res: Response) => {
+    try {
+      const transaction = await paymentService.getMockTransaction(String(req.params.transactionId), req.user!.id);
+      res.json(successResponse(transaction));
+    } catch (error: any) {
+      const code = error.message.includes('not found') ? 404 : error.message.includes('does not belong') ? 403 : 400;
+      res.status(code).json({ success: false, error: { message: error.message } });
+    }
+  };
+
+  completeMockTransaction = async (req: AuthRequest, res: Response) => {
+    try {
+      const transactionId = String(req.params.transactionId);
+      const { outcome } = req.body;
+      if (!['SUCCESS', 'FAILED', 'CANCELLED'].includes(outcome)) {
+        return res.status(400).json({ success: false, error: { message: 'Invalid outcome. Use SUCCESS, FAILED, or CANCELLED.' } });
+      }
+      const result = await paymentService.completeMockTransaction(transactionId, req.user!.id, outcome, req.body.failureMessage);
+      HELPERS(req).log({ action: outcome === 'SUCCESS' ? 'MOCK_PAYMENT_COMPLETED' : 'MOCK_PAYMENT_FAILED', entity: 'MockTransaction', entityId: transactionId, description: `Mock transaction ${outcome.toLowerCase()} (${result.payment.status})` });
+      res.json(successResponse(result, outcome === 'SUCCESS' ? 'Payment successful!' : 'Transaction updated.'));
+    } catch (error: any) {
+      HELPERS(req).log({ action: 'COMPLETE_MOCK_TRANSACTION', entity: 'MockTransaction', status: 'Failed', level: 'error', errorMessage: error.message });
+      const code = error.message.includes('no longer pending') ? 409 : error.message.includes('not found') ? 404 : 400;
+      res.status(code).json({ success: false, error: { message: error.message } });
+    }
+  };
 }

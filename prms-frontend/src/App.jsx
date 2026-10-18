@@ -81,6 +81,7 @@ const AdminRetention = lazy(() => import('./pages/AdminRetention'));
 const AdminBreachRegister = lazy(() => import('./pages/AdminBreachRegister'));
 const AdminBookings = lazy(() => import('./pages/AdminBookings'));
 const TenantPayments = lazy(() => import('./pages/TenantPayments'));
+const MockPaymentCheckout = lazy(() => import('./pages/MockPaymentCheckout'));
 const TenantMaintenance = lazy(() => import('./pages/TenantMaintenance'));
 const LandlordMaintenance = lazy(() => import('./pages/LandlordMaintenance'));
 const AgentMaintenance = lazy(() => import('./pages/AgentMaintenance'));
@@ -375,6 +376,7 @@ function AppRoutes() {
         <Route path="viewings" element={<Viewings />} />
         <Route path="privacy" element={<PrivacyPersonalData />} />
         <Route path="payments" element={<TenantPayments />} />
+        <Route path="payments/:id/checkout" element={<SuspenseWrapper><MockPaymentCheckout /></SuspenseWrapper>} />
         <Route path="payments/:id" element={<PaymentReceipt />} />
         <Route path="maintenance" element={<TenantMaintenance />} />
         <Route path="messages" element={<TenantSimplePage label="Messages"><CommunicationHub /></TenantSimplePage>} />

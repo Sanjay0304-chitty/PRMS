@@ -359,24 +359,49 @@ model Agreement {
   @@map("agreements")
 }
 
+enum MockPaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
 model Payment {
-  id         String        @id @default(uuid())
+  id         String                @id @default(uuid())
   bookingId  String
-  booking    Booking       @relation(fields: [bookingId], references: [id])
+  booking    Booking               @relation(fields: [bookingId], references: [id])
   userId     String
-  user       User          @relation(fields: [userId], references: [id])
+  user       User                  @relation(fields: [userId], references: [id])
   amount     Float
-  type       String        @default("rent")
-  method     String        @default("cash")
-  status     PaymentStatus @default(PENDING)
+  type       String                @default("rent")
+  method     String                @default("cash")
+  status     PaymentStatus         @default(PENDING)
   due_date   DateTime
   paid_at    DateTime?
   reference  String?
-  created_at DateTime      @default(now())
-  updated_at DateTime      @updatedAt
+  created_at DateTime              @default(now())
+  updated_at DateTime              @updatedAt
+
+  transactions MockPaymentTransaction[]
 
   @@index([userId])
   @@map("payments")
+}
+
+model MockPaymentTransaction {
+  id            String           @id @default(uuid())
+  paymentId     String
+  payment       Payment          @relation(fields: [paymentId], references: [id])
+  method        String           // FPX, QR, CARD
+  status        MockPaymentStatus @default(PENDING)
+  reference     String           @unique // MOCK-<timestamp>-<random>
+  failureMessage String?
+  created_at    DateTime         @default(now())
+  updated_at    DateTime         @updatedAt
+
+  @@index([paymentId])
+  @@index([status])
+  @@map("mock_payment_transactions")
 }
 
 model Invoice {

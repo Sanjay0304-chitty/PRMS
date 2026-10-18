@@ -7,10 +7,18 @@ const router = express.Router();
 const ctrl = new PaymentController();
 
 router.use(authenticate);
-router.get('/', adminOrLandlordOrAgent, ctrl.list);
+
+// ── Static paths (must come before dynamic :id routes) ──
 router.get('/summary', ctrl.summary);
+router.get('/my-payments', ctrl.myPayments);
+router.get('/mock-transactions/:transactionId', ctrl.mockTransactionStatus);
+router.post('/mock-transactions/:transactionId/complete', ctrl.completeMockTransaction);
+
+// ── Payment-level routes ──
+router.get('/', adminOrLandlordOrAgent, ctrl.list);
 router.get('/:id', ctrl.getById);
 router.post('/', ctrl.create);
 router.patch('/:id/mark-paid', adminOrLandlord, ctrl.markPaid);
+router.post('/:paymentId/checkout', ctrl.mockCheckout);
 
 export default router;

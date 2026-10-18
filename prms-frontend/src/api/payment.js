@@ -25,4 +25,17 @@ export const paymentApi = {
   payPayment(id) {
     return apiClient.post(`/payments/${id}/pay`);
   },
+  // Mock Payment Gateway
+  myPayments(params) {
+    return apiClient.get('/payments/my-payments', { params });
+  },
+  startMockCheckout(paymentId, method) {
+    return apiClient.post(`/payments/${paymentId}/checkout`, { method });
+  },
+  getMockTransaction(transactionId) {
+    return apiClient.get(`/payments/mock-transactions/${transactionId}`);
+  },
+  completeMockTransaction(transactionId, outcome, failureMessage) {
+    return apiClient.post(`/payments/mock-transactions/${transactionId}/complete`, { outcome, failureMessage });
+  },
 };
