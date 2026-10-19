@@ -168,7 +168,7 @@ function FinanceDashboard() {
               <option value="">All Statuses</option>
               <option value="PENDING">Pending</option>
               <option value="PAID">Paid</option>
-              <option value="OVERDUE">Overdue</option>
+              <option value="UNPAID">Unpaid</option>
             </select>
           </div>
         </div>

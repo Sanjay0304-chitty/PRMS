@@ -9,8 +9,8 @@ export async function getFinanceSummary(userId: string) {
   const now = new Date();
   const [collectedAgg, pendingAgg, pendingCount, collectedCount, overdueCount, totalBookings, paidPayments] = await Promise.all([
     prisma.payment.aggregate({ where: { status: 'PAID' }, _sum: { amount: true } }),
-    prisma.payment.aggregate({ where: { status: 'PENDING' }, _sum: { amount: true } }),
-    prisma.payment.count({ where: { status: 'PENDING' } }),
+    prisma.payment.aggregate({ where: { status: { in: ['PENDING', 'UNPAID'] } }, _sum: { amount: true } }),
+    prisma.payment.count({ where: { status: { in: ['PENDING', 'UNPAID'] } } }),
     prisma.payment.count({ where: { status: 'PAID' } }),
     prisma.payment.count({ where: { status: { in: ['PENDING', 'UNPAID'] }, due_date: { lt: now } } }),
     prisma.booking.count(),
@@ -75,8 +75,8 @@ export async function getAgentFinanceSummary(userId: string) {
   const now = new Date();
   const [collectedAgg, pendingAgg, pendingCount, collectedCount, overdueCount, totalBookings, paidPayments] = await Promise.all([
     prisma.payment.aggregate({ where: { ...paymentWhere, status: 'PAID' }, _sum: { amount: true } }),
-    prisma.payment.aggregate({ where: { ...paymentWhere, status: 'PENDING' }, _sum: { amount: true } }),
-    prisma.payment.count({ where: { ...paymentWhere, status: 'PENDING' } }),
+    prisma.payment.aggregate({ where: { ...paymentWhere, status: { in: ['PENDING', 'UNPAID'] } }, _sum: { amount: true } }),
+    prisma.payment.count({ where: { ...paymentWhere, status: { in: ['PENDING', 'UNPAID'] } } }),
     prisma.payment.count({ where: { ...paymentWhere, status: 'PAID' } }),
     prisma.payment.count({ where: { ...paymentWhere, status: { in: ['PENDING', 'UNPAID'] }, due_date: { lt: now } } }),
     prisma.booking.count({ where: { propertyId: { in: propertyIds } } }),
