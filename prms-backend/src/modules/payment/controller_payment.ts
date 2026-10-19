@@ -51,8 +51,12 @@ export class PaymentController {
     } catch (error: any) { HELPERS(req).log({ action: 'CREATE_PAYMENT', entity: 'Payment', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
-  markPaid = async (req: Request, res: Response) => {
+  markPaid = async (req: AuthRequest, res: Response) => {
     try {
+      const role = req.user!.role;
+      if (role !== 'Admin' && role !== 'Landlord') {
+        return res.status(403).json({ success: false, error: { message: 'Only Admin or Landlord can mark a payment as paid' } });
+      }
       const payment = await paymentService.markAsPaid(String(req.params.id));
       HELPERS(req).log({ action: 'MARK_PAYMENT_PAID', entity: 'Payment', entityId: String(req.params.id), description: `Payment marked as paid` });
       res.json(successResponse(payment, 'Payment marked as paid'));

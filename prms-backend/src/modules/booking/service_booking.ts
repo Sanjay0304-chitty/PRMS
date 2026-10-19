@@ -102,22 +102,41 @@ export async function createBooking(data: {
     ? property.rent
     : Math.max(1, Math.round((end.getTime() - start.getTime()) / 86400000)) * property.rent;
 
-  return prisma.booking.create({
-    data: {
-      property: { connect: { id: data.propertyId } },
-      start_date: start,
-      end_date: end,
-      totalAmount,
-      user: { connect: { id: userId } },
-      alternative_start_date: data.alternative_start_date ? new Date(data.alternative_start_date) : undefined,
-      lease_duration_months: data.lease_duration_months,
-      occupants: data.occupants,
-      applicant_message: data.applicant_message,
-      pdpa_consent: !!data.pdpa_consent,
-      acknowledgement: !!data.acknowledgement,
-      application_stage: 'SUBMITTED',
-    },
-    include: { user: { select: { id: true, full_name: true, email: true } }, property: true },
+  return prisma.$transaction(async (tx) => {
+    // 1. Create the booking
+    const booking = await tx.booking.create({
+      data: {
+        property: { connect: { id: data.propertyId } },
+        start_date: start,
+        end_date: end,
+        totalAmount,
+        user: { connect: { id: userId } },
+        alternative_start_date: data.alternative_start_date ? new Date(data.alternative_start_date) : undefined,
+        lease_duration_months: data.lease_duration_months,
+        occupants: data.occupants,
+        applicant_message: data.applicant_message,
+        pdpa_consent: !!data.pdpa_consent,
+        acknowledgement: !!data.acknowledgement,
+        application_stage: 'SUBMITTED',
+      },
+      include: { user: { select: { id: true, full_name: true, email: true } }, property: true },
+    });
+
+    // 2. Auto-create an initial payment row for the booking so the tenant
+    //    has something to pay against immediately (no manual step needed).
+    await tx.payment.create({
+      data: {
+        bookingId: booking.id,
+        userId,
+        amount: totalAmount,
+        type: 'rent',
+        method: 'cash',
+        status: 'UNPAID',
+        due_date: start,
+      },
+    });
+
+    return booking;
   });
 }
 
@@ -190,7 +209,22 @@ export async function approveApplication(id: string, data: {
     rejection_reason: null,
   };
   if (data.monthlyRent) updateData.totalAmount = data.monthlyRent;
-  return prisma.booking.update({ where: { id }, data: updateData, include: { user: { select: { id: true, full_name: true, email: true } }, property: true } });
+
+  const updated = await prisma.booking.update({
+    where: { id },
+    data: updateData,
+    include: { user: { select: { id: true, full_name: true, email: true } }, property: true },
+  });
+
+  // Sync the auto-created payment row to match any revised totalAmount
+  if (data.monthlyRent) {
+    await prisma.payment.updateMany({
+      where: { bookingId: id, status: { in: ['UNPAID', 'PENDING'] } },
+      data: { amount: data.monthlyRent },
+    });
+  }
+
+  return updated;
 }
 
 export async function rejectApplication(id: string, reason: string) {

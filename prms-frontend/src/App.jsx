@@ -376,7 +376,7 @@ function AppRoutes() {
         <Route path="viewings" element={<Viewings />} />
         <Route path="privacy" element={<PrivacyPersonalData />} />
         <Route path="payments" element={<TenantPayments />} />
-        <Route path="payments/:id/checkout" element={<SuspenseWrapper><MockPaymentCheckout /></SuspenseWrapper>} />
+        <Route path="payments/:paymentId/checkout" element={<SuspenseWrapper><MockPaymentCheckout /></SuspenseWrapper>} />
         <Route path="payments/:id" element={<PaymentReceipt />} />
         <Route path="maintenance" element={<TenantMaintenance />} />
         <Route path="messages" element={<TenantSimplePage label="Messages"><CommunicationHub /></TenantSimplePage>} />

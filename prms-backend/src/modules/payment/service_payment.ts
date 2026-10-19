@@ -111,7 +111,31 @@ export async function createPayment(data: { bookingId: string; userId: string; a
 }
 
 export async function markAsPaid(id: string) {
-  return prisma.payment.update({ where: { id }, data: { status: 'PAID' } });
+  const payment = await prisma.payment.findUnique({ where: { id } });
+  if (!payment) throw new Error('Payment not found');
+  // Enforce status transition: only UNPAID or PENDING can be marked paid
+  if (!['UNPAID', 'PENDING'].includes(payment.status)) {
+    throw new Error(`Payment cannot be marked as paid while in ${payment.status} status`);
+  }
+  const now = new Date();
+  await prisma.$transaction([
+    // Update the payment row
+    prisma.payment.update({
+      where: { id },
+      data: { status: 'PAID', paid_at: now },
+    }),
+    // Update the booking payment status
+    prisma.booking.update({
+      where: { id: payment.bookingId },
+      data: { paymentStatus: 'PAID' },
+    }),
+    // Update related invoices
+    prisma.invoice.updateMany({
+      where: { bookingId: payment.bookingId, status: { in: ['PENDING', 'UNPAID'] } },
+      data: { status: 'PAID' },
+    }),
+  ]);
+  return getPaymentById(id);
 }
 
 // ── Tenant-only payments ──────────────────────────────────────────────
