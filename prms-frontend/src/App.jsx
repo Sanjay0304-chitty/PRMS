@@ -84,6 +84,7 @@ const TenantPayments = lazy(() => import('./pages/TenantPayments'));
 const MockPaymentCheckout = lazy(() => import('./pages/MockPaymentCheckout'));
 const TenantMaintenance = lazy(() => import('./pages/TenantMaintenance'));
 const LandlordMaintenance = lazy(() => import('./pages/LandlordMaintenance'));
+const LandlordAgents = lazy(() => import('./pages/LandlordAgents'));
 const AgentMaintenance = lazy(() => import('./pages/AgentMaintenance'));
 const AgentProperties = lazy(() => import('./pages/AgentProperties'));
 const AgentBookings = lazy(() => import('./pages/AgentBookings'));
@@ -307,6 +308,14 @@ function AppRoutes() {
         <Route path="properties/edit/:id" element={<PropertyEdit />} />
         <Route path="properties/:id" element={<PropertyDetail />} />
         <Route path="properties/:id/edit" element={<AgentPropertyEdit />} />
+        <Route
+          path="agents"
+          element={
+            <SuspenseWrapper>
+              <LandlordAgents />
+            </SuspenseWrapper>
+          }
+        />
         <Route path="bookings" element={<LandlordBookings />} />
         <Route path="viewings" element={<Viewings />} />
         <Route path="privacy" element={<PrivacyPersonalData />} />
