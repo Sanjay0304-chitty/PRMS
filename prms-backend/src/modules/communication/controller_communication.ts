@@ -6,7 +6,7 @@ import { successResponse } from '../../utils/response';
 export class CommunicationController {
   getContacts = async (req: AuthRequest, res: Response) => {
     try {
-      const contacts = await communicationService.getAdminContacts(req.user!.id);
+      const contacts = await communicationService.getContacts(req.user!.id);
       res.json(successResponse(contacts));
     } catch (error: any) {
       res.status(500).json({ success: false, error: { message: error.message } });
@@ -17,7 +17,10 @@ export class CommunicationController {
     try {
       const message = await communicationService.sendMessage(req.body, req.user!.id);
       res.status(201).json(successResponse(message));
-    } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
+    } catch (error: any) {
+      const status = error.message === 'You are not allowed to message this user' ? 403 : 400;
+      res.status(status).json({ success: false, error: { message: error.message } });
+    }
   };
 
   getConversations = async (req: AuthRequest, res: Response) => {

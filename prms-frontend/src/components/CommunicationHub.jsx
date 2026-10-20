@@ -2,8 +2,6 @@ import { useEffect, useState, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { communicationApi } from '../api';
-import { bookingApi } from '../api/booking';
-import { userApi } from '../api/user';
 import { useAuth } from '../contexts/AuthContext';
 import Modal from './Modal';
 import {
@@ -90,63 +88,13 @@ function CommunicationHub() {
   async function openCompose() {
     setComposing(true);
     setContactsLoading(true);
-    const role = (user?.role || '').toLowerCase();
-    const map = {};
     try {
-      if (role !== 'admin') {
-        const { data } = await communicationApi.contacts();
-        const administrators = data?.data || data || [];
-        administrators.forEach((admin) => {
-          if (admin.id && admin.id !== user?.id) {
-            map[admin.id] = { id: admin.id, name: admin.name || 'System Administrator (Admin)' };
-          }
-        });
-      }
-
-      if (role === 'landlord') {
-        const { data } = await bookingApi.landlordBookings();
-        const items = data?.data || data || [];
-        items.forEach((b) => {
-          if (b.userId && b.userId !== user?.id && !map[b.userId]) {
-            map[b.userId] = { id: b.userId, name: b.user?.full_name || 'Tenant' };
-          }
-        });
-      } else if (role === 'tenant') {
-        const { data } = await bookingApi.myBookings();
-        const items = data?.data || data || [];
-        items.forEach((b) => {
-          const ownerId = b.property?.ownerId;
-          if (ownerId && !map[ownerId]) {
-            map[ownerId] = { id: ownerId, name: `Landlord — ${b.property?.title || 'Property'}` };
-          }
-        });
-      } else if (role === 'agent') {
-        const { data } = await bookingApi.assigned();
-        const items = data?.data || data || [];
-        items.forEach((b) => {
-          if (b.userId && b.userId !== user?.id && !map[b.userId]) {
-            map[b.userId] = { id: b.userId, name: b.user?.full_name || 'Tenant' };
-          }
-          const ownerId = b.property?.ownerId;
-          if (ownerId && ownerId !== user?.id && !map[ownerId]) {
-            map[ownerId] = { id: ownerId, name: `Landlord — ${b.property?.title || 'Property'}` };
-          }
-        });
-      } else if (role === 'admin') {
-        // Admin can message anyone in the system, not just people tied to a booking.
-        const { data } = await userApi.list({ limit: 100 });
-        const items = data?.data || data || [];
-        items.forEach((u) => {
-          if (u.id && u.id !== user?.id && !map[u.id]) {
-            const userRole = u.UserRole?.[0]?.role?.name || u.role || 'User';
-            map[u.id] = { id: u.id, name: `${u.full_name || 'User'} (${userRole})` };
-          }
-        });
-      }
+      const { data } = await communicationApi.contacts();
+      setContacts(data?.data || data || []);
     } catch (e) {
       console.error(e);
+      setContacts([]);
     } finally {
-      setContacts(Object.values(map));
       setContactsLoading(false);
     }
   }
@@ -234,6 +182,7 @@ function CommunicationHub() {
   async function handleSend() {
     if (!newMessage.trim() || !selectedConv) return;
     const isNewConversation = !selectedConv.id;
+    setActionError('');
     try {
       const response = await communicationApi.send({
         content: newMessage,
@@ -254,7 +203,7 @@ function CommunicationHub() {
         loadMessages();
       }
     } catch (e) {
-      console.error(e);
+      setActionError(e.response?.data?.error?.message || 'Failed to send message.');
     }
   }
 
@@ -468,7 +417,7 @@ function CommunicationHub() {
           <p className="comm-compose-hint">
             {(user?.role || '').toLowerCase() === 'admin'
               ? 'No other users in the system yet.'
-              : 'No contacts yet — messaging unlocks once you have a booking together.'}
+              : 'No contacts yet — messaging unlocks when you share a property or active task.'}
           </p>
         ) : (
           <div className="comm-contact-list">
