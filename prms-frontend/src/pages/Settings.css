@@ -75,6 +75,40 @@
   filter: brightness(1.15);
 }
 
+.settings-preference-list {
+  display: grid;
+  gap: 8px;
+  margin: -8px 0 16px;
+}
+
+.settings-preference {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--on-surface);
+  font-size: 14px;
+}
+
+.settings-preference.master {
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 700;
+}
+
+.settings-preference input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary-container);
+}
+
+.settings-save-status {
+  min-height: 20px;
+  margin: -8px 0 12px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
 @media (max-width: 900px) {
   .settings-grid {
     grid-template-columns: 1fr;

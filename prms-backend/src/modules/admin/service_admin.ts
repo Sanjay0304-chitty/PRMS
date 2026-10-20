@@ -1,4 +1,5 @@
 import { prisma } from '../../db';
+import { createNotification as createUserNotification } from '../notification/service_notification';
 
 export async function getSystemSettings() {
   return prisma.systemSetting.findMany({ orderBy: { key: 'asc' } });
@@ -109,7 +110,7 @@ export async function getNotifications(userId: string, page = 1, limit = 20) {
 }
 
 export async function createNotification(data: { userId: string; type: string; title: string; message: string }) {
-  return prisma.notification.create({ data });
+  return createUserNotification(data.userId, data);
 }
 
 export async function markNotificationRead(userId: string, notificationId: string) {

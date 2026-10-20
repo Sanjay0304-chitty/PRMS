@@ -13,6 +13,8 @@ router.post('/refresh', refreshBody, auth.refresh);
 router.post('/logout', authenticate, auth.logout);
 router.get('/me', authenticate, auth.getMe);
 router.put('/me', authenticate, auth.updateMe);
+router.get('/me/preferences', authenticate, auth.getPreferences);
+router.put('/me/preferences', authenticate, auth.updatePreferences);
 router.post('/me/avatar', authenticate, upload.single('profileImage'), auth.uploadProfileImage);
 router.post('/change-password', authenticate, auth.changePassword);
 router.post('/set-password', authenticate, auth.setPassword);

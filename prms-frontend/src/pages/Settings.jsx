@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useUserPreferences } from '../contexts/UserPreferencesContext'
 import { ROUTES } from '../config/routes'
 
 import {
@@ -53,6 +55,8 @@ function getPrivacyPath(role) {
 function Settings() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { preferences, loading: preferencesLoading, updatePreferences } = useUserPreferences()
+  const [preferenceMessage, setPreferenceMessage] = useState('')
 
   const profilePath = getProfilePath(user?.role)
   const notificationsPath = getNotificationsPath(user?.role)
@@ -69,6 +73,23 @@ function Settings() {
     : role.includes('landlord')
       ? 'Personalize your company name, logo, and account colors.'
       : 'Personalize the colors used in your own account.'
+
+  const notificationOptions = [
+    ['viewingNotifications', 'Viewing updates'],
+    ['applicationNotifications', 'Applications and tenancies'],
+    ['maintenanceNotifications', 'Maintenance updates'],
+    ['messageNotifications', 'New messages'],
+  ]
+
+  async function saveNotificationPreference(field, checked) {
+    setPreferenceMessage('Saving...')
+    try {
+      await updatePreferences({ [field]: checked })
+      setPreferenceMessage('Preferences saved')
+    } catch {
+      setPreferenceMessage('Could not save preferences')
+    }
+  }
 
   return (
     <div className="admin-content" data-customize-id="global.content">
@@ -98,6 +119,30 @@ function Settings() {
 
           <h2>Notification Settings</h2>
           <p>Control alerts for rent, bookings, maintenance updates, and reminders.</p>
+
+          <div className="settings-preference-list">
+            <label className="settings-preference master">
+              <span>Enable notifications</span>
+              <input
+                type="checkbox"
+                checked={preferences.notificationsEnabled}
+                disabled={preferencesLoading}
+                onChange={(event) => saveNotificationPreference('notificationsEnabled', event.target.checked)}
+              />
+            </label>
+            {notificationOptions.map(([field, label]) => (
+              <label className="settings-preference" key={field}>
+                <span>{label}</span>
+                <input
+                  type="checkbox"
+                  checked={preferences[field]}
+                  disabled={preferencesLoading || !preferences.notificationsEnabled}
+                  onChange={(event) => saveNotificationPreference(field, event.target.checked)}
+                />
+              </label>
+            ))}
+          </div>
+          {preferenceMessage && <div className="settings-save-status" role="status">{preferenceMessage}</div>}
 
           <button type="button" onClick={() => navigate(notificationsPath)}>Manage Notifications</button>
         </div>

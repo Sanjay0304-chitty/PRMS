@@ -501,12 +501,17 @@ model SystemSetting {
 }
 
 model UserPreference {
-  id         String   @id @default(uuid())
-  userId     String   @unique
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  appearance String   @default("system")
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id                           String   @id @default(uuid())
+  userId                       String   @unique
+  user                         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appearance                   String   @default("system")
+  notificationsEnabled         Boolean  @default(true)
+  viewingNotifications         Boolean  @default(true)
+  applicationNotifications     Boolean  @default(true)
+  maintenanceNotifications     Boolean  @default(true)
+  messageNotifications         Boolean  @default(true)
+  created_at                   DateTime @default(now())
+  updated_at                   DateTime @updatedAt
 
   @@map("user_preferences")
 }

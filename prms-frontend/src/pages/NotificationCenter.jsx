@@ -114,8 +114,14 @@ function NotificationCenter() {
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const getNotificationIcon = (not) => {
-    const Icon = TYPE_ICONS[not.type] || TYPE_ICONS.default;
-    return <Icon size={18} style={{ color: TYPE_COLORS[not.type] || '#6b7280' }} />;
+    const type = String(not.type || '').toLowerCase();
+    const category = type.startsWith('viewing') || type.startsWith('application') || type.startsWith('booking')
+      ? 'booking'
+      : type.startsWith('maintenance')
+        ? 'maintenance'
+        : type;
+    const Icon = TYPE_ICONS[category] || TYPE_ICONS.default;
+    return <Icon size={18} style={{ color: TYPE_COLORS[category] || '#6b7280' }} />;
   };
 
   const formatTime = (dateStr) => {

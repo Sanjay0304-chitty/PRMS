@@ -1,27 +1,38 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authApi } from '../api/auth';
+import { useAuth } from './AuthContext';
 
 const UserPreferencesContext = createContext(null);
+const DEFAULT_PREFERENCES = {
+  appearance: 'system',
+  notificationsEnabled: true,
+  viewingNotifications: true,
+  applicationNotifications: true,
+  maintenanceNotifications: true,
+  messageNotifications: true,
+};
 
 export function UserPreferencesProvider({ children }) {
-  const [preferences, setPreferences] = useState({
-    appearance: 'system',
-    notifications_enabled: true,
-    language: 'en',
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-  });
+  const { user } = useAuth();
+  const [preferences, setPreferences] = useState(DEFAULT_PREFERENCES);
   const [loading, setLoading] = useState(true);
 
   const loadPreferences = useCallback(async () => {
+    setPreferences(DEFAULT_PREFERENCES);
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
     try {
-      const me = await authApi.getMe();
-      if (me.data?.preferences) setPreferences(me.data.preferences);
+      const response = await authApi.getPreferences();
+      if (response.data?.data) setPreferences((current) => ({ ...current, ...response.data.data }));
     } catch (e) {
       console.warn('Failed to load preferences:', e);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     loadPreferences();
@@ -29,8 +40,8 @@ export function UserPreferencesProvider({ children }) {
 
   const updatePreferences = useCallback(async (updates) => {
     try {
-      const res = await authApi.updateMe(updates);
-      if (res.data?.preferences) setPreferences(prev => ({ ...prev, ...res.data.preferences }));
+      const res = await authApi.updatePreferences(updates);
+      if (res.data?.data) setPreferences(prev => ({ ...prev, ...res.data.data }));
       return res;
     } catch (e) {
       console.error('Failed to update preferences:', e);

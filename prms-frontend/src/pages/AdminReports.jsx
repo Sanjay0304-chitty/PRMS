@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { WalletCards, Clock, CheckCircle2, AlertTriangle, Printer } from 'lucide-react';
 import { paymentApi } from '../api/payment';
+import { useAuth } from '../contexts/AuthContext';
 import './AdminSimplePage.css';
 
 export default function AdminReports() {
+  const { user } = useAuth();
+  const isAgent = user?.role === 'Agent';
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [report, setReport] = useState(null);
@@ -34,8 +37,10 @@ export default function AdminReports() {
     <>
       <section className="admin-simple-hero">
         <div>
-          <h1>Reports &amp; Audit</h1>
-          <p>Platform-wide revenue, payment activity, and financial health at a glance.</p>
+          <h1>{isAgent ? 'Assigned Property Reports' : 'Reports & Audit'}</h1>
+          <p>{isAgent
+            ? 'Payment status and financial activity for properties assigned to you.'
+            : 'Platform-wide revenue, payment activity, and financial health at a glance.'}</p>
         </div>
         <button type="button" className="admin-simple-primary-btn" onClick={() => window.print()}>
           <Printer size={18} style={{ marginRight: 8, verticalAlign: 'text-bottom' }} />
