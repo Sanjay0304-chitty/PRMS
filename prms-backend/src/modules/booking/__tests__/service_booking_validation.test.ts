@@ -2,11 +2,17 @@ import * as service from '../service_booking';
 
 const propertyFindUnique = jest.fn();
 const bookingCreate = jest.fn();
+const paymentCreate = jest.fn();
 
 jest.mock('../../../db', () => ({
   prisma: {
     property: { findUnique: (...args: any[]) => propertyFindUnique(...args) },
     booking: { create: (...args: any[]) => bookingCreate(...args) },
+    payment: { create: (...args: any[]) => paymentCreate(...args) },
+    $transaction: (callback: any) => callback({
+      booking: { create: (...args: any[]) => bookingCreate(...args) },
+      payment: { create: (...args: any[]) => paymentCreate(...args) },
+    }),
   },
 }));
 
@@ -14,6 +20,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   propertyFindUnique.mockResolvedValue({ rent: 1500 });
   bookingCreate.mockResolvedValue({ id: 'booking-1', status: 'PENDING' });
+  paymentCreate.mockResolvedValue({ id: 'payment-1' });
 });
 
 test('rejects an invalid booking start date before database access', async () => {
@@ -53,4 +60,12 @@ test('creates a valid rental application with pending status supplied by the sch
       application_stage: 'SUBMITTED',
     }),
   }));
+  expect(paymentCreate).toHaveBeenCalledWith({
+    data: expect.objectContaining({
+      bookingId: 'booking-1',
+      userId: 'tenant-1',
+      amount: 1500,
+      status: 'UNPAID',
+    }),
+  });
 });

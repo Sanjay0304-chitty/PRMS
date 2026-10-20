@@ -6,6 +6,7 @@ const bookingCount = jest.fn();
 const agreementFindFirst = jest.fn();
 const propertyFindUnique = jest.fn();
 const propertyUpdate = jest.fn();
+const paymentUpdateMany = jest.fn();
 
 jest.mock('../../../db', () => ({
   prisma: {
@@ -20,6 +21,9 @@ jest.mock('../../../db', () => ({
     property: {
       findUnique: (...args: any[]) => propertyFindUnique(...args),
       update: (...args: any[]) => propertyUpdate(...args),
+    },
+    payment: {
+      updateMany: (...args: any[]) => paymentUpdateMany(...args),
     },
   },
 }));
@@ -38,6 +42,7 @@ beforeEach(() => {
   bookingCount.mockResolvedValue(0);
   propertyFindUnique.mockResolvedValue({ id: 'property-1', status: 'RENTED' });
   propertyUpdate.mockResolvedValue({ id: 'property-1' });
+  paymentUpdateMany.mockResolvedValue({ count: 1 });
 });
 
 test('landlord approval persists the offer and advances the application', async () => {
@@ -59,6 +64,10 @@ test('landlord approval persists the offer and advances the application', async 
     }),
   }));
   expect(result.status).toBe('CONFIRMED');
+  expect(paymentUpdateMany).toHaveBeenCalledWith({
+    where: { bookingId: 'booking-1', status: { in: ['UNPAID', 'PENDING'] } },
+    data: { amount: 1800 },
+  });
 });
 
 test('an application cannot be approved with an expired offer', async () => {

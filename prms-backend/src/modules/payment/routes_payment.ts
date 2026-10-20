@@ -1,6 +1,6 @@
 import express from 'express';
 import { authenticate } from '../../middleware/auth';
-import { adminOrLandlord, adminOrLandlordOrAgent } from '../../middleware/rbac';
+import { adminOrLandlord, adminOrLandlordOrAgent, tenantOnly } from '../../middleware/rbac';
 import { PaymentController } from './controller_payment';
 
 const router = express.Router();
@@ -9,16 +9,15 @@ const ctrl = new PaymentController();
 router.use(authenticate);
 
 // ── Static paths (must come before dynamic :id routes) ──
-router.get('/summary', ctrl.summary);
-router.get('/my-payments', ctrl.myPayments);
-router.get('/mock-transactions/:transactionId', ctrl.mockTransactionStatus);
-router.post('/mock-transactions/:transactionId/complete', ctrl.completeMockTransaction);
+router.get('/summary', adminOrLandlordOrAgent, ctrl.summary);
+router.get('/my-payments', tenantOnly, ctrl.myPayments);
+router.get('/mock-transactions/:transactionId', tenantOnly, ctrl.mockTransactionStatus);
+router.post('/mock-transactions/:transactionId/complete', tenantOnly, ctrl.completeMockTransaction);
 
 // ── Payment-level routes ──
 router.get('/', adminOrLandlordOrAgent, ctrl.list);
 router.get('/:id', ctrl.getById);
-router.post('/', ctrl.create);
 router.patch('/:id/mark-paid', adminOrLandlord, ctrl.markPaid);
-router.post('/:paymentId/checkout', ctrl.mockCheckout);
+router.post('/:paymentId/checkout', tenantOnly, ctrl.mockCheckout);
 
 export default router;
