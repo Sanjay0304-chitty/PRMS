@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Modal from '../components/Modal';
 import { maintenanceApi } from '../api/maintenance';
 import { propertyApi } from '../api/property';
+import { getFullUrl } from '../config/apiBaseUrl';
 import './SharedPageShell.css';
 
 const STATUS_TABS = ['all', 'in_progress', 'resolved', 'closed'];
@@ -107,7 +108,7 @@ export default function LandlordMaintenance() {
           <label className="mt-2">Maintenance note
             <textarea className="input" rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
           </label>
-          {!!selected.attachments?.length && <div className="mt-2"><strong>Photographs:</strong> {selected.attachments.map((photo) => <a key={photo.id} href={`http://localhost:3500${photo.url}`} target="_blank" rel="noreferrer" style={{ marginLeft: 8 }}>View</a>)}</div>}
+          {!!selected.attachments?.length && <div className="mt-2"><strong>Photographs:</strong> {selected.attachments.map((photo) => <a key={photo.id} href={getFullUrl(photo.url)} target="_blank" rel="noreferrer" style={{ marginLeft: 8 }}>View</a>)}</div>}
           <button className="btn btn-outline mt-2" onClick={() => saveNote(selected.id)}>Save Note</button>
           {selected.status === 'RESOLVED' && (
             <div className="flex gap-2 mt-4">

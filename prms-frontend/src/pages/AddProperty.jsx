@@ -4,6 +4,7 @@ import { categoryApi } from '../api/categories';
 import { PROPERTY_TYPES } from '../config/propertyTypes';
 import { getPropertyRoute } from '../config/routes';
 import { useParams, useNavigate } from 'react-router-dom';
+import { getApiBaseUrl } from '../config/apiBaseUrl';
 import {
   MapPin,
   DollarSign,
@@ -140,8 +141,8 @@ function AddProperty() {
     if (!validateForm()) return;
     setSubmitting(true);
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || window.location.origin || 'http://localhost:3500';
-      const token = sessionStorage.getItem('accessToken');
+      const apiBaseUrl = getApiBaseUrl();
+      const token = sessionStorage.getItem('accessToken') || localStorage.getItem('accessToken');
       const endpoint = id ? `/properties/${id}` : '/properties';
 
       // Build JSON body — align frontend fields to backend DTO (schema source of truth)

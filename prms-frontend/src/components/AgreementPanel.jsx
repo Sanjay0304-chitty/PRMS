@@ -1,13 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import { agreementApi } from '../api';
+import { getFullUrl } from '../config/apiBaseUrl';
 import './AgreementPanel.css';
 
 function formatDate(d) {
-  if (!d) return '—';
+  if (!d) return 'â€”';
   return new Date(d).toLocaleDateString('en-MY', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 function formatDateTime(d) {
-  if (!d) return '—';
+  if (!d) return 'â€”';
   return new Date(d).toLocaleString('en-MY', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 function formatRM(n) {
@@ -26,7 +27,7 @@ const STATUS_LABEL = {
 };
 
 /**
- * AgreementPanel — generation, editing, and both electronic and physical
+ * AgreementPanel â€” generation, editing, and both electronic and physical
  * signing for a single booking's tenancy agreement. Reused from the
  * Landlord/Admin application-review view and the Tenant's application
  * detail view; behaviour adapts to `role`.
@@ -188,7 +189,7 @@ export default function AgreementPanel({ bookingId, booking, role, userId }) {
     finally { setBusy(false); }
   }
 
-  if (loading) return <p className="agreement-panel-loading">Loading agreement…</p>;
+  if (loading) return <p className="agreement-panel-loading">Loading agreementâ€¦</p>;
 
   return (
     <div className="agreement-panel">
@@ -207,14 +208,14 @@ export default function AgreementPanel({ bookingId, booking, role, userId }) {
         <div className="agreement-panel-card">
           <div className="agreement-panel-header">
             <div>
-              <strong>{latest.reference}</strong> · v{latest.version}
+              <strong>{latest.reference}</strong> Â· v{latest.version}
               <span className={`agreement-status-badge agreement-status-${latest.status.toLowerCase()}`}>
                 {STATUS_LABEL[latest.status] || latest.status}
               </span>
             </div>
           </div>
 
-          {/* ── DRAFT: editable terms (landlord/admin/assigned agent) ── */}
+          {/* â”€â”€ DRAFT: editable terms (landlord/admin/assigned agent) â”€â”€ */}
           {latest.status === 'DRAFT' && draftForm && (
             <div className="agreement-panel-terms">
               {canEditDraft ? (
@@ -237,7 +238,7 @@ export default function AgreementPanel({ bookingId, booking, role, userId }) {
                     </label>
                   </div>
                   <label className="agreement-terms-label">Terms / House Rules / Maintenance Responsibilities
-                    <textarea rows={4} value={draftForm.terms} onChange={(e) => setDraftForm((p) => ({ ...p, terms: e.target.value }))} placeholder="Maintenance responsibilities, house rules, termination and renewal clauses…" />
+                    <textarea rows={4} value={draftForm.terms} onChange={(e) => setDraftForm((p) => ({ ...p, terms: e.target.value }))} placeholder="Maintenance responsibilities, house rules, termination and renewal clausesâ€¦" />
                   </label>
                   <button className="btn btn-sm btn-outline" onClick={handleSaveDraft} disabled={busy}>Save Draft</button>
                 </>
@@ -245,7 +246,7 @@ export default function AgreementPanel({ bookingId, booking, role, userId }) {
                 <AgreementSummary a={latest} />
               )}
 
-              {/* Electronic signing entry — tenant only, from DRAFT */}
+              {/* Electronic signing entry â€” tenant only, from DRAFT */}
               {isTenant && !otpStep && (
                 <div className="agreement-sign-block">
                   <h4>Sign Electronically</h4>
@@ -253,20 +254,20 @@ export default function AgreementPanel({ bookingId, booking, role, userId }) {
                     <input value={legalName} onChange={(e) => setLegalName(e.target.value)} placeholder="Full legal name" />
                   </label>
                   <button className="btn btn-sm btn-primary" onClick={handleTenantConsent} disabled={busy || !legalName.trim()}>
-                    I Consent — Send Verification Code
+                    I Consent â€” Send Verification Code
                   </button>
                 </div>
               )}
               {isTenant && otpStep && (
                 <div className="agreement-sign-block">
                   <h4>Enter Verification Code</h4>
-                  <p className="agreement-otp-hint">Demonstration mode — simulated code: <strong>{simulatedOtp}</strong></p>
+                  <p className="agreement-otp-hint">Demonstration mode â€” simulated code: <strong>{simulatedOtp}</strong></p>
                   <input value={otpValue} onChange={(e) => setOtpValue(e.target.value)} placeholder="6-digit code" maxLength={6} />
                   <button className="btn btn-sm btn-primary" onClick={handleVerifyOtp} disabled={busy || otpValue.length !== 6}>Verify & Sign</button>
                 </div>
               )}
 
-              {/* Physical signing entry — either party, from DRAFT */}
+              {/* Physical signing entry â€” either party, from DRAFT */}
               {(isTenant || isLandlordOrAdmin) && (
                 <div className="agreement-sign-block">
                   <h4>Or Sign Physically</h4>
@@ -278,14 +279,14 @@ export default function AgreementPanel({ bookingId, booking, role, userId }) {
             </div>
           )}
 
-          {/* ── AWAITING_TENANT_SIGNATURE: resume OTP step for tenant ── */}
+          {/* â”€â”€ AWAITING_TENANT_SIGNATURE: resume OTP step for tenant â”€â”€ */}
           {latest.status === 'AWAITING_TENANT_SIGNATURE' && (
             <div className="agreement-panel-terms">
               <AgreementSummary a={latest} />
               {isTenant ? (
                 <div className="agreement-sign-block">
                   <h4>Enter Verification Code</h4>
-                  {simulatedOtp && <p className="agreement-otp-hint">Demonstration mode — simulated code: <strong>{simulatedOtp}</strong></p>}
+                  {simulatedOtp && <p className="agreement-otp-hint">Demonstration mode â€” simulated code: <strong>{simulatedOtp}</strong></p>}
                   <input value={otpValue} onChange={(e) => setOtpValue(e.target.value)} placeholder="6-digit code" maxLength={6} />
                   <button className="btn btn-sm btn-primary" onClick={handleVerifyOtp} disabled={busy || otpValue.length !== 6}>Verify & Sign</button>
                 </div>
@@ -298,7 +299,7 @@ export default function AgreementPanel({ bookingId, booking, role, userId }) {
             </div>
           )}
 
-          {/* ── AWAITING_LANDLORD_SIGNATURE ── */}
+          {/* â”€â”€ AWAITING_LANDLORD_SIGNATURE â”€â”€ */}
           {latest.status === 'AWAITING_LANDLORD_SIGNATURE' && (
             <div className="agreement-panel-terms">
               <AgreementSummary a={latest} />
@@ -319,18 +320,18 @@ export default function AgreementPanel({ bookingId, booking, role, userId }) {
             </div>
           )}
 
-          {/* ── PHYSICAL_COPY_PENDING ── */}
+          {/* â”€â”€ PHYSICAL_COPY_PENDING â”€â”€ */}
           {latest.status === 'PHYSICAL_COPY_PENDING' && (
             <div className="agreement-panel-terms">
               <AgreementSummary a={latest} />
-              <a href={`http://localhost:3500${latest.physicalCopyUrl}`} target="_blank" rel="noopener noreferrer" className="agreement-doc-link">View Uploaded Copy</a>
+              <a href={getFullUrl(latest.physicalCopyUrl)} target="_blank" rel="noopener noreferrer" className="agreement-doc-link">View Uploaded Copy</a>
               {canManageAgreement && (
                 <button className="btn btn-sm btn-primary" onClick={handleVerifyPhysical} disabled={busy}>Verify Physical Copy</button>
               )}
             </div>
           )}
 
-          {/* ── FULLY_SIGNED / PHYSICALLY_SIGNED ── */}
+          {/* â”€â”€ FULLY_SIGNED / PHYSICALLY_SIGNED â”€â”€ */}
           {['FULLY_SIGNED', 'PHYSICALLY_SIGNED'].includes(latest.status) && (
             <div className="agreement-panel-terms">
               <AgreementSummary a={latest} />
@@ -338,7 +339,7 @@ export default function AgreementPanel({ bookingId, booking, role, userId }) {
                 <p><strong>Tenant signed:</strong> {formatDateTime(latest.tenantSignedAt)}</p>
                 <p><strong>Landlord signed:</strong> {formatDateTime(latest.landlordSignedAt)}</p>
                 {latest.physicalVerifiedAt && <p><strong>Physical copy verified:</strong> {formatDateTime(latest.physicalVerifiedAt)}</p>}
-                {latest.documentHash && <p className="agreement-hash">Document hash: <code>{latest.documentHash.slice(0, 24)}…</code></p>}
+                {latest.documentHash && <p className="agreement-hash">Document hash: <code>{latest.documentHash.slice(0, 24)}â€¦</code></p>}
               </div>
               <button className="btn btn-sm btn-outline" onClick={() => window.print()}>Print Agreement</button>
             </div>
@@ -351,7 +352,7 @@ export default function AgreementPanel({ bookingId, booking, role, userId }) {
           <summary>Version history ({agreements.length})</summary>
           <ul>
             {agreements.map((a) => (
-              <li key={a.id}>{a.reference} · v{a.version} · {STATUS_LABEL[a.status] || a.status}</li>
+              <li key={a.id}>{a.reference} Â· v{a.version} Â· {STATUS_LABEL[a.status] || a.status}</li>
             ))}
           </ul>
         </details>
@@ -366,7 +367,7 @@ function AgreementSummary({ a }) {
       <p><strong>Monthly Rent:</strong> {formatRM(a.monthlyRent)}</p>
       <p><strong>Security Deposit:</strong> {formatRM(a.securityDeposit)}</p>
       <p><strong>Utility Deposit:</strong> {formatRM(a.utilityDeposit)}</p>
-      <p><strong>Lease Period:</strong> {formatDate(a.leaseStartDate)} → {formatDate(a.leaseEndDate)}</p>
+      <p><strong>Lease Period:</strong> {formatDate(a.leaseStartDate)} â†’ {formatDate(a.leaseEndDate)}</p>
       {a.terms && <p className="agreement-summary-terms">{a.terms}</p>}
     </div>
   );

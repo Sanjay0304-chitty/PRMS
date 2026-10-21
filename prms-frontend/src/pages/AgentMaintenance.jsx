@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Modal from '../components/Modal';
 import { maintenanceApi } from '../api/maintenance';
 import { agentApi } from '../api/agents';
+import { getFullUrl } from '../config/apiBaseUrl';
 import './SharedPageShell.css';
 
 const STATUS_TABS = ['open', 'in_progress', 'resolved', 'closed'];
@@ -125,7 +126,7 @@ export default function AgentMaintenance() {
             </label>
             {!!selected.attachments?.length && (
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {selected.attachments.map((photo) => <a key={photo.id} href={`http://localhost:3500${photo.url}`} target="_blank" rel="noreferrer">View photo</a>)}
+                {selected.attachments.map((photo) => <a key={photo.id} href={getFullUrl(photo.url)} target="_blank" rel="noreferrer">View photo</a>)}
               </div>
             )}
           </div>

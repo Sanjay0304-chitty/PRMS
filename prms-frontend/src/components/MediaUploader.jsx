@@ -5,6 +5,7 @@ import {
   Trash2, Download
 } from 'lucide-react';
 import { apiClient } from '../api/ApiClient';
+import { getFullUrl } from '../config/apiBaseUrl';
 import './MediaUploader.css';
 
 const VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm'];
@@ -19,10 +20,8 @@ const DOC_TYPES = [
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100 MB
 const MAX_DOC_SIZE = 20 * 1024 * 1024; // 20 MB
 
-function getFullUrl(url) {
-  if (!url) return '';
-  const base = import.meta.env.VITE_API_BASE_URL || window.location.origin || 'http://localhost:3500';
-  return url.startsWith('http') ? url : `${base}${url}`;
+function getFullMediaUrl(url) {
+  return getFullUrl(url);
 }
 
 /* ================= VIDEO UPLOADER ================= */
