@@ -40,6 +40,14 @@ export const authApi = {
     return apiClient.put('/auth/me', data);
   },
 
+  getPreferences() {
+    return apiClient.get('/auth/me/preferences');
+  },
+
+  updatePreferences(data) {
+    return apiClient.put('/auth/me/preferences', data);
+  },
+
   uploadProfileImage(file) {
     const formData = new FormData();
     formData.append('profileImage', file);

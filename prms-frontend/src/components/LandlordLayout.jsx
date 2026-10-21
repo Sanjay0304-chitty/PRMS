@@ -20,6 +20,7 @@ function getTopbarTitle(activePage) {
     dashboard: 'Portfolio Overview',
     notifications: 'Notification Center',
     properties: 'Property Management',
+    agents: 'Agent Management',
     bookings: 'Rental Applications',
     viewings: 'Viewing Appointments',
     finance: 'Finance Console',

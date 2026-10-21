@@ -132,6 +132,24 @@ export class AuthController {
     }
   };
 
+  getPreferences = async (req: AuthRequest, res: Response) => {
+    try {
+      const preferences = await authService.getUserPreferences(req.user!.id);
+      res.json(successResponse(preferences));
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: { message: error.message } });
+    }
+  };
+
+  updatePreferences = async (req: AuthRequest, res: Response) => {
+    try {
+      const preferences = await authService.updateUserPreferences(req.user!.id, req.body || {});
+      res.json(successResponse(preferences, 'Preferences updated'));
+    } catch (error: any) {
+      res.status(400).json({ success: false, error: { message: error.message } });
+    }
+  };
+
   logout = async (req: AuthRequest, res: Response) => {
     try {
       await authService.logoutUser(req.user!.id);

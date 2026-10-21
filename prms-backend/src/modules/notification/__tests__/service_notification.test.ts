@@ -5,6 +5,7 @@ const updateMany = jest.fn();
 const findUnique = jest.fn();
 const deleteMany = jest.fn();
 const create = jest.fn();
+const findPreference = jest.fn();
 
 jest.mock('../../../db', () => ({
   prisma: {
@@ -15,11 +16,15 @@ jest.mock('../../../db', () => ({
       deleteMany: (...args: any[]) => deleteMany(...args),
       create: (...args: any[]) => create(...args),
     },
+    userPreference: {
+      findUnique: (...args: any[]) => findPreference(...args),
+    },
   },
 }));
 
 beforeEach(() => {
   jest.clearAllMocks();
+  findPreference.mockResolvedValue(null);
 });
 
 test('lists only the authenticated user notifications with an optional read filter', async () => {
@@ -67,4 +72,25 @@ test('trims and creates a valid unread notification', async () => {
   expect(create).toHaveBeenCalledWith({
     data: { userId: 'user-1', title: 'Title', message: 'Message', type: 'system', isRead: false },
   });
+});
+
+test('does not create a maintenance notification when that preference is disabled', async () => {
+  findPreference.mockResolvedValue({
+    notificationsEnabled: true,
+    maintenanceNotifications: false,
+  });
+
+  await expect(service.createNotification('agent-1', {
+    title: 'Maintenance updated', message: 'Ticket updated', type: 'maintenance',
+  })).resolves.toBeNull();
+  expect(create).not.toHaveBeenCalled();
+});
+
+test('master notification preference blocks every notification type', async () => {
+  findPreference.mockResolvedValue({ notificationsEnabled: false });
+
+  await expect(service.createNotification('agent-1', {
+    title: 'New message', message: 'You have a message', type: 'message',
+  })).resolves.toBeNull();
+  expect(create).not.toHaveBeenCalled();
 });

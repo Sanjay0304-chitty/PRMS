@@ -34,11 +34,36 @@ export async function deleteNotification(userId: string, id: string) {
   if (result.count === 0) throw new NotificationNotFoundError();
 }
 
+function preferenceFieldForType(type: string) {
+  const normalized = type.toLowerCase();
+  if (normalized.startsWith('viewing')) return 'viewingNotifications';
+  if (normalized === 'message') return 'messageNotifications';
+  if (normalized.startsWith('maintenance')) return 'maintenanceNotifications';
+  if (
+    normalized.startsWith('application')
+    || normalized.startsWith('booking')
+    || normalized.startsWith('agreement')
+    || normalized.startsWith('move_')
+    || normalized.startsWith('tenancy')
+  ) return 'applicationNotifications';
+  return null;
+}
+
+export async function notificationAllowed(userId: string, type: string) {
+  const preferences = await prisma.userPreference.findUnique({ where: { userId } });
+  if (!preferences || preferences.notificationsEnabled) {
+    const field = preferenceFieldForType(type);
+    return !field || !preferences || preferences[field as keyof typeof preferences] !== false;
+  }
+  return false;
+}
+
 export async function createNotification(userId: string, data: { title: string; message: string; type: string; }) {
   if (!userId) throw new Error('userId is required');
   if (!data.title?.trim()) throw new Error('Notification title is required');
   if (!data.message?.trim()) throw new Error('Notification message is required');
   if (!data.type?.trim()) throw new Error('Notification type is required');
+  if (!(await notificationAllowed(userId, data.type))) return null;
   return prisma.notification.create({
     data: {
       userId,

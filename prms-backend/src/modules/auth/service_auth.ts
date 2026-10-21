@@ -125,6 +125,48 @@ export async function getCurrentUser(userId: string) {
   });
 }
 
+const DEFAULT_PREFERENCES = {
+  appearance: 'system',
+  notificationsEnabled: true,
+  viewingNotifications: true,
+  applicationNotifications: true,
+  maintenanceNotifications: true,
+  messageNotifications: true,
+};
+
+export async function getUserPreferences(userId: string) {
+  return (await prisma.userPreference.findUnique({ where: { userId } })) ?? { userId, ...DEFAULT_PREFERENCES };
+}
+
+export async function updateUserPreferences(userId: string, data: Record<string, unknown>) {
+  const allowedBooleanFields = [
+    'notificationsEnabled',
+    'viewingNotifications',
+    'applicationNotifications',
+    'maintenanceNotifications',
+    'messageNotifications',
+  ];
+  const update: Record<string, boolean | string> = {};
+  for (const field of allowedBooleanFields) {
+    if (field in data) {
+      if (typeof data[field] !== 'boolean') throw new Error(`${field} must be true or false`);
+      update[field] = data[field] as boolean;
+    }
+  }
+  if ('appearance' in data) {
+    if (!['system', 'light', 'dark'].includes(String(data.appearance))) {
+      throw new Error('appearance must be system, light, or dark');
+    }
+    update.appearance = String(data.appearance);
+  }
+  if (!Object.keys(update).length) throw new Error('No valid preference fields supplied');
+  return prisma.userPreference.upsert({
+    where: { userId },
+    update,
+    create: { userId, ...DEFAULT_PREFERENCES, ...update },
+  });
+}
+
 // Roles a user may assign to themselves (e.g. during first-time onboarding).
 // 'Admin' is deliberately excluded — granting Admin must never be something
 // a user can trigger on their own account through a self-service endpoint.

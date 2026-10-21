@@ -23,7 +23,7 @@ import {
 
 const roleRoutes = {
   Tenant:    { prefix: '/tenant',   pages: ['dashboard', 'notifications', 'properties', 'bookings', 'viewings', 'payments', 'maintenance', 'messages', 'settings'] },
-  Landlord:  { prefix: '/landlord', pages: ['dashboard', 'notifications', 'properties', 'bookings', 'viewings', 'finance', 'heatmap', 'categories', 'maintenance', 'messages', 'settings'] },
+  Landlord:  { prefix: '/landlord', pages: ['dashboard', 'notifications', 'properties', 'agents', 'bookings', 'viewings', 'finance', 'heatmap', 'categories', 'maintenance', 'messages', 'settings'] },
   Agent:     { prefix: '/agent',    pages: ['dashboard', 'notifications', 'properties', 'bookings', 'viewings', 'maintenance', 'messages', 'categories', 'reports', 'finance', 'settings'] },
   Admin:     { prefix: '/admin',    pages: ['dashboard', 'notifications', 'users', 'properties', 'bookings', 'viewings', 'finance', 'maintenance', 'messages', 'categories', 'audit-logs', 'privacy-requests', 'retention', 'breach-register', 'settings'] },
 }
@@ -38,6 +38,7 @@ const pageMeta = {
   dashboard:    { label: 'Dashboard',       icon: LayoutDashboard },
   notifications:{ label: 'Notifications',   icon: Bell },
   properties:   { label: 'Properties',      icon: Building2 },
+  agents:       { label: 'Manage Agents',   icon: Users },
   bookings:     { label: 'Applications',    icon: CalendarDays },
   viewings:     { label: 'Viewings',        icon: CalendarClock },
   payments:     { label: 'Payments',        icon: WalletCards },
