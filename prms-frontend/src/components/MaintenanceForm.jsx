@@ -1,7 +1,6 @@
 import {
   useState,
   useEffect,
-  useCallback,
 } from 'react';
 
 import Modal from '../components/Modal';
@@ -11,13 +10,6 @@ import { bookingApi } from '../api/booking';
 // Matches the real MaintenancePriority enum (LOW/MEDIUM/HIGH/URGENT) -
 // 'critical' isn't a real value, submitting it would fail at the database.
 const PRIORITY_ORDER = ['urgent', 'high', 'medium', 'low'];
-
-const PRIORITY_MAP = {
-  urgent: { label: 'Urgent', color: '#ef4444' },
-  high: { label: 'High', color: '#f97316' },
-  medium: { label: 'Medium', color: '#eab308' },
-  low: { label: 'Low', color: '#22c55e' },
-};
 
 export default function MaintenanceForm({ onSuccess, onClose, initialData }) {
   const [step, setStep] = useState(0);
@@ -44,7 +36,9 @@ export default function MaintenanceForm({ onSuccess, onClose, initialData }) {
       const bookings = res.data?.data || [];
       const eligible = bookings.filter((booking) => ['CONFIRMED', 'CHECKED_IN'].includes(booking.status));
       setProperties(Array.from(new Map(eligible.filter((booking) => booking.property).map((booking) => [booking.property.id, booking.property])).values()));
-    } catch {}
+    } catch {
+      setProperties([]);
+    }
   };
 
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
@@ -79,7 +73,6 @@ export default function MaintenanceForm({ onSuccess, onClose, initialData }) {
     set('files', Array.from(e.target.files));
   };
 
-  const statusOpts = ['submitted', 'assigned', 'in_progress', 'resolved', 'closed'];
   const steps = [
     { label: 'Details', icon: '📝' },
     { label: 'Photos', icon: '📷' },

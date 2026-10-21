@@ -1,6 +1,5 @@
 import { useRef, useCallback, useEffect, useState } from 'react';
 import { useSettings } from '../contexts/SettingsContext';
-import { motion } from 'framer-motion';
 import { Eye } from 'lucide-react';
 
 const ELEMENT_SELECTOR_MAP = [
@@ -21,9 +20,6 @@ export default function ElementOverlay({ onInspect }) {
   const [cursorX, setCursorX] = useState(0);
   const [cursorY, setCursorY] = useState(0);
   const { settings } = useSettings();
-
-  /* Build a key -> label map for hover labels. */
-  const keyLabelMap = useRef(new Map(ELEMENT_SELECTOR_MAP.map((s) => [s.key, s.key.replace(/_/g, ' ')])));
 
   /* Attach a global event listener inside the preview that highlights on hover. */
   const attachOverlay = useCallback(() => {

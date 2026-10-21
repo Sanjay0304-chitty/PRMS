@@ -7,16 +7,11 @@ import { maintenanceApi } from '../api/maintenance'
 import { getImageUrl } from '../config/imageHelper'
 import {
   ArrowUp,
-  CalendarDays,
   CheckCircle2,
   Clock,
-  Download,
   Heart,
   Home,
-  Loader,
   Minus,
-  Search,
-  SlidersHorizontal,
   WalletCards,
   Wrench,
 } from 'lucide-react'

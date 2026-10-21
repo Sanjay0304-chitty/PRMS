@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getApiBaseUrl } from '../config/apiBaseUrl';
 import {
@@ -71,9 +71,6 @@ function SectionAvatar({ user, uploadImg }) {
       .catch((e) => setMsg({ type: 'error', text: e || 'Upload failed' }))
       .finally(() => setLoading(false));
   };
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const onAvatarChange = useCallback((file) => pick(file), [uploadImg]);
 
   const onDrop = (e) => { e.preventDefault(); e.stopPropagation(); pick(e.dataTransfer.files[0]); };
 

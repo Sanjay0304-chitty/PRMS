@@ -175,5 +175,4 @@ export function CustomizationProvider({ children }) {
   );
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const useCustomization = () => useContext(CustomizationContext);

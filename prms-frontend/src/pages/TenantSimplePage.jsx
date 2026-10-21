@@ -78,7 +78,7 @@ const subPages = {
     cardKeys: ['unread', 'total', 'unread', 'total'],
     cardLabels: ['Unread', 'Total', 'Unread', 'Total'],
     columns: ['Conversation', 'Related Property', 'Category', 'Status', 'Action'],
-    renderRow: (n, i) => [
+    renderRow: (n) => [
       n.title || 'Notification',
       n.property?.title || n.property?.name || '—',
       formatLabel(n.type || 'General'),

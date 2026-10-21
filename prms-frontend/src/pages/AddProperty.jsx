@@ -25,8 +25,6 @@ const PROPERTY_STATUS = [
   'INACTIVE',
 ];
 
-const defaultImagePlaceholders = [];
-
 function AddProperty() {
   const { user } = useAuth();
   const { id } = useParams();
@@ -206,25 +204,6 @@ function AddProperty() {
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const handleSaveAndNew = async () => {
-    await handleSubmit();
-    setFormData({
-      title: '',
-      propertyType: 'apartment',
-      status: 'AVAILABLE',
-      monthlyRent: '',
-      address: '',
-      city: '',
-      state: '',
-      amenities: [],
-      categoryId: '',
-    });
-    setImages([]);
-    setImagePreviews([]);
-    setVideo(null);
-    setVideoPreview('');
   };
 
   const sectionNav = [

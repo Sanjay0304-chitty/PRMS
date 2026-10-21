@@ -10,12 +10,10 @@ import {
   User,
   UserPlus,
   Phone,
-  MapPin,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useRegistration } from '../contexts/RegistrationContext';
 import { ROUTES } from '../config/routes';
-import { privacyApi } from '../api';
 import {
   PRIVACY_NOTICE_ACK_TEXT, PRIVACY_NOTICE_VERSION,
   MARKETING_CONSENT_TEXT, MARKETING_CONSENT_VERSION,

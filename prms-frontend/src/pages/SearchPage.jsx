@@ -1,13 +1,11 @@
-import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { getImageUrl } from '../config/imageHelper';
 import { searchApi } from '../api/search'
 import { ROUTES } from '../config/routes'
 import { isPropertyAvailable } from '../config/propertyStatus'
 import {
-  ArrowRight,
   Building2,
-  ChevronDown,
   Filter,
   MapPin,
   Search,
@@ -74,7 +72,6 @@ function SearchPage() {
   // empty filter panel with no results until the user re-submits.
   useEffect(() => {
     if (searchParams.get('q')) handleSearch()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const clearFilters = useCallback(() => {

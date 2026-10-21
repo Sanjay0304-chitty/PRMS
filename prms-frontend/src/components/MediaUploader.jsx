@@ -20,10 +20,6 @@ const DOC_TYPES = [
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100 MB
 const MAX_DOC_SIZE = 20 * 1024 * 1024; // 20 MB
 
-function getFullMediaUrl(url) {
-  return getFullUrl(url);
-}
-
 /* ================= VIDEO UPLOADER ================= */
 function VideoUploader({ propertyId, videos = [], onChange }) {
   const [uploading, setUploading] = useState(false);

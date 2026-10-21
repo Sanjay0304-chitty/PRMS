@@ -2,11 +2,9 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { categoryApi } from '../api/categories'
 import {
-  FolderOpen,
   Plus,
   Globe,
   User,
-  Star,
   AlertCircle,
 } from 'lucide-react'
 import './AgentCategories.css'

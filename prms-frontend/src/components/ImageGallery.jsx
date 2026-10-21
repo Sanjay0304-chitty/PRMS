@@ -1,11 +1,10 @@
-import { useState, useCallback, useRef, DragEvent, ChangeEvent } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
   ChevronLeft,
   ChevronRight,
   Upload,
-  XCircle,
   Loader2,
   CheckCircle2,
   ImagePlus,

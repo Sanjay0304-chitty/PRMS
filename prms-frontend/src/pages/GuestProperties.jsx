@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import {
   Building2,
   CalendarDays,
-  ChevronDown,
   Globe2,
   Heart,
   Home,
@@ -15,13 +14,12 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Sparkles,
-  Star,
   UserCircle,
   Users,
   X,
 } from 'lucide-react';
 import { getImageUrl } from '../config/imageHelper';
-import { propertyApi, searchApi } from '../api';
+import { propertyApi } from '../api';
 import { PROPERTY_STATUSES, propertyStatusInfo } from '../config/propertyStatus';
 import './GuestProperties.css';
 
@@ -215,7 +213,7 @@ function GuestProperties() {
       {/* Filter bar with area tabs */}
       <section className="guest-filter-bar" data-customize-id="search.filters">
         <div className="guest-area-tabs">
-          {cities.map((city, index) => (
+          {cities.map((city) => (
             <button
               type="button"
               className={searchQuery === city ? 'active' : ''}

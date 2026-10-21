@@ -86,7 +86,7 @@ const subPages = {
     primaryBtn: 'New Message',
     cardLabels: ['Unread', 'Total', 'Unread', 'Total'],
     columns: ['Conversation', 'Related Property', 'Category', 'Status', 'Action'],
-    renderRow: (n, i) => [
+    renderRow: (n) => [
       n.title || 'Notification',
       '—',
       n.type || 'General',

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
@@ -22,8 +22,6 @@ import {
   Info,
 } from 'lucide-react';
 import { propertyApi } from '../api';
-import { useAuth } from '../contexts/AuthContext';
-import ImageGallery from '../components/ImageGallery';
 import { PROPERTY_TYPES } from '../config/propertyTypes';
 import './PropertyEdit.css';
 
@@ -460,8 +458,6 @@ function AmenityItem({ amenity, onEdit, onRemove }) {
 function PropertyEdit() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
-  const { user } = useAuth();
 
   /* ---- State ---- */
   const [property, setProperty] = useState(null);
@@ -605,14 +601,6 @@ function PropertyEdit() {
 
   const removeImage = (imgId) => {
     setImages((prev) => prev.filter((img) => img.id !== imgId));
-  };
-
-  const reorderImages = (imgIds) => {
-    const sorted = imgIds.map((id) => {
-      const idx = images.findIndex((img) => img.id === id);
-      return idx !== -1 ? images[idx] : null;
-    }).filter(Boolean);
-    setImages(sorted);
   };
 
   /* ---- Video handlers ---- */

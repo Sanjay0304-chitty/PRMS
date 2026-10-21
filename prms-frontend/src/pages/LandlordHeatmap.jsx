@@ -47,7 +47,6 @@ function LandlordHeatmap() {
   const monthDays = useMemo(() => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
-    const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
     const days = [];
@@ -62,7 +61,6 @@ function LandlordHeatmap() {
   }, [currentDate]);
 
   function isBooked(propId, day) {
-    const dayStr = day.toISOString().split('T')[0];
     return bookings.some((b) => {
       if (b.propertyId !== propId && b.property?.id !== propId) return false;
       const s = new Date(b.startDate || b.start_date);

@@ -332,5 +332,4 @@ function useAuth() {
   return ctx;
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export { AuthProvider, useAuth, AuthContext };

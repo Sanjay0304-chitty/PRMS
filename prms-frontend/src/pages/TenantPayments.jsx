@@ -8,7 +8,6 @@ import {
   AlertCircle,
   ArrowRight,
   CheckCircle,
-  Banknote,
   Building2,
   CalendarDays,
   ChevronDown,

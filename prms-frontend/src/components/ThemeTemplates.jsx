@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Palette, Check, Download, Upload, FileJson } from 'lucide-react';
+import { Palette, Check, Download, Upload } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
 /* Preset definitions — flat key/value objects covering all categories */

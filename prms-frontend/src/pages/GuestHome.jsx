@@ -20,7 +20,7 @@ import './GuestHome.css';
 
 function GuestHome() {
   const navigate = useNavigate()
-  const { settings, loadSettings } = useSettings()
+  const { settings } = useSettings()
 
   /* Track the active theme so branding colors below can pick the correct
      light_ or dark_ customizer field — without this, a light-only override
@@ -44,16 +44,13 @@ function GuestHome() {
   /* Fallback hero content from settings */
   const heroTitle = settings?.homepage_hero_title || 'Find Your Perfect Space in Malaysia\'s Most Trusted Ecosystem.'
   const heroSubtitle = settings?.homepage_hero_subtitle || 'Experience seamless property discovery with PRMS. Browse verified homes, compare listings, and connect with trusted landlords.'
-  const heroButtonText = settings?.homepage_hero_button_text || 'Browse Properties'
   const heroButtonLink = settings?.homepage_hero_button_link || '/search'
-  const heroImage = settings?.homepage_hero_image || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1600&auto=format&fit=crop'
 
   /* Section visibility toggles */
   const showHero = settings?.homepage_show_hero !== false
   const showSearchBar = settings?.homepage_show_search_bar !== false
   const showFeatured = settings?.homepage_show_featured !== false
   const showFeatures = settings?.homepage_show_features !== false
-  const showTestimonials = settings?.homepage_show_testimonials !== false
   const showCta = settings?.homepage_show_cta !== false
   const showAbout = settings?.homepage_show_about !== false
 

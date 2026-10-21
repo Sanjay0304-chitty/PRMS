@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useSettings } from '../contexts/SettingsContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Wand2, Info, X } from 'lucide-react';
@@ -23,9 +23,9 @@ const ELEMENT_MAP = [
   { label: 'Footer Copyright',      key: 'footer_copyright_text',         section: 'footer' },
 ];
 
-export default function ElementInspector({ onInspect, onClose }) {
+export default function ElementInspector({ onClose }) {
   const { settings } = useSettings();
-  const [hoveredKey, setHoveredKey] = useState(null);
+  const [hoveredKey] = useState(null);
 
   const flatSettings = useMemo(() => {
     if (!settings) return {};
@@ -45,12 +45,6 @@ export default function ElementInspector({ onInspect, onClose }) {
     });
     return map;
   }, []);
-
-  /* Called by the preview overlay when the user hovers an element. */
-  const onHover = useCallback((key) => {
-    setHoveredKey(key);
-    onInspect?.(key);
-  }, [onInspect]);
 
   /* Show the currently hovered element info. */
   const current = hoveredKey

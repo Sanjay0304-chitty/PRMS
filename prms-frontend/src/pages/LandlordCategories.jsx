@@ -1,7 +1,6 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { categoryApi } from '../api/categories'
-import { useAuth } from '../contexts/AuthContext'
 import Modal from '../components/Modal'
 import {
   FolderOpen,
@@ -11,10 +10,8 @@ import {
   Edit2,
   Trash2,
   X,
-  AlertCircle,
   CheckCircle2,
   EyeOff,
-  Power,
 } from 'lucide-react'
 import './LandlordCategories.css'
 
