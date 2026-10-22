@@ -123,6 +123,7 @@
 }
 
 .tenant-layout-topbar {
+  color: var(--header-foreground, #ffffff);
   height: 88px;
   padding: 0 36px;
   display: grid;
@@ -151,7 +152,7 @@
 .tenant-layout-brand h2 {
   margin: 0;
   font-size: 28px;
-  color: var(--text-color);
+  color: var(--header-foreground, #ffffff);
   letter-spacing: -0.6px;
   white-space: nowrap;
   max-width: 380px;
@@ -168,7 +169,7 @@
 
 .tenant-layout-brand p {
   margin: 0;
-  color: var(--text-secondary);
+  color: var(--header-foreground, #ffffff);
   font-size: 17px;
   font-weight: 800;
   overflow: hidden;
@@ -178,6 +179,7 @@
 }
 
 .tenant-layout-search {
+  color: var(--text-color);
   height: 56px;
   padding: 0 22px;
   border: 2px solid var(--border-color);
@@ -204,6 +206,22 @@
   gap: 22px;
 }
 
+.tenant-layout-topbar .profile-dropdown-name,
+.tenant-layout-topbar .profile-dropdown-role,
+.tenant-layout-topbar .theme-switcher {
+  color: var(--header-foreground, #ffffff);
+}
+
+.tenant-layout-topbar .profile-dropdown-toggle:hover,
+.tenant-layout-topbar .notification-toggle:hover {
+  background: rgba(128, 128, 128, 0.2);
+}
+
+/* Dropdown panels have their own surfaces, independent of the header. */
+.tenant-layout-topbar .notification-panel {
+  color: var(--text-primary);
+}
+
 .tenant-layout-icon-btn {
   width: 42px;
   height: 42px;
@@ -211,7 +229,7 @@
   display: grid;
   place-items: center;
   background: transparent;
-  color: var(--text-color);
+  color: var(--header-foreground, #ffffff);
   cursor: pointer;
 }
 

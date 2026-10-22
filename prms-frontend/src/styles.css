@@ -27,6 +27,26 @@
 }
 
 /* Website Customizer – CSS variables (injectable at runtime) */
+/* Portal headers can stay dark while page surfaces switch to light. */
+:is(.admin-layout-topbar, .landlord-layout-topbar, .agent-layout-topbar, .tenant-layout-topbar) {
+  color: var(--header-foreground, #ffffff);
+}
+
+:is(.admin-layout-topbar, .landlord-layout-topbar, .agent-layout-topbar, .tenant-layout-topbar)
+:is([data-customize-id="global.brand.title"], [data-customize-id="global.brand.subtitle"], .profile-dropdown-name, .profile-dropdown-role, .theme-switcher, .notification-toggle) {
+  color: var(--header-foreground, #ffffff);
+}
+
+:is(.admin-layout-topbar, .landlord-layout-topbar, .agent-layout-topbar, .tenant-layout-topbar)
+:is(.profile-dropdown-toggle, .notification-toggle):hover {
+  background: rgba(128, 128, 128, 0.2);
+}
+
+:is(.admin-layout-topbar, .landlord-layout-topbar, .agent-layout-topbar, .tenant-layout-topbar)
+:is([data-customize-id="global.search"], .notification-panel) {
+  color: var(--text-primary);
+}
+
 :root {
   --primary-color:       #8a2be2;
   --secondary-color:     #0f172a;
