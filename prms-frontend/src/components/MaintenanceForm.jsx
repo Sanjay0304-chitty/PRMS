@@ -25,6 +25,7 @@ export default function MaintenanceForm({ onSuccess, onClose, initialData }) {
   );
   const [properties, setProperties] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
     loadProperties();
@@ -41,7 +42,10 @@ export default function MaintenanceForm({ onSuccess, onClose, initialData }) {
     }
   };
 
-  const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
+  const set = (key, val) => {
+    setSubmitError('');
+    setForm(prev => ({ ...prev, [key]: val }));
+  };
 
   const valid = () => {
     if (step === 0) return !!form.title && !!form.description;
@@ -53,6 +57,7 @@ export default function MaintenanceForm({ onSuccess, onClose, initialData }) {
   const prev = () => setStep(step - 1);
 
   const submit = async () => {
+    setSubmitError('');
     setUploading(true);
     try {
       // contactMethod is deliberately NOT sent - there's no such column on
@@ -65,7 +70,13 @@ export default function MaintenanceForm({ onSuccess, onClose, initialData }) {
       if (ticket?.id && form.files.length) await maintenanceApi.addPhotos(ticket.id, form.files);
       onSuccess?.(ticket);
       onClose?.();
-    } catch (e) { alert(e.response?.data?.message || 'Failed to create ticket'); }
+    } catch (e) {
+      const message = e.response?.data?.error?.message
+        || e.response?.data?.message
+        || (e.request ? 'Unable to reach the server. Please check that the backend is running and try again.' : e.message)
+        || 'Failed to create ticket';
+      setSubmitError(message);
+    }
     finally { setUploading(false); }
   };
 
@@ -143,6 +154,11 @@ export default function MaintenanceForm({ onSuccess, onClose, initialData }) {
           {step === 2 && <button className="btn btn-primary" disabled={!valid() || uploading} onClick={submit}>{uploading ? 'Submitting…' : 'Submit'}</button>}
         </div>
       </div>
+      {submitError && (
+        <div className="maintenance-form-error" role="alert">
+          {submitError}
+        </div>
+      )}
     </Modal>
   );
 }
