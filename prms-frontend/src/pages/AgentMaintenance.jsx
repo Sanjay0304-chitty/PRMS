@@ -1,18 +1,19 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { useRecordList, ArchiveAction, ArchiveHint, RecordPagination } from '../components/RecordListControls';
 import Modal from '../components/Modal';
 import { maintenanceApi } from '../api/maintenance';
 import { agentApi } from '../api/agents';
 import { getFullUrl } from '../config/apiBaseUrl';
 import './SharedPageShell.css';
 
-const STATUS_TABS = ['open', 'in_progress', 'resolved', 'closed'];
+const STATUS_TABS = ['all', 'open', 'in_progress', 'resolved', 'closed', 'archived'];
 
 export default function AgentMaintenance() {
   const [tab, setTab] = useState('open');
-  const [tickets, setTickets] = useState([]);
+  const list = useRecordList('maintenance', tab);
+  const { records: tickets, loading, load } = list;
   const [propertyNames, setPropertyNames] = useState({});
   const [selected, setSelected] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [form, setForm] = useState({});
@@ -25,16 +26,6 @@ export default function AgentMaintenance() {
     }).catch(() => {});
   }, []);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await maintenanceApi.assigned({ status: tab.toUpperCase() });
-      setTickets(res.data?.data || []);
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
-  }, [tab]);
-
-  useEffect(() => { load(); }, [load]);
 
   const openTicket = (ticket) => {
     setSelected(ticket);
@@ -74,12 +65,15 @@ export default function AgentMaintenance() {
       <div className="card-table">
         <div className="status-filter">
           {STATUS_TABS.map(t => (
-            <button key={t} className={tab === t ? 'active' : ''} onClick={() => setTab(t)}>
+            <button key={t} className={tab === t ? 'active' : ''} onClick={() => { setTab(t); list.setPage(1); }}>
               {t.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}
+              {t === 'archived' && ` (${list.archivedCount})`}
             </button>
           ))}
         </div>
 
+        <ArchiveHint archived={tab === 'archived'} />
+        {list.error && <div className="alert alert-danger" role="alert">{list.error}</div>}
         {loading ? <p>Loading...</p> : (
           <table className="table">
             <thead>
@@ -89,12 +83,13 @@ export default function AgentMaintenance() {
               {tickets.map(t => (
                 <tr key={t._id || t.id}>
                   <td>{t.title}</td>
-                  <td>{propertyNames[t.propertyId] || t.propertyId || 'N/A'}</td>
+                  <td>{t.property?.title || propertyNames[t.propertyId] || t.propertyId || 'N/A'}</td>
                   <td>{t.user?.full_name ?? t.user?.email}</td>
                   <td><span className={`shell-status-badge status-${t.priority}`}>{t.priority}</span></td>
                   <td><span className={`shell-status-badge status-${(t.status||'').toLowerCase()}`}>{t.status}</span></td>
                   <td>
                     <button className="btn btn-sm btn-outline" onClick={() => openTicket(t)}>Manage</button>
+                    <ArchiveAction record={t} list={list} kind="maintenance" />
                   </td>
                 </tr>
               ))}
@@ -104,11 +99,12 @@ export default function AgentMaintenance() {
         )}
       </div>
 
+      <RecordPagination list={list} />
       {selected && (
         <Modal isOpen={!!selected} onOpenChange={() => setSelected(null)} title="Manage Maintenance Ticket">
           <h3>{selected.title}</h3>
           <p>{selected.description}</p>
-          <p><strong>Property:</strong> {propertyNames[selected.propertyId] || selected.propertyId || 'N/A'}</p>
+          <p><strong>Property:</strong> {selected.property?.title || propertyNames[selected.propertyId] || selected.propertyId || 'N/A'}</p>
           <p><strong>Priority:</strong> {selected.priority} | <strong>Status:</strong> {selected.status}</p>
           {error && <div className="alert alert-danger">{error}</div>}
 

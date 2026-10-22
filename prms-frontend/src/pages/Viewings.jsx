@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
+import { useRecordList, ArchiveAction, ArchiveHint, RecordPagination } from '../components/RecordListControls';
 import { viewingApi } from '../api';
 import { useAuth } from '../contexts/AuthContext';
 import './SharedPageShell.css';
@@ -21,29 +22,15 @@ const STATUS_LABEL = {
 export default function Viewings() {
   const { user } = useAuth();
   const role = (user?.role || '').toLowerCase();
-  const [viewings, setViewings] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState('all');
+  const list = useRecordList('viewing', tab);
+  const { records: viewings, loading, load } = list;
   const [error, setError] = useState('');
   const [proposeFor, setProposeFor] = useState(null);
   const [proposeTime, setProposeTime] = useState('');
   const [rescheduleFor, setRescheduleFor] = useState(null);
   const [rescheduleTime, setRescheduleTime] = useState('');
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const call = role === 'landlord' ? viewingApi.landlord : role === 'agent' ? viewingApi.assigned : role === 'admin' ? viewingApi.all : viewingApi.mine;
-      const res = await call();
-      setViewings(res.data?.data || []);
-    } catch (e) {
-      setError(e.response?.data?.error?.message || 'Failed to load viewings');
-    } finally {
-      setLoading(false);
-    }
-  }, [role]);
-
-  useEffect(() => { load(); }, [load]);
 
   async function run(fn) {
     setError('');
@@ -63,6 +50,11 @@ export default function Viewings() {
       {error && <div className="alert alert-danger mt-2">{error}</div>}
 
       <div className="card-table">
+        <div className="status-filter">
+          {['all', 'active', 'history', 'archived'].map(t => <button key={t} className={tab === t ? 'active' : ''} onClick={() => { setTab(t); list.setPage(1); }}>{t.charAt(0).toUpperCase() + t.slice(1)}{t === 'archived' ? ` (${list.archivedCount})` : ''}</button>)}
+        </div>
+        <ArchiveHint archived={tab === 'archived'} />
+        {list.error && <div className="alert alert-danger" role="alert">{list.error}</div>}
         {loading ? <p>Loading...</p> : (
           <div className="viewings-table-scroll">
             <table className="table viewings-table">
@@ -86,6 +78,7 @@ export default function Viewings() {
                   <td><span className={`shell-status-badge status-${v.status.toLowerCase()}`}>{STATUS_LABEL[v.status] || v.status}</span></td>
                   <td className="viewings-actions-cell">
                     <div className="viewings-actions">
+                    <ArchiveAction record={v} list={list} kind="viewing" />
                     {isManager && v.status === 'REQUESTED' && (
                       <>
                         <button className="btn btn-sm btn-primary" onClick={() => run(() => viewingApi.accept(v.id))}>Accept</button>
@@ -135,6 +128,7 @@ export default function Viewings() {
           </div>
         )}
       </div>
+      <RecordPagination list={list} />
     </div>
   );
 }

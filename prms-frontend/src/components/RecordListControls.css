@@ -1,0 +1,5 @@
+.record-pagination { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-top: 20px; color: var(--text-secondary); font-size: 13px; }
+.record-pagination > div { display: flex; align-items: center; gap: 12px; }
+.record-archive-hint { color: var(--text-secondary); font-size: 13px; margin: 12px 0; }
+.record-archive-button { margin-left: 8px; }
+.record-pagination button:disabled { opacity: .5; cursor: default; }

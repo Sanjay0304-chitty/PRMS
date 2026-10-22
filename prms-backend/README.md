@@ -1,5 +1,16 @@
 # PRMS - Property Rental Management System
 
+## Updating for personal archives
+
+After pulling the archive feature, run these commands from `prms-backend` before starting the server:
+
+```sh
+npx prisma migrate deploy
+npx prisma generate
+```
+
+This adds the `record_archives` table without deleting existing tickets or appointments. Each user can archive cancelled, completed, or no-show viewings and closed maintenance tickets independently. Restore removes only that user's archive marker. Reopened maintenance tickets automatically reappear in the main list. The `/viewings/records` and `/maintenance/records` endpoints enforce role scopes and accept `page`, `limit` (maximum 100), and `tab` filters. Existing reporting endpoints continue to include shared history.
+
 How To Start
 
 ----------------------------------

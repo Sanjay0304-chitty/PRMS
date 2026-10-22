@@ -116,6 +116,7 @@ model User {
   viewingAppointments ViewingAppointment[] @relation("TenantViewings")
   consentRecords      ConsentRecord[]
   privacyRequests     PrivacyRequest[]
+  recordArchives      RecordArchive[]
 
   @@index([email])
   @@map("users")
@@ -421,6 +422,17 @@ model Invoice {
 
   @@index([userId])
   @@map("invoices")
+}
+
+model RecordArchive {
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind       String
+  recordId   String
+  archivedAt DateTime @default(now())
+
+  @@id([userId, kind, recordId])
+  @@map("record_archives")
 }
 
 model MaintenanceTicket {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import {
   CircleHelp,
   Search,
@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { maintenanceApi } from '../api/maintenance'
 import { propertyApi } from '../api/property'
 import './AdminSimplePage.css'
+const LandlordMaintenance = lazy(() => import('./LandlordMaintenance'))
 
 const subPages = {
   maintenance: {
@@ -124,7 +125,7 @@ export default function AdminSimplePage({ type = 'maintenance' }) {
         ))}
       </section>
 
-      <section className="admin-simple-table-card">
+      {type === 'maintenance' ? <Suspense fallback={<p>Loading maintenance...</p>}><LandlordMaintenance embedded /></Suspense> : <section className="admin-simple-table-card">
         <div className="admin-simple-table-header">
           <h2>{cfg.title}</h2>
           <div className="admin-simple-search">
@@ -182,7 +183,7 @@ export default function AdminSimplePage({ type = 'maintenance' }) {
             })}
           </div>
         )}
-      </section>
+      </section>}
     </>
   )
 }

@@ -3,11 +3,13 @@ import { authenticate } from '../../middleware/auth';
 import { adminOrLandlord, adminOrLandlordOrAgent, agentOnly } from '../../middleware/rbac';
 import { MaintenanceController } from './controller_maintenance';
 import uploadMaintenance from '../../middleware/uploadMaintenance';
+import { recordArchiveRoutes } from '../recordArchive/routes_recordArchive';
 
 const router = express.Router();
 const ctrl = new MaintenanceController();
 
 router.use(authenticate);
+router.use(recordArchiveRoutes('maintenance'));
 router.get('/', adminOrLandlord, ctrl.list);
 router.get('/my-tickets', ctrl.myTickets);
 router.get('/assigned', agentOnly, ctrl.assignedTickets);

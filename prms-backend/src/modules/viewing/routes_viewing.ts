@@ -2,11 +2,13 @@ import express from 'express';
 import { authenticate } from '../../middleware/auth';
 import { adminOrLandlordOrAgent, adminOnly, agentOnly, landlordOnly, tenantOnly } from '../../middleware/rbac';
 import { ViewingController } from './controller_viewing';
+import { recordArchiveRoutes } from '../recordArchive/routes_recordArchive';
 
 const router = express.Router();
 const ctrl = new ViewingController();
 
 router.use(authenticate);
+router.use(recordArchiveRoutes('viewing'));
 
 router.post('/', tenantOnly, ctrl.request);
 router.get('/mine', tenantOnly, ctrl.mine);
