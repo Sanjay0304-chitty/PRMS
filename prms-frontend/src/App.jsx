@@ -307,7 +307,6 @@ function AppRoutes() {
         <Route path="properties/edit" element={<PropertyEdit />} />
         <Route path="properties/edit/:id" element={<PropertyEdit />} />
         <Route path="properties/:id" element={<PropertyDetail />} />
-        <Route path="properties/:id/edit" element={<AgentPropertyEdit />} />
         <Route
           path="agents"
           element={
@@ -432,6 +431,14 @@ function AppRoutes() {
           }
         />
         <Route path="properties/:id" element={<PropertyDetail />} />
+        <Route
+          path="properties/:id/edit"
+          element={
+            <SuspenseWrapper>
+              <AgentPropertyEdit />
+            </SuspenseWrapper>
+          }
+        />
         <Route
           path="bookings"
           element={
