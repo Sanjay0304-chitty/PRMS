@@ -19,6 +19,7 @@ export default function LandlordMaintenance({ embedded = false }) {
   const [selected, setSelected] = useState(null);
   const [error, setError] = useState('');
   const [note, setNote] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     (isAdmin ? propertyApi.list({ limit: 100 }) : propertyApi.myProperties()).then((res) => {
@@ -28,19 +29,19 @@ export default function LandlordMaintenance({ embedded = false }) {
   }, [isAdmin]);
 
 
-  const verify = async (id, approved) => {
+  const saveTicket = async (status) => {
+    if (!selected || saving) return;
+    setSaving(true);
+    setError('');
     try {
-      await maintenanceApi.update(id, { status: approved ? 'CLOSED' : 'IN_PROGRESS' });
-      setSelected(null); load();
-    } catch (e) { setError(e.response?.data?.error?.message || 'Maintenance review failed'); }
-  };
-
-  const saveNote = async (id) => {
-    try {
-      await maintenanceApi.update(id, { inspectionNotes: note });
+      await maintenanceApi.update(selected.id, {
+        inspectionNotes: note,
+        ...(status ? { status } : {}),
+      });
       setSelected(null);
       await load();
-    } catch (e) { setError(e.response?.data?.error?.message || 'Failed to save maintenance note'); }
+    } catch (e) { setError(e.response?.data?.error?.message || 'Failed to update maintenance ticket'); }
+    finally { setSaving(false); }
   };
 
   const exportReport = () => {
@@ -61,7 +62,7 @@ export default function LandlordMaintenance({ embedded = false }) {
         {!embedded && <h1 className="page-title">{isAdmin ? 'Maintenance Center' : 'Maintenance Overview'}</h1>}
         <button className="btn btn-primary" onClick={exportReport}>Export Current Page</button>
       </div>
-      {error && <div className="alert alert-danger">{error}</div>}
+      {error && !selected && <div className="alert alert-danger" role="alert">{error}</div>}
 
       <div className="card-table">
         <div className="status-filter">
@@ -88,7 +89,7 @@ export default function LandlordMaintenance({ embedded = false }) {
                   <td><span className={`shell-status-badge status-${t.priority}`}>{t.priority}</span></td>
                   <td><span className={`shell-status-badge status-${(t.status||'').toLowerCase()}`}>{t.status}</span></td>
                   <td>{t.assignedTo?.full_name ?? t.assignedTo?.name ?? '—'}</td>
-                  <td><button className="btn btn-sm btn-outline" onClick={() => { setSelected(t); setNote(t.inspectionNotes || ''); }}>Detail</button><ArchiveAction record={t} list={list} kind="maintenance" /></td>
+                  <td><button className="btn btn-sm btn-outline" onClick={() => { setError(''); setSelected(t); setNote(t.inspectionNotes || ''); }}>Detail</button><ArchiveAction record={t} list={list} kind="maintenance" /></td>
                 </tr>
               ))}
               {!tickets.length && <tr><td colSpan={6}>No maintenance tickets.</td></tr>}
@@ -99,22 +100,29 @@ export default function LandlordMaintenance({ embedded = false }) {
 
       <RecordPagination list={list} />
       {selected && (
-        <Modal isOpen={!!selected} onOpenChange={v => setSelected(v || null)} title="Resolution Review">
+        <Modal isOpen={!!selected} onOpenChange={() => { if (!saving) setSelected(null); }} title="Manage Maintenance Ticket">
           <h3>{selected.title}</h3>
           <p>{selected.description}</p>
           <p><strong>Status:</strong> {selected.status}</p>
+          {error && <div className="alert alert-danger" role="alert">{error}</div>}
           <label className="mt-2">Maintenance note
-            <textarea className="input" rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
+            <textarea className="input" rows={3} value={note} disabled={saving} onChange={(e) => setNote(e.target.value)} />
           </label>
           {!!selected.attachments?.length && <div className="mt-2"><strong>Photographs:</strong> {selected.attachments.map((photo) => <a key={photo.id} href={getFullUrl(photo.url)} target="_blank" rel="noreferrer" style={{ marginLeft: 8 }}>View</a>)}</div>}
-          <button className="btn btn-outline mt-2" onClick={() => saveNote(selected.id)}>Save Note</button>
-          {selected.status === 'RESOLVED' && (
-            <div className="flex gap-2 mt-4">
-              <button className="btn btn-primary" onClick={() => verify(selected._id || selected.id, true)}>Confirm and Close</button>
-              <button className="btn btn-danger" onClick={() => verify(selected._id || selected.id, false)}>Request Revision</button>
+          <button className="btn btn-outline mt-2" disabled={saving} onClick={() => saveTicket()}>{saving ? 'Saving…' : 'Save Note'}</button>
+          {['OPEN', 'IN_PROGRESS'].includes(selected.status) && (
+            <div className="flex gap-2 flex-wrap mt-4">
+              {selected.status === 'OPEN' && <button className="btn btn-primary" disabled={saving} onClick={() => saveTicket('IN_PROGRESS')}>Start Progress</button>}
+              <button className="btn btn-success" disabled={saving} onClick={() => saveTicket('RESOLVED')}>Mark Resolved</button>
             </div>
           )}
-          {selected.status === 'CLOSED' && <button className="btn btn-outline mt-4" onClick={() => verify(selected.id, false)}>Reopen Ticket</button>}
+          {selected.status === 'RESOLVED' && (
+            <div className="flex gap-2 mt-4">
+              <button className="btn btn-primary" disabled={saving} onClick={() => saveTicket('CLOSED')}>Confirm and Close</button>
+              <button className="btn btn-danger" disabled={saving} onClick={() => saveTicket('IN_PROGRESS')}>Request Revision</button>
+            </div>
+          )}
+          {selected.status === 'CLOSED' && <button className="btn btn-outline mt-4" disabled={saving} onClick={() => saveTicket('IN_PROGRESS')}>Reopen Ticket</button>}
         </Modal>
       )}
     </div>

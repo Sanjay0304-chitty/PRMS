@@ -65,3 +65,24 @@ test('maintenance recipients include tenant, owner and assigned agents without d
   await expect(service.getPropertyMaintenanceRecipients('property-1', 'tenant-1'))
     .resolves.toEqual(['tenant-1', 'landlord-1', 'agent-1']);
 });
+
+test.each([
+  ['OPEN', 'IN_PROGRESS'],
+  ['IN_PROGRESS', 'RESOLVED'],
+  ['RESOLVED', 'CLOSED'],
+  ['CLOSED', 'IN_PROGRESS'],
+])('landlord can move a ticket from %s to %s without an agent', async (from, to) => {
+  ticketFindUnique.mockResolvedValue({ ...ticket, status: from });
+  await service.updateTicket('ticket-1', { status: to as 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED', inspectionNotes: 'Owner handled repair' }, 'Landlord');
+  expect(ticketUpdate).toHaveBeenCalledWith(expect.objectContaining({
+    data: expect.objectContaining({ status: to, inspectionNotes: 'Owner handled repair' }),
+  }));
+  expect(assignmentFindMany).not.toHaveBeenCalled();
+});
+
+test('maintenance notifications still include the owner when no agent is assigned', async () => {
+  propertyFindUnique.mockResolvedValue({ ownerId: 'landlord-1' });
+  assignmentFindMany.mockResolvedValue([]);
+  await expect(service.getPropertyMaintenanceRecipients('property-1', 'tenant-1'))
+    .resolves.toEqual(['tenant-1', 'landlord-1']);
+});
