@@ -1,19 +1,20 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '../config/routes'
 import { bookingApi } from '../api/booking'
 import { favoritesApi } from '../api/favorites'
 import { maintenanceApi } from '../api/maintenance'
+import { paymentApi } from '../api/payment'
 import { getImageUrl } from '../config/imageHelper'
 import {
   ArrowUp,
-  CheckCircle2,
   Clock,
   Heart,
   Home,
   Minus,
   WalletCards,
   Wrench,
+  X,
 } from 'lucide-react'
 import './TenantDashboard.css'
 
@@ -40,7 +41,50 @@ function TenantDashboard() {
   const [rentals, setRentals] = useState([])
   const [savedProperties, setSavedProperties] = useState([])
   const [maintenance, setMaintenance] = useState([])
+  const [maintenanceCounts, setMaintenanceCounts] = useState({ open: 0, inProgress: 0 })
   const [dataError, setDataError] = useState('')
+  const [paymentData, setPaymentData] = useState({ recent: [], nextDue: null })
+  const [paymentsLoading, setPaymentsLoading] = useState(true)
+  const [paymentError, setPaymentError] = useState('')
+  const [dismissBusy, setDismissBusy] = useState(false)
+  const [dismissedPayment, setDismissedPayment] = useState(null)
+  const paymentVersion = useRef(0)
+
+  const refreshPayments = useCallback(async () => {
+    const version = ++paymentVersion.current
+    try {
+      const res = await paymentApi.dashboard()
+      if (version === paymentVersion.current) {
+        setPaymentData(res.data.data)
+        setPaymentError('')
+      }
+    } catch {
+      if (version === paymentVersion.current) setPaymentError('Payment activity could not be refreshed. Please check My Payments.')
+    } finally {
+      if (version === paymentVersion.current) setPaymentsLoading(false)
+    }
+  }, [])
+
+  async function dismissPayment(payment, dismissed) {
+    if (dismissBusy) return
+    setDismissBusy(true)
+    setPaymentError('')
+    ++paymentVersion.current
+    try {
+      await paymentApi.dismissActivity(payment.id, dismissed)
+      setDismissedPayment(dismissed ? payment : null)
+      await refreshPayments()
+    } catch (e) {
+      setPaymentError(e.response?.data?.error?.message || 'Unable to update Payment Activity. Please try again.')
+    } finally { setDismissBusy(false) }
+  }
+
+  useEffect(() => {
+    refreshPayments()
+    window.addEventListener('focus', refreshPayments)
+    const timer = window.setInterval(refreshPayments, 60000)
+    return () => { ++paymentVersion.current; window.removeEventListener('focus', refreshPayments); window.clearInterval(timer) }
+  }, [refreshPayments])
 
   useEffect(() => {
     localStorage.setItem('prmsDashboardPath', '/tenant')
@@ -49,10 +93,11 @@ function TenantDashboard() {
 
     async function loadDashboardData() {
       try {
-        const [bookingsRes, favoritesRes, ticketsRes] = await Promise.all([
+        const [bookingsRes, favoritesRes, openTicketsRes, progressTicketsRes] = await Promise.all([
           bookingApi.myBookings(),
           favoritesApi.getMyFavorites(),
-          maintenanceApi.myTickets({ limit: 5 }),
+          maintenanceApi.myTickets({ status: 'OPEN', limit: 4 }),
+          maintenanceApi.myTickets({ status: 'IN_PROGRESS', limit: 4 }),
         ])
         if (cancelled) return
 
@@ -74,12 +119,19 @@ function TenantDashboard() {
           }))
         )
 
-        const tickets = ticketsRes.data?.data || []
+        setMaintenanceCounts({
+          open: openTicketsRes.data?.pagination?.total || 0,
+          inProgress: progressTicketsRes.data?.pagination?.total || 0,
+        })
+        const tickets = [...(openTicketsRes.data?.data || []), ...(progressTicketsRes.data?.data || [])]
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
         setMaintenance(
           tickets.slice(0, 4).map((t) => ({
+            id: t.id,
             title: t.title,
             desc: t.description,
             status: (t.status || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+            inProgress: t.status === 'IN_PROGRESS',
             urgent: (t.priority || '').toUpperCase() === 'URGENT' || (t.priority || '').toUpperCase() === 'HIGH',
           }))
         )
@@ -166,16 +218,13 @@ function TenantDashboard() {
           </>
         ) : (
           <>
-            {/* Next Payment - left as a placeholder rather than fake data;
-                there's no tenant-scoped payment listing endpoint on the
-                backend yet (adding one is payment-module work, out of
-                scope for this pass), so this can't show a real value. */}
+            {/* Earliest outstanding payment, including overdue balances. */}
             <KpiCard
               icon={WalletCards}
               iconBg="icon-purple"
               label="Next Payment Due"
-              value="—"
-              sublabel="See Payments for details"
+              value={paymentsLoading ? 'Loading…' : paymentError ? '—' : paymentData.nextDue ? formatAmount(paymentData.nextDue.amount) : '—'}
+              sublabel={paymentError ? 'Payment data unavailable' : paymentsLoading ? 'Checking payments' : paymentData.nextDue ? `Due ${new Date(paymentData.nextDue.due_date).toLocaleDateString('en-MY')}` : 'No outstanding payments'}
               trend={null}
               trendDir="neutral"
             />
@@ -196,9 +245,9 @@ function TenantDashboard() {
               icon={Wrench}
               iconBg="icon-rose"
               label="Maintenance"
-              value={`${maintenance.length} Open`}
-              sublabel={maintenance.some((m) => m.urgent) ? 'Urgent request open' : maintenance.length ? 'All routine' : 'No open requests'}
-              trend={maintenance.length ? 'In progress' : null}
+              value={`${maintenanceCounts.open + maintenanceCounts.inProgress} Active`}
+              sublabel={`${maintenanceCounts.open} open · ${maintenanceCounts.inProgress} in progress`}
+              trend={maintenanceCounts.inProgress ? 'In progress' : maintenanceCounts.open ? 'Awaiting action' : null}
               trendDir="neutral"
             />
           </>
@@ -233,7 +282,7 @@ function TenantDashboard() {
                 <strong>{rental.name}</strong>
                 <p>{rental.location}</p>
               </div>
-              <span className="status-badge active">Active</span>
+              <span className="tenant-dashboard-status active">Active</span>
             </div>
           )) : (
             <p className="panel-subtitle">No active rentals right now.</p>
@@ -296,12 +345,23 @@ function TenantDashboard() {
             </button>
           </div>
 
-          {/* Not wired to real data - see the Next Payment Due KPI note
-              above, same reason (no tenant-scoped payment list endpoint
-              yet). Left as an honest empty state pointing at the real
-              Payments page rather than showing fabricated transactions. */}
           <div className="payment-list">
-            <p className="panel-subtitle">Visit Payments for your full transaction history.</p>
+            {dismissedPayment && <p className="panel-subtitle" role="status">Hidden from this dashboard. Still available in My Payments. <button type="button" className="btn-outline-sm" disabled={dismissBusy} onClick={() => dismissPayment(dismissedPayment, false)}>Undo</button></p>}
+            {paymentError && <p className="panel-subtitle" role="alert">{paymentError}</p>}
+            {paymentsLoading ? <p className="panel-subtitle">Loading payments…</p> : !paymentError && !paymentData.recent.length ? <p className="panel-subtitle">No payments found for your bookings yet.</p> : paymentData.recent.map(payment => (
+              <div className="payment-item tenant-payment-activity-item" key={payment.id}>
+                <div className="payment-icon-sm"><WalletCards size={22} /></div>
+                <div className="payment-info">
+                  <h4>{payment.booking?.property?.title || 'Property payment'}</h4>
+                  <p>{payment.type || 'rent'} · {payment.status === 'PAID' && payment.paid_at ? `Paid ${new Date(payment.paid_at).toLocaleDateString('en-MY')}` : `Due ${new Date(payment.due_date).toLocaleDateString('en-MY')}`}</p>
+                </div>
+                <div className="payment-right">
+                  <strong>{formatAmount(payment.amount)}</strong>
+                  <span className={`tenant-dashboard-status ${payment.status === 'PAID' ? 'paid' : payment.status === 'FAILED' ? 'failed' : payment.status === 'REFUNDED' ? 'refunded' : 'pending'}`}>{({ PAID: 'Paid', PENDING: 'Pending', UNPAID: 'Unpaid', FAILED: 'Failed', REFUNDED: 'Refunded' })[payment.status] || payment.status}</span>
+                </div>
+                {['PAID', 'REFUNDED', 'FAILED'].includes(payment.status) && <button type="button" className="payment-activity-dismiss" disabled={dismissBusy} title="Hide from dashboard" aria-label={`Hide payment activity for ${payment.booking?.property?.title || 'property'}`} onClick={() => dismissPayment(payment, true)}><X size={16} /></button>}
+              </div>
+            ))}
           </div>
         </div>
 
@@ -324,7 +384,7 @@ function TenantDashboard() {
 
           <div className="maintenance-list">
             {maintenance.length ? maintenance.map((req, i) => (
-              <div className="maintenance-item" key={`${req.title}-${i}`}>
+              <div className="maintenance-item" key={req.id || `${req.title}-${i}`}>
                 <div className={`maintenance-icon ${req.urgent ? 'urgent' : 'soft'}`}>
                   <Wrench size={22} />
                 </div>
@@ -332,12 +392,8 @@ function TenantDashboard() {
                 <div className="maintenance-info">
                   <h4>{req.title}</h4>
                   <p>{req.desc}</p>
-                  <span className={`status-badge ${req.urgent ? 'pending' : 'active'}`}>
-                    {req.urgent ? (
-                      <Clock size={12} />
-                    ) : (
-                      <CheckCircle2 size={12} />
-                    )}
+                  <span className={`tenant-dashboard-status ${req.inProgress ? 'active' : 'pending'}`}>
+                    {req.inProgress ? <Wrench size={12} /> : <Clock size={12} />}
                     {req.status}
                   </span>
                 </div>

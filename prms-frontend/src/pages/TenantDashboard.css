@@ -216,6 +216,11 @@
 }
 
 /* ---- Maintenance list ---- */
+.tenant-payment-activity-item { position: relative; padding-right: 38px; }
+.payment-activity-dismiss { position: absolute; top: 6px; right: 6px; display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--text-secondary); cursor: pointer; }
+.payment-activity-dismiss:hover { background: var(--surface-container); color: var(--text-primary); }
+.payment-activity-dismiss:disabled { opacity: .5; cursor: default; }
+
 .maintenance-list {
   display: grid;
   gap: var(--spacing-md);
@@ -246,7 +251,7 @@
 }
 .maintenance-icon.urgent {
   background: var(--error-state);
-  color: var(--status-error);
+  color: #ffffff;
 }
 .maintenance-icon.soft {
   background: var(--primary-fixed);
@@ -266,7 +271,7 @@
 }
 
 /* ---- Status badges (reused for payments & maintenance) ---- */
-.status-badge {
+.tenant-dashboard-status {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -276,15 +281,23 @@
   font-weight: 700;
   letter-spacing: 0.3px;
 }
-.status-badge.paid {
+.tenant-dashboard-status.paid {
   color: var(--status-success);
   background: rgba(22, 163, 74, 0.1);
 }
-.status-badge.pending {
+.tenant-dashboard-status.pending {
+  color: var(--status-warning, #f59e0b);
+  background: rgba(245, 158, 11, 0.1);
+}
+.tenant-dashboard-status.failed {
   color: var(--status-error);
   background: rgba(220, 38, 38, 0.1);
 }
-.status-badge.active {
+.tenant-dashboard-status.refunded {
+  color: var(--text-secondary);
+  background: var(--surface-container);
+}
+.tenant-dashboard-status.active {
   color: var(--status-success);
   background: rgba(22, 163, 74, 0.1);
 }

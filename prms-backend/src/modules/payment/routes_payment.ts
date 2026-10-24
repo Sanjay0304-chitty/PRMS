@@ -11,6 +11,8 @@ router.use(authenticate);
 // ── Static paths (must come before dynamic :id routes) ──
 router.get('/summary', adminOrLandlordOrAgent, ctrl.summary);
 router.get('/my-payments', tenantOnly, ctrl.myPayments);
+router.get('/my-dashboard', tenantOnly, ctrl.tenantDashboard);
+router.patch('/:id/dashboard-visibility', tenantOnly, ctrl.dashboardVisibility);
 router.get('/mock-transactions/:transactionId', tenantOnly, ctrl.mockTransactionStatus);
 router.post('/mock-transactions/:transactionId/complete', tenantOnly, ctrl.completeMockTransaction);
 

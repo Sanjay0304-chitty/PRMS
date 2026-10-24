@@ -104,6 +104,21 @@ export class PaymentController {
     } catch (error: any) { HELPERS(req).log({ action: 'VIEW_MY_PAYMENTS', entity: 'Payment', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(500).json({ success: false, error: { message: error.message } }); }
   };
 
+  tenantDashboard = async (req: AuthRequest, res: Response) => {
+    try {
+      const data = await paymentService.getTenantDashboardPayments(req.user!.id);
+      res.json(successResponse(data));
+    } catch (error: any) { res.status(500).json({ success: false, error: { message: error.message } }); }
+  };
+
+  dashboardVisibility = async (req: AuthRequest, res: Response) => {
+    if (typeof req.body?.dismissed !== 'boolean') return res.status(400).json({ error: { message: 'Dismissed must be true or false' } });
+    try {
+      await paymentService.setDashboardPaymentDismissed(req.user!.id, String(req.params.id), req.body.dismissed);
+      res.json(successResponse(null, req.body.dismissed ? 'Hidden from Payment Activity' : 'Restored to Payment Activity'));
+    } catch (error: any) { res.status(error.message === 'Payment not found' ? 404 : 400).json({ error: { message: error.message } }); }
+  };
+
   mockCheckout = async (req: AuthRequest, res: Response) => {
     try {
       const { paymentId } = req.params;

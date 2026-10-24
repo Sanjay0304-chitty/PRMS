@@ -1,4 +1,5 @@
 import { prisma } from '../../db';
+import type { Prisma } from '@prisma/client';
 
 // Platform-wide finance summary. Consumed by both Admin Reports (which reads
 // total/pending/collected/overdue as *counts*) and FinanceDashboard (which
@@ -163,6 +164,30 @@ export async function markAsPaid(id: string) {
 }
 
 // ── Tenant-only payments ──────────────────────────────────────────────
+
+export async function getTenantDashboardPayments(userId: string) {
+  const dismissed = await prisma.recordArchive.findMany({ where: { userId, kind: 'payment_activity' } });
+  const hidden: Prisma.PaymentWhereInput[] = dismissed.map(item => ({ id: item.recordId, updated_at: { lte: item.archivedAt }, status: { in: ['PAID', 'REFUNDED', 'FAILED'] } }));
+  const select = {
+    id: true, amount: true, type: true, status: true, due_date: true,
+    paid_at: true, updated_at: true,
+    booking: { select: { property: { select: { id: true, title: true } } } },
+  };
+  const [recent, nextDue] = await Promise.all([
+    prisma.payment.findMany({ where: { userId, ...(hidden.length ? { NOT: { OR: hidden } } : {}) }, select, orderBy: [{ updated_at: 'desc' }, { id: 'desc' }], take: 4 }),
+    prisma.payment.findFirst({ where: { userId, status: { in: ['UNPAID', 'PENDING', 'FAILED'] } }, select, orderBy: [{ due_date: 'asc' }, { id: 'asc' }] }),
+  ]);
+  return { recent, nextDue };
+}
+
+export async function setDashboardPaymentDismissed(userId: string, paymentId: string, dismissed: boolean) {
+  const payment = await prisma.payment.findFirst({ where: { id: paymentId, userId }, select: { id: true, status: true } });
+  if (!payment) throw new Error('Payment not found');
+  if (dismissed && !['PAID', 'REFUNDED', 'FAILED'].includes(payment.status)) throw new Error('Unpaid and pending payments must remain visible');
+  const key = { userId, kind: 'payment_activity', recordId: paymentId };
+  if (dismissed) await prisma.recordArchive.upsert({ where: { userId_kind_recordId: key }, create: key, update: { archivedAt: new Date() } });
+  else await prisma.recordArchive.deleteMany({ where: key });
+}
 
 export async function getMyPayments(userId: string, page = 1, limit = 10) {
   const skip = (page - 1) * limit;

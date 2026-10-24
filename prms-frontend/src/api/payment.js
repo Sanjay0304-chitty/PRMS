@@ -1,6 +1,12 @@
 import { apiClient } from './ApiClient';
 
 export const paymentApi = {
+  dashboard() {
+    return apiClient.get('/payments/my-dashboard');
+  },
+  dismissActivity(id, dismissed = true) {
+    return apiClient.patch(`/payments/${id}/dashboard-visibility`, { dismissed });
+  },
   list(params) {
     return apiClient.get('/payments', { params });
   },

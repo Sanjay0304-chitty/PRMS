@@ -28,7 +28,7 @@ export async function getTickets(page = 1, limit = 10, userId?: string, status?:
       // model (just a bare string column, unlike Booking's real relation) -
       // can't include it without a schema change, so ticket.property stays
       // unavailable from this endpoint for now.
-      where, skip: (page - 1) * limit, take: limit, orderBy: { id: 'desc' },
+      where, skip: (page - 1) * limit, take: limit, orderBy: [{ created_at: 'desc' }, { id: 'desc' }],
       include: includeTicket,
     }),
     prisma.maintenanceTicket.count({ where }),
