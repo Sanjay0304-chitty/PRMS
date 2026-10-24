@@ -48,7 +48,6 @@ export const ROUTES = {
     propertyDetail: (id: string) => `/landlord/properties/${id}`,
     bookings: '/landlord/bookings',
     finance: '/landlord/finance',
-    heatmap: '/landlord/heatmap',
     maintenance: '/landlord/maintenance',
     messages: '/landlord/messages',
     settings: '/landlord/settings',

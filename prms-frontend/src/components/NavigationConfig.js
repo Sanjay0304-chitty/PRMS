@@ -12,7 +12,6 @@ import {
   Users,
   FileText,
   Tag,
-  BarChart3,
   Bell,
   ShieldCheck,
   Palette,
@@ -23,7 +22,7 @@ import {
 
 const roleRoutes = {
   Tenant:    { prefix: '/tenant',   pages: ['dashboard', 'notifications', 'properties', 'bookings', 'viewings', 'payments', 'maintenance', 'messages', 'settings'] },
-  Landlord:  { prefix: '/landlord', pages: ['dashboard', 'notifications', 'properties', 'agents', 'bookings', 'viewings', 'finance', 'heatmap', 'categories', 'maintenance', 'messages', 'settings'] },
+  Landlord:  { prefix: '/landlord', pages: ['dashboard', 'notifications', 'properties', 'agents', 'bookings', 'viewings', 'finance', 'categories', 'maintenance', 'messages', 'settings'] },
   Agent:     { prefix: '/agent',    pages: ['dashboard', 'notifications', 'properties', 'bookings', 'viewings', 'maintenance', 'messages', 'categories', 'reports', 'finance', 'settings'] },
   Admin:     { prefix: '/admin',    pages: ['dashboard', 'notifications', 'users', 'properties', 'bookings', 'viewings', 'finance', 'maintenance', 'messages', 'categories', 'audit-logs', 'privacy-requests', 'retention', 'breach-register', 'settings'] },
 }
@@ -43,7 +42,6 @@ const pageMeta = {
   viewings:     { label: 'Viewings',        icon: CalendarClock },
   payments:     { label: 'Payments',        icon: WalletCards },
   finance:      { label: 'Finance',         icon: WalletCards },
-  heatmap:      { label: 'Heatmap',         icon: BarChart3 },
   maintenance:  { label: 'Maintenance',     icon: Wrench },
   messages:     { label: 'Messages',        icon: MessageCircle },
   settings:     { label: 'Settings',        icon: Settings },

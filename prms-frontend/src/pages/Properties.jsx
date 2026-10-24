@@ -5,7 +5,6 @@ import { motion } from 'framer-motion'
 import {
   Building2,
   MapPin,
-  DollarSign,
   Search,
   Filter,
   Plus,
@@ -305,7 +304,17 @@ function Properties() {
                           {(() => {
                             const imageUrl = p.images?.[0]?.url || p.image || p.thumbnail;
                             if (imageUrl) {
-                              return <img src={getImageUrl(imageUrl)} alt={p.name || p.title} />;
+                              return (
+                                <img
+                                  src={getImageUrl(imageUrl)}
+                                  alt={p.name || p.title}
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                    const fb = e.currentTarget.parentElement?.querySelector('.image-fallback-placeholder');
+                                    if (fb) fb.style.display = 'flex';
+                                  }}
+                                />
+                              );
                             }
                             return (
                               <div className="image-placeholder">
@@ -313,6 +322,9 @@ function Properties() {
                               </div>
                             );
                           })()}
+                          <div className="image-placeholder image-fallback-placeholder" style={{ display: 'none' }}>
+                            <Building2 size={40} />
+                          </div>
                           <span className={`status-badge status-${stype}`}>
                             {propertyStatusInfo(p.status).label}
                           </span>
@@ -330,9 +342,8 @@ function Properties() {
                           </span>
                           <div className="property-footer">
                             <div className="property-price">
-                              <DollarSign size={14} />
                               <span>
-                                {Number(p.price || p.rent || 0).toLocaleString()}{' '}
+                                RM {Number(p.price || p.rent || 0).toLocaleString()}{' '}
                                 /mo
                               </span>
                             </div>

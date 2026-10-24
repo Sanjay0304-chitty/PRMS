@@ -48,7 +48,7 @@ export default function LandlordBookings() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await bookingApi.landlordBookings();
+      const res = await bookingApi.landlordBookings({ limit: 100 });
       setBookings(res.data?.data || []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }

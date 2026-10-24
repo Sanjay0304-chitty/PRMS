@@ -58,7 +58,6 @@ import AgentSimplePage from './pages/AgentSimplePage';
 
 /*  Shared  */
 import Profile from './pages/Profile';
-import LandlordHeatmap from './pages/LandlordHeatmap';
 import PaymentReceipt from './pages/PaymentReceipt';
 import CommunicationHub from './components/CommunicationHub';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -326,7 +325,6 @@ function AppRoutes() {
             </SuspenseWrapper>
           }
         />
-        <Route path="heatmap" element={<LandlordHeatmap />} />
         <Route path="categories" element={<LandlordCategories />} />
         <Route
           path="maintenance"

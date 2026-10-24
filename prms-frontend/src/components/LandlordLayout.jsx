@@ -24,7 +24,6 @@ function getTopbarTitle(activePage) {
     bookings: 'Rental Applications',
     viewings: 'Viewing Appointments',
     finance: 'Finance Console',
-    heatmap: 'Market Heatmap',
     categories: 'Category Management',
     maintenance: 'Maintenance Center',
     messages: 'Messages',

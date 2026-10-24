@@ -6,7 +6,7 @@ export async function getBookings(page = 1, limit = 10, userId?: string, status?
   // BookingStatus enum values are uppercase; accept either case from callers.
   if (status) where.status = status.toUpperCase();
   const [bookings, total] = await Promise.all([
-    prisma.booking.findMany({ where, skip: (page - 1) * limit, take: limit, orderBy: { id: 'desc' }, include: { user: { select: { id: true, full_name: true, email: true } }, property: true } }),
+    prisma.booking.findMany({ where, skip: (page - 1) * limit, take: limit, orderBy: { created_at: 'desc' }, include: { user: { select: { id: true, full_name: true, email: true } }, property: true } }),
     prisma.booking.count({ where }),
   ]);
   return { bookings, total };
@@ -18,7 +18,7 @@ export async function getLandlordBookings(userId: string, page = 1, limit = 10, 
 
   const [bookings, total] = await Promise.all([
     prisma.booking.findMany({
-      where, skip: (page - 1) * limit, take: limit, orderBy: { id: 'desc' },
+      where, skip: (page - 1) * limit, take: limit, orderBy: { created_at: 'desc' },
       include: { user: { select: { id: true, full_name: true, email: true } }, property: true },
     }),
     prisma.booking.count({ where }),
@@ -39,7 +39,7 @@ export async function getAgentBookings(userId: string, page = 1, limit = 10, sta
 
   const [bookings, total] = await Promise.all([
     prisma.booking.findMany({
-      where, skip: (page - 1) * limit, take: limit, orderBy: { id: 'desc' },
+      where, skip: (page - 1) * limit, take: limit, orderBy: { created_at: 'desc' },
       include: { user: { select: { id: true, full_name: true, email: true } }, property: true },
     }),
     prisma.booking.count({ where }),
@@ -349,11 +349,14 @@ export async function checkOverlap(
   startDate: string,
   endDate: string,
   excludeBookingId?: string,
-): Promise<{ hasOverlap: boolean; overlapping: any[] }> {
+): Promise<{ hasOverlap: boolean; overlapping: any[]; conflictingBookings: any[] }> {
+  // Only confirmed or actively checked-in tenancies block dates.
+  // Completed tenancies (CHECKED_OUT), cancelled bookings (CANCELLED), and
+  // unreviewed applications (PENDING) must not lock the property.
   const overlaps = await prisma.booking.findMany({
     where: {
       propertyId,
-      status: { notIn: ['CANCELLED'] },
+      status: { in: ['CONFIRMED', 'CHECKED_IN'] },
       id: excludeBookingId ? { not: excludeBookingId } : undefined,
       OR: [
         {
@@ -365,7 +368,19 @@ export async function checkOverlap(
     include: { user: { select: { id: true, full_name: true } } },
   });
 
-  return { hasOverlap: overlaps.length > 0, overlapping: overlaps };
+  const formattedOverlaps = overlaps.map((b) => ({
+    id: b.id,
+    start_date: b.start_date.toISOString().slice(0, 10),
+    end_date: b.end_date.toISOString().slice(0, 10),
+    status: b.status,
+    tenantName: b.user?.full_name || 'Existing Tenant',
+  }));
+
+  return {
+    hasOverlap: formattedOverlaps.length > 0,
+    overlapping: formattedOverlaps,
+    conflictingBookings: formattedOverlaps,
+  };
 }
 
 export async function getBookingSummary(): Promise<{ pending: number; confirmed: number; active: number; cancelled: number; total: number }> {

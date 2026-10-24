@@ -56,7 +56,13 @@ function TenantBookingModal({ property, isOpen, onClose }) {
         startDate: moveInDate,
         endDate: expectedEndDate,
       });
-      setOverlapResult(res?.data?.data ?? res?.data);
+      const data = res?.data?.data ?? res?.data;
+      const conflicts = data?.conflictingBookings || data?.overlapping || [];
+      setOverlapResult({
+        ...data,
+        hasOverlap: Boolean(data?.hasOverlap && conflicts.length > 0),
+        conflictingBookings: conflicts,
+      });
     } catch (err) {
       setOverlapResult({
         hasOverlap: false,
