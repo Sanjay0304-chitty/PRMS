@@ -10,7 +10,7 @@ const router = express.Router();
 const ctrl = new PropertyController();
 
 router.get('/', ctrl.list);
-router.get('/my-properties', authenticate, landlordOnly, ctrl.myProperties);
+router.get('/my-properties', authenticate, adminOrLandlord, ctrl.myProperties);
 router.get('/:id', ctrl.getById);
 router.post('/', authenticate, adminOrLandlord, createPropertyBody, ctrl.create);
 router.put('/:id', authenticate, adminOrLandlord, propertyIdParam, updatePropertyBody, ctrl.update);
@@ -22,5 +22,7 @@ router.post('/:id/videos', authenticate, ctrl.requireManagedProperty, uploadProp
 router.delete('/:id/videos', authenticate, ctrl.deleteVideo);
 router.post('/:id/documents', authenticate, ctrl.requireManagedProperty, uploadProperty.single('document'), ctrl.addDocument);
 router.delete('/:id/documents', authenticate, ctrl.deleteDocument);
+router.get('/:id/reviews', ctrl.getReviews);
+router.post('/:id/reviews', authenticate, ctrl.addReview);
 
 export default router;

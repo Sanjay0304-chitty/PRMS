@@ -232,9 +232,27 @@ model Property {
   invoices            Invoice[]
   favorites           Favorite[]
   viewingAppointments ViewingAppointment[]
+  rating              Float?               @default(4.8)
+  reviewsCount        Int?                 @default(0)
+  reviews             Review[]
 
   @@index([ownerId])
   @@map("properties")
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  userId     String?
+  userName   String
+  userAvatar String?
+  rating     Float    @default(5.0)
+  comment    String
+  created_at DateTime @default(now())
+
+  @@index([propertyId])
+  @@map("reviews")
 }
 
 model Amenity {

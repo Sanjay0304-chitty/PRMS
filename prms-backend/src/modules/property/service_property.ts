@@ -42,7 +42,13 @@ export async function getAllProperties(page = 1, limit = 10, filters: { type?: s
 export async function getPropertyById(id: string) {
   return prisma.property.findUnique({
     where: { id },
-    include: { owner: { select: { id: true, full_name: true, email: true, phone: true, profile_img_url: true } }, amenities: true, images: true, category: true },
+    include: {
+      owner: { select: { id: true, full_name: true, email: true, phone: true, profile_img_url: true } },
+      amenities: true,
+      images: true,
+      category: true,
+      reviews: { orderBy: { created_at: 'desc' } },
+    },
   });
 }
 
@@ -300,3 +306,38 @@ export async function getLandlordProperties(landlordId: string) {
     agentProperties: p.agentProperties.map((ap) => ap.agent),
   }));
 }
+
+export async function addPropertyReview(
+  propertyId: string,
+  data: { userId?: string; userName: string; userAvatar?: string; rating: number; comment: string }
+) {
+  const review = await prisma.review.create({
+    data: {
+      propertyId,
+      userId: data.userId,
+      userName: data.userName,
+      userAvatar: data.userAvatar,
+      rating: data.rating,
+      comment: data.comment,
+    },
+  });
+
+  const reviews = await prisma.review.findMany({ where: { propertyId } });
+  const count = reviews.length;
+  const avg = count > 0 ? Number((reviews.reduce((sum, r) => sum + r.rating, 0) / count).toFixed(1)) : 5.0;
+
+  await prisma.property.update({
+    where: { id: propertyId },
+    data: { rating: avg, reviewsCount: count },
+  });
+
+  return review;
+}
+
+export async function getPropertyReviews(propertyId: string) {
+  return prisma.review.findMany({
+    where: { propertyId },
+    orderBy: { created_at: 'desc' },
+  });
+}
+

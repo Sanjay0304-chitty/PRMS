@@ -129,8 +129,17 @@
 }
 
 /* ── Title Row ── */
+/* ── Title Row ── */
 .pd-title-row {
-  margin-bottom: 16px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.pd-title-col {
+  flex: 1;
 }
 
 .pd-title {
@@ -144,10 +153,23 @@
 .pd-rating {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   font-size: 14px;
   color: var(--text-color, #1a1a1a);
   font-weight: 600;
+  flex-wrap: wrap;
+}
+
+.pd-rating-val {
+  font-weight: 700;
+  color: var(--text-color, #1a1a1a);
+}
+
+.pd-rating-count {
+  color: var(--text-secondary, #94a3b8);
+  font-size: 13px;
+  font-weight: 500;
+  margin-right: 4px;
 }
 
 .pd-rating-loc {
@@ -155,7 +177,34 @@
   align-items: center;
   gap: 3px;
   color: var(--text-secondary, #94a3b8);
-  margin-left: 4px;
+}
+
+.pd-favorite-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: var(--radius-full, 999px);
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+  white-space: nowrap;
+}
+
+.pd-favorite-btn:hover {
+  background: var(--surface-container);
+  transform: translateY(-1px);
+}
+
+.pd-favorite-btn.is-liked {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.06);
 }
 
 /* ── Image Gallery (Airbnb-style) ── */
@@ -209,27 +258,109 @@
   border-radius: 4px;
 }
 
-/* ── Heart Button ── */
-.pd-heart {
-  position: fixed;
-  top: 20px;
-  right: 24px;
-  z-index: 60;
-  background: rgba(255, 255, 255, 0.9);
-  border: none;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: transform 0.2s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+/* ── Review Form ── */
+.pd-review-form {
+  background: var(--surface-container-lowest, var(--card-bg));
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg, 12px);
+  padding: 18px 20px;
+  margin-bottom: 24px;
 }
 
-.pd-heart:hover {
-  transform: scale(1.1);
+.pd-review-form h4 {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-color, #1a1a1a);
+}
+
+.pd-review-alert {
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.pd-review-alert-success {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.pd-review-alert-error {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.pd-review-form-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.pd-review-form-row label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.pd-star-select {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pd-star-choice {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  color: #cbd5e1;
+  transition: transform 0.1s;
+}
+
+.pd-star-choice.active {
+  color: #f59e0b;
+}
+
+.pd-star-choice-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-left: 8px;
+}
+
+.pd-review-form textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+}
+
+.pd-review-submit-btn {
+  padding: 8px 18px;
+  background: var(--secondary-accent, #4f46e5);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md, 8px);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.pd-review-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* ── Two-column body ── */

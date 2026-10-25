@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import {
   Building2,
   CalendarDays,
+  ChevronDown,
   Globe2,
   Heart,
   Home,
@@ -14,12 +15,15 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Sparkles,
+  Star,
   UserCircle,
   Users,
   X,
 } from 'lucide-react';
 import { getImageUrl } from '../config/imageHelper';
-import { propertyApi } from '../api';
+import { propertyApi, searchApi } from '../api';
+import { favoritesApi } from '../api/favorites';
+import { useAuth } from '../contexts/AuthContext';
 import { PROPERTY_STATUSES, propertyStatusInfo } from '../config/propertyStatus';
 import './GuestProperties.css';
 
@@ -35,9 +39,51 @@ const PROPERTY_TYPES = ['apartment', 'condo', 'serviced residence', 'studio', 'l
 
 function GuestProperties() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [favoriteIds, setFavoriteIds] = useState(new Set());
+
+  useEffect(() => {
+    if (!user) return;
+    favoritesApi.list()
+      .then((res) => {
+        const favs = res?.data?.data || [];
+        const ids = new Set(favs.map((f) => f.propertyId || f.id || f.property?.id));
+        setFavoriteIds(ids);
+      })
+      .catch(() => {});
+  }, [user]);
+
+  const handleToggleFavorite = async (e, propertyId) => {
+    e.stopPropagation();
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    const isFav = favoriteIds.has(propertyId);
+    setFavoriteIds((prev) => {
+      const next = new Set(prev);
+      if (isFav) next.delete(propertyId);
+      else next.add(propertyId);
+      return next;
+    });
+    try {
+      if (isFav) {
+        await favoritesApi.removeFavorite(propertyId);
+      } else {
+        await favoritesApi.addFavorite(propertyId);
+      }
+    } catch {
+      setFavoriteIds((prev) => {
+        const next = new Set(prev);
+        if (isFav) next.add(propertyId);
+        else next.delete(propertyId);
+        return next;
+      });
+    }
+  };
 
   /* Issue #14: Filter state */
   const [searchQuery, setSearchQuery] = useState('');
@@ -213,7 +259,7 @@ function GuestProperties() {
       {/* Filter bar with area tabs */}
       <section className="guest-filter-bar" data-customize-id="search.filters">
         <div className="guest-area-tabs">
-          {cities.map((city) => (
+          {cities.map((city, index) => (
             <button
               type="button"
               className={searchQuery === city ? 'active' : ''}
@@ -393,16 +439,26 @@ function GuestProperties() {
                       )}
                       <button
                         type="button"
-                        className="heart-btn"
-                        onClick={(e) => e.stopPropagation()}
+                        className={`heart-btn ${favoriteIds.has(property.id) ? 'favorited' : ''}`}
+                        onClick={(e) => handleToggleFavorite(e, property.id)}
+                        aria-label="Save to favorites"
                       >
-                        <Heart size={21} />
+                        <Heart
+                          size={20}
+                          fill={favoriteIds.has(property.id) ? '#ef4444' : 'none'}
+                          stroke={favoriteIds.has(property.id) ? '#ef4444' : 'currentColor'}
+                        />
                       </button>
                     </div>
 
                     <div className="guest-property-body">
                       <div className="guest-property-main">
                         <h3>{property.title}</h3>
+                        <div className="guest-property-rating">
+                          <Star size={14} fill="#F59E0B" color="#F59E0B" />
+                          <span>{Number(property.rating || 4.8).toFixed(1)}</span>
+                          <span className="guest-review-count">({property.reviewsCount ?? property.reviews?.length ?? 0})</span>
+                        </div>
                       </div>
 
                       <p>

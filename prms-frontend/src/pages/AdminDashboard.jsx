@@ -85,10 +85,8 @@ function AdminDashboard() {
   const [auditLogs, setAuditLogs] = useState([])
   const [properties, setProperties] = useState([])
 
-  useEffect(() => {
-    localStorage.setItem('prmsDashboardPath', '/admin')
-
-    // Fetch all dashboard data in parallel
+  const loadDashboardData = useCallback((isInitial = false) => {
+    if (isInitial) setLoading(true)
     Promise.allSettled([
       fetchJson(API_ENDPOINTS.dashboard).then((d) => d?.data ?? d),
       fetchJson(API_ENDPOINTS.occupancy).then((d) => d?.data ?? d),
@@ -97,7 +95,6 @@ function AdminDashboard() {
       fetchJson(API_ENDPOINTS.auditLogs + '?limit=12').then((d) => d?.data?.logs ?? d?.logs ?? d?.data ?? []),
     ])
       .then(([dash, occ, props, usr, logs]) => {
-        // Promise.allSettled wraps each result in {status, value|reason}
         setStats(dash.status === 'fulfilled' ? dash.value : null)
         setOccupancy(occ.status === 'fulfilled' ? occ.value : null)
         setProperties(props.status === 'fulfilled' && Array.isArray(props.value) ? props.value : [])
@@ -108,10 +105,20 @@ function AdminDashboard() {
         setError(failures.length ? failures[0].reason?.message || 'Some dashboard data failed to load' : null)
       })
       .finally(() => {
-        // Short delay so skeleton is visible briefly
-        setTimeout(() => setLoading(false), 400)
+        if (isInitial) setTimeout(() => setLoading(false), 400)
       })
   }, [])
+
+  useEffect(() => {
+    localStorage.setItem('prmsDashboardPath', '/admin')
+    loadDashboardData(true)
+
+    // Auto-refresh live data every 30 seconds
+    const interval = setInterval(() => {
+      loadDashboardData(false)
+    }, 30000)
+    return () => clearInterval(interval)
+  }, [loadDashboardData])
 
   /* ---- KPI data ---- */
   const kpiData = useMemo(() => {
@@ -125,10 +132,8 @@ function AdminDashboard() {
         icon: Activity,
         iconBg: 'icon-emerald',
         label: 'Active Users',
-        value: formatCompact(stats.totalUsers),
-        sublabel: `${stats.totalProperties} properties listed`,
-        // No historical snapshot exists yet to compute a real change-over-time
-        // trend, so we don't show a fake "+N" pill that just repeats the total.
+        value: formatCompact(stats.activeUsers ?? stats.totalUsers),
+        sublabel: `${stats.totalUsers ?? 0} total accounts (${stats.totalProperties ?? 0} properties)`,
       },
       {
         icon: WalletCards,

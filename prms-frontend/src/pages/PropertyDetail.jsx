@@ -24,6 +24,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { propertyApi, viewingApi } from '../api';
+import { favoritesApi } from '../api/favorites';
 import { agentApi } from '../api/agents';
 import { useAuth } from '../contexts/AuthContext';
 import TenantBookingModal from '../components/TenantBookingModal';
@@ -236,7 +237,76 @@ function PropertyDetail() {
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterStatus, setNewsletterStatus] = useState(null); // null | 'success' | 'error'
   const [agentAssigned, setAgentAssigned] = useState(false);
+  const [newReviewRating, setNewReviewRating] = useState(5);
+  const [newReviewComment, setNewReviewComment] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewError, setReviewError] = useState(null);
+  const [reviewSuccess, setReviewSuccess] = useState(null);
   const canApplyToRent = !user || (user.role || '').toLowerCase() === 'tenant';
+
+  useEffect(() => {
+    if (!id || !user) return;
+    favoritesApi.checkFavorite(id)
+      .then((isFav) => setLiked(Boolean(isFav)))
+      .catch(() => {});
+  }, [id, user]);
+
+  const handleToggleFavorite = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    const nextState = !liked;
+    setLiked(nextState);
+    try {
+      if (nextState) {
+        await favoritesApi.addFavorite(id);
+      } else {
+        await favoritesApi.removeFavorite(id);
+      }
+    } catch {
+      setLiked(!nextState);
+    }
+  };
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    if (!newReviewComment.trim()) return;
+    setSubmittingReview(true);
+    setReviewError(null);
+    setReviewSuccess(null);
+    try {
+      const res = await propertyApi.addReview(id, {
+        rating: Number(newReviewRating),
+        comment: newReviewComment.trim(),
+        userName: user?.full_name || user?.email?.split('@')[0] || 'Verified Guest',
+      });
+      const created = res.data?.data;
+      if (created) {
+        setProperty((prev) => {
+          if (!prev) return prev;
+          const updatedReviews = [created, ...(prev.reviews || [])];
+          const newAvg = Number(
+            (updatedReviews.reduce((sum, r) => sum + r.rating, 0) / updatedReviews.length).toFixed(1)
+          );
+          return {
+            ...prev,
+            reviews: updatedReviews,
+            rating: newAvg,
+            reviewsCount: updatedReviews.length,
+          };
+        });
+        setNewReviewComment('');
+        setNewReviewRating(5);
+        setReviewSuccess('Review posted successfully!');
+        setTimeout(() => setReviewSuccess(null), 3500);
+      }
+    } catch (err) {
+      setReviewError(err.response?.data?.error?.message || 'Failed to submit review');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   function handleBack() {
     // Prefer real browser history (works from any properties list —
@@ -321,8 +391,10 @@ function PropertyDetail() {
   const description = property?.description || '';
   const shortDesc = description.length > 350 ? description.slice(0, 350) + '...' : description;
 
-  /* Star rating placeholder */
-  const rating = property?.rating || '4.9';
+  /* Star rating and reviews */
+  const reviewsList = property?.reviews?.length ? property.reviews : sampleReviews;
+  const totalReviewsCount = property?.reviewsCount ?? reviewsList.length;
+  const rating = property?.rating ? Number(property.rating).toFixed(1) : '4.8';
 
   /* Status badge */
   const statusConfig = propertyStatusInfo(property?.status);
@@ -410,17 +482,29 @@ function PropertyDetail() {
           <span className="breadcrumb-title">{property.title}</span>
         </div>
 
-        {/* ── Title + Rating ── */}
+        {/* ── Title + Rating + Favorite Action ── */}
         <div className="pd-title-row" data-customize-id="detail.title">
-          <h1 className="pd-title">{property.title}</h1>
-          <div className="pd-rating">
-            <Star size={16} fill="#F59E0B" color="#F59E0B" />
-            <span>{rating}</span>
-            <span className="pd-rating-loc">
-              <MapPin size={12} />
-              {property.city || 'Bukit Bintang'}, {property.state || 'KL'}
-            </span>
+          <div className="pd-title-col">
+            <h1 className="pd-title">{property.title}</h1>
+            <div className="pd-rating">
+              <Star size={16} fill="#F59E0B" color="#F59E0B" />
+              <span className="pd-rating-val">{rating}</span>
+              <span className="pd-rating-count">({totalReviewsCount} reviews)</span>
+              <span className="pd-rating-loc">
+                <MapPin size={13} />
+                {property.city ? `${property.city}${property.state ? `, ${property.state}` : ''}` : property.address}
+              </span>
+            </div>
           </div>
+          <button
+            type="button"
+            className={`pd-favorite-btn ${liked ? 'is-liked' : ''}`}
+            onClick={handleToggleFavorite}
+            aria-label={liked ? 'Remove from favorites' : 'Save to favorites'}
+          >
+            <Heart size={18} fill={liked ? '#ef4444' : 'none'} stroke={liked ? '#ef4444' : 'currentColor'} />
+            <span>{liked ? 'Saved' : 'Save'}</span>
+          </button>
         </div>
 
         {/* ── Image Gallery ── */}
@@ -657,29 +741,72 @@ function PropertyDetail() {
             {/* Reviews */}
             <div className="pd-section">
               <h3 className="pd-section-title">
-                <Star size={16} fill="#222" color="#222" />
-                {' '}{rating} · {sampleReviews.length} reviews
+                <Star size={18} fill="#F59E0B" color="#F59E0B" />
+                {' '}{rating} · {totalReviewsCount} reviews
               </h3>
+
+              {/* Review submit form for authenticated tenants / guests */}
+              {user && (
+                <form className="pd-review-form" onSubmit={handleReviewSubmit}>
+                  <h4>Leave a Review</h4>
+                  {reviewSuccess && (
+                    <div className="pd-review-alert pd-review-alert-success">{reviewSuccess}</div>
+                  )}
+                  {reviewError && (
+                    <div className="pd-review-alert pd-review-alert-error">{reviewError}</div>
+                  )}
+                  <div className="pd-review-form-row">
+                    <label>Rating:</label>
+                    <div className="pd-star-select">
+                      {[5, 4, 3, 2, 1].map((num) => (
+                        <button
+                          type="button"
+                          key={num}
+                          className={`pd-star-choice ${newReviewRating >= num ? 'active' : ''}`}
+                          onClick={() => setNewReviewRating(num)}
+                        >
+                          <Star size={18} fill={newReviewRating >= num ? '#F59E0B' : 'none'} color="#F59E0B" />
+                        </button>
+                      ))}
+                      <span className="pd-star-choice-label">{newReviewRating} Stars</span>
+                    </div>
+                  </div>
+                  <textarea
+                    rows={3}
+                    placeholder="Share your experience staying here (location, landlord responsiveness, amenities, etc.)..."
+                    value={newReviewComment}
+                    onChange={(e) => setNewReviewComment(e.target.value)}
+                    required
+                  />
+                  <button type="submit" className="pd-review-submit-btn" disabled={submittingReview}>
+                    {submittingReview ? 'Posting...' : 'Post Review'}
+                  </button>
+                </form>
+              )}
+
               <div className="pd-reviews">
-                {sampleReviews.map((r, i) => (
-                  <div className="pd-review" key={i}>
+                {reviewsList.map((r, i) => (
+                  <div className="pd-review" key={r.id || i}>
                     <div className="pd-review-avatar">
                       <UserCircle size={36} />
                     </div>
                     <div className="pd-review-body">
                       <div className="pd-review-header">
-                        <strong>{r.name}</strong>
-                        <span className="pd-review-date">{r.date}</span>
+                        <strong>{r.userName || r.name}</strong>
+                        <span className="pd-review-date">
+                          {r.created_at
+                            ? new Date(r.created_at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
+                            : r.date || 'Recent'}
+                        </span>
                       </div>
                       <div className="pd-review-stars">
-                        {'★ '.repeat(r.rating)}
+                        {'★'.repeat(Math.round(r.rating || 5))}
                       </div>
-                      <p>{r.text}</p>
+                      <p>{r.comment || r.text}</p>
                     </div>
                   </div>
                 ))}
               </div>
-              <button className="pd-amenity-more">Show all reviews</button>
             </div>
           </div>
 
@@ -752,15 +879,6 @@ function PropertyDetail() {
           </div>
         </footer>
       )}
-
-      {/* ── Heart overlay on gallery ── */}
-      <button
-        className="pd-heart"
-        onClick={() => setLiked(!liked)}
-        aria-label="Like"
-      >
-        <Heart size={20} fill={liked ? '#D82A2A' : 'none'} stroke="#D82A2A" />
-      </button>
 
       {/* Booking Modal */}
       {canApplyToRent && (

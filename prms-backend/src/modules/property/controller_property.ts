@@ -273,4 +273,40 @@ export class PropertyController {
       res.json(successResponse(prop, 'Document deleted'));
     } catch (error: any) { HELPERS(req).log({ action: 'DELETE_PROPERTY_DOCUMENT', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
+
+  addReview = async (req: AuthRequest, res: Response) => {
+    try {
+      const propertyId = String(req.params.id);
+      const { rating, comment, userName } = req.body;
+      if (!rating || Number(rating) < 1 || Number(rating) > 5) {
+        return res.status(400).json({ success: false, error: { message: 'Rating must be between 1 and 5' } });
+      }
+      if (!comment || typeof comment !== 'string' || comment.trim().length < 3) {
+        return res.status(400).json({ success: false, error: { message: 'Comment must be at least 3 characters' } });
+      }
+
+      const review = await propertyService.addPropertyReview(propertyId, {
+        userId: req.user?.id,
+        userName: userName || req.user?.email?.split('@')[0] || 'Verified Guest',
+        rating: Number(rating),
+        comment: comment.trim(),
+      });
+
+      clearCache('^/properties');
+      HELPERS(req).log({ action: 'ADD_PROPERTY_REVIEW', entity: 'Property', entityId: propertyId, description: `Added review for property` });
+      res.status(201).json(successResponse(review, 'Review added successfully'));
+    } catch (error: any) {
+      HELPERS(req).log({ action: 'ADD_PROPERTY_REVIEW', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message });
+      res.status(400).json({ success: false, error: { message: error.message } });
+    }
+  };
+
+  getReviews = async (req: Request, res: Response) => {
+    try {
+      const reviews = await propertyService.getPropertyReviews(String(req.params.id));
+      res.json(successResponse(reviews));
+    } catch (error: any) {
+      res.status(400).json({ success: false, error: { message: error.message } });
+    }
+  };
 }

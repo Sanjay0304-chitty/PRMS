@@ -12,9 +12,12 @@ import {
   List,
   ChevronLeft,
   ChevronRight,
+  Heart,
+  Star,
 } from 'lucide-react'
 import { getImageUrl } from '../config/imageHelper';
 import { propertyApi, getApiError } from '../api'
+import { favoritesApi } from '../api/favorites'
 import { getAddPropertyRoute, getPropertyDetailPath } from '../config/routes'
 import { PROPERTY_TYPES as CANONICAL_PROPERTY_TYPES, propertyTypeLabel } from '../config/propertyTypes'
 import { PROPERTY_STATUSES, propertyStatusInfo } from '../config/propertyStatus'
@@ -50,6 +53,47 @@ function Properties() {
   const role = (user?.role || '').toLowerCase()
   const isAdmin = role.includes('admin')
   const isLandlord = role.includes('landlord')
+  const [favoriteIds, setFavoriteIds] = useState(new Set())
+
+  useEffect(() => {
+    if (!user) return
+    favoritesApi.list()
+      .then((res) => {
+        const favs = res?.data?.data || []
+        const ids = new Set(favs.map((f) => f.propertyId || f.id || f.property?.id))
+        setFavoriteIds(ids)
+      })
+      .catch(() => {})
+  }, [user])
+
+  const handleToggleFavorite = async (e, propertyId) => {
+    e.stopPropagation()
+    if (!user) {
+      navigate('/login')
+      return
+    }
+    const isFav = favoriteIds.has(propertyId)
+    setFavoriteIds((prev) => {
+      const next = new Set(prev)
+      if (isFav) next.delete(propertyId)
+      else next.add(propertyId)
+      return next
+    })
+    try {
+      if (isFav) {
+        await favoritesApi.removeFavorite(propertyId)
+      } else {
+        await favoritesApi.addFavorite(propertyId)
+      }
+    } catch {
+      setFavoriteIds((prev) => {
+        const next = new Set(prev)
+        if (isFav) next.add(propertyId)
+        else next.delete(propertyId)
+        return next
+      })
+    }
+  }
 
   const fetchProperties = useCallback(async () => {
     setLoading(true)
@@ -328,11 +372,28 @@ function Properties() {
                           <span className={`status-badge status-${stype}`}>
                             {propertyStatusInfo(p.status).label}
                           </span>
+                          <button
+                            type="button"
+                            className={`property-card-heart ${favoriteIds.has(pid) ? 'favorited' : ''}`}
+                            onClick={(e) => handleToggleFavorite(e, pid)}
+                            aria-label="Save to favorites"
+                          >
+                            <Heart
+                              size={18}
+                              fill={favoriteIds.has(pid) ? '#ef4444' : 'none'}
+                              stroke={favoriteIds.has(pid) ? '#ef4444' : '#ffffff'}
+                            />
+                          </button>
                         </div>
 
                         {/* Body */}
                         <div className="property-card-body">
                           <h3 className="property-name">{p.name || p.title || 'Property'}</h3>
+                          <div className="property-rating-row">
+                            <Star size={14} fill="#F59E0B" color="#F59E0B" />
+                            <span className="rating-score">{Number(p.rating || 4.8).toFixed(1)}</span>
+                            <span className="rating-count">({p.reviewsCount ?? p.reviews?.length ?? 0} reviews)</span>
+                          </div>
                           <div className="property-location">
                             <MapPin size={14} />
                             <span>{p.location || p.address || 'Location not set'}</span>

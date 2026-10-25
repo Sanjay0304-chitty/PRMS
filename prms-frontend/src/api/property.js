@@ -67,4 +67,13 @@ export const propertyApi = {
       onUploadProgress,
     });
   },
+
+  /* Reviews */
+  getReviews(propertyId) {
+    return apiClient.get(`/properties/${propertyId}/reviews`);
+  },
+  addReview(propertyId, data) {
+    return apiClient.post(`/properties/${propertyId}/reviews`, data);
+  },
 };
+

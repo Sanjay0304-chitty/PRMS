@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useSettings } from '../contexts/SettingsContext'
 import { useBranding } from '../contexts/BrandingContext'
+import { useAuth } from '../contexts/AuthContext'
 import ThemeSwitcher from '../components/ThemeSwitcher'
 import {
   ArrowRight,
@@ -16,16 +17,37 @@ import {
   UserRoundCheck,
 } from 'lucide-react'
 import { getImageUrl } from '../config/imageHelper';
+import { propertyApi } from '../api';
 import './GuestHome.css';
 
 function GuestHome() {
   const navigate = useNavigate()
-  const { settings } = useSettings()
+  const { settings, loadSettings } = useSettings()
 
   /* Track the active theme so branding colors below can pick the correct
      light_ or dark_ customizer field — without this, a light-only override
      (e.g. a white header) stayed pinned on regardless of dark mode. */
   const [theme, setTheme] = useState(() => document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light')
+  const [liveHomes, setLiveHomes] = useState([])
+
+  useEffect(() => {
+    propertyApi.list({ limit: 4, status: 'AVAILABLE' })
+      .then((res) => {
+        const list = res?.data?.data || []
+        if (list.length > 0) {
+          setLiveHomes(list.map((p) => ({
+            id: p.id,
+            title: p.title,
+            location: p.city ? `${p.city}${p.state ? `, ${p.state}` : ''}` : p.address,
+            price: `RM ${Number(p.rent || 0).toLocaleString()} / month`,
+            rating: p.rating ? Number(p.rating).toFixed(1) : '4.8',
+            image: p.images?.[0]?.url || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=900&q=80',
+          })))
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   useEffect(() => {
     const observer = new MutationObserver(() => {
       setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light')
@@ -44,13 +66,16 @@ function GuestHome() {
   /* Fallback hero content from settings */
   const heroTitle = settings?.homepage_hero_title || 'Find Your Perfect Space in Malaysia\'s Most Trusted Ecosystem.'
   const heroSubtitle = settings?.homepage_hero_subtitle || 'Experience seamless property discovery with PRMS. Browse verified homes, compare listings, and connect with trusted landlords.'
+  const heroButtonText = settings?.homepage_hero_button_text || 'Browse Properties'
   const heroButtonLink = settings?.homepage_hero_button_link || '/search'
+  const heroImage = settings?.homepage_hero_image || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1600&auto=format&fit=crop'
 
   /* Section visibility toggles */
   const showHero = settings?.homepage_show_hero !== false
   const showSearchBar = settings?.homepage_show_search_bar !== false
   const showFeatured = settings?.homepage_show_featured !== false
   const showFeatures = settings?.homepage_show_features !== false
+  const showTestimonials = settings?.homepage_show_testimonials !== false
   const showCta = settings?.homepage_show_cta !== false
   const showAbout = settings?.homepage_show_about !== false
 
@@ -63,23 +88,34 @@ function GuestHome() {
   const heroAlignment = settings?.homepage_hero_text_alignment || 'left'
 
   /* Header / Footer background colors.
-     The Website Customizer is per-account now - a real config row (with a
-     real `id`) only exists once someone is logged in and has viewed/saved
-     it. An anonymous visitor gets back the plain guest defaults (id:
-     null) from BrandingContext, which always has *some* color in every
-     field - so checking those fields for truthiness can never actually
-     detect "unconfigured" anymore. Gate on `colors?.id` instead: only a
-     genuinely-customized account's colors get applied here; a guest
-     always falls through to the navbar's own default CSS background
-     (var(--navbar-bg-glass)), which is designed to read correctly in
-     both light and dark mode regardless of what any account's own
-     customizer happens to be set to. */
-  const hasRealCustomization = !!branding.colors?.id
+     The Website Customizer is per-account now - only an authenticated user
+     with an explicitly saved config should override the public landing page.
+     An anonymous visitor always falls through to the navbar's own default
+     CSS glass background (var(--navbar-bg-glass)), which is designed to
+     read correctly in both light and dark mode. */
+  const { user } = useAuth()
+  const hasRealCustomization = !!user && !!branding.colors?.id && branding.colors?.userId === user.id
   const headerBg = !hasRealCustomization
     ? null
     : theme === 'dark'
       ? (branding.colors?.dark_header_bg || null)
       : (branding.colors?.light_header_bg || settings?.header_background_color || null)
+
+  function isDarkBg(color) {
+    if (!color) return false
+    const hex = color.replace('#', '')
+    if (hex.length === 6) {
+      const num = parseInt(hex, 16)
+      const r = (num >> 16) & 255
+      const g = (num >> 8) & 255
+      const b = num & 255
+      return (r * 299 + g * 587 + b * 114) / 1000 < 140
+    }
+    return false
+  }
+
+  const isNavDark = headerBg ? isDarkBg(headerBg) : theme === 'dark'
+
   const footerBg = !hasRealCustomization
     ? '#0f172a'
     : theme === 'dark'
@@ -154,7 +190,7 @@ function GuestHome() {
 
   return (
     <main className="guest-page">
-      <header className="guest-navbar" data-customize-id="global.header" style={headerBg ? { backgroundColor: headerBg } : undefined}>
+      <header className={`guest-navbar ${isNavDark ? 'is-dark-nav' : 'is-light-nav'}`} data-customize-id="global.header" style={headerBg ? { backgroundColor: headerBg } : undefined}>
         <Link to="/" className="guest-logo">
           {brandLogo ? (
             <img src={branding.logoUrl ? brandLogo : getImageUrl(brandLogo)} alt="Logo" className="guest-logo-img" />
@@ -367,16 +403,18 @@ function GuestHome() {
           </div>
 
           <div className="guest-home-row">
-            {homes.map((home, index) => (
+            {(liveHomes.length > 0 ? liveHomes : homes).map((home, index) => (
               <motion.article
                 className="guest-home-card"
                 data-customize-id="component.property-card"
-                key={home.title}
+                key={home.id || home.title}
                 initial={{ opacity: 0, y: 26 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.08, duration: 0.4 }}
                 whileHover={{ y: -7 }}
+                onClick={() => navigate(home.id ? `/properties/${home.id}` : '/properties')}
+                style={{ cursor: 'pointer' }}
               >
                 <div className="guest-home-image">
                   <img src={getImageUrl(home.image)} alt={home.title} />

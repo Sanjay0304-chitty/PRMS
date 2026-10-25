@@ -30,6 +30,26 @@ export async function getAllUsers(page = 1, limit = 10, search?: string, role?: 
   return { users, total };
 }
 
+export async function getUserSummaryStats() {
+  const [total, active, tenants, landlords, agents, admins] = await Promise.all([
+    prisma.user.count(),
+    prisma.user.count({ where: { is_active: true } }),
+    prisma.user.count({ where: { UserRole: { some: { role: { name: 'Tenant' } } } } }),
+    prisma.user.count({ where: { UserRole: { some: { role: { name: 'Landlord' } } } } }),
+    prisma.user.count({ where: { UserRole: { some: { role: { name: 'Agent' } } } } }),
+    prisma.user.count({ where: { UserRole: { some: { role: { name: 'Admin' } } } } }),
+  ]);
+  return {
+    total,
+    active,
+    suspended: total - active,
+    tenants,
+    landlords,
+    agents,
+    admins,
+  };
+}
+
 export async function getUserById(id: string) {
   return prisma.user.findUnique({
     where: { id },

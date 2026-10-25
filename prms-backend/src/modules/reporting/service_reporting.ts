@@ -1,15 +1,17 @@
 import { prisma } from '../../db';
+import { getUserSummaryStats } from '../user/service_user';
 
 export async function getDashboardStats() {
-  const [totalUsers, totalProperties, totalBookings, totalRevenue] = await Promise.all([
-    prisma.user.count(),
+  const [userStats, totalProperties, totalBookings, totalRevenue] = await Promise.all([
+    getUserSummaryStats(),
     prisma.property.count(),
     prisma.booking.count(),
     prisma.payment.aggregate({ where: { status: 'PAID' }, _sum: { amount: true } }),
   ]);
   
   return {
-    totalUsers,
+    totalUsers: userStats.total,
+    activeUsers: userStats.active,
     totalProperties,
     totalBookings,
     totalRevenue: totalRevenue._sum?.amount || 0,

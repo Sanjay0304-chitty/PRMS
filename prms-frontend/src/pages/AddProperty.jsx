@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { categoryApi } from '../api/categories';
+import { propertyApi } from '../api/property';
 import { PROPERTY_TYPES } from '../config/propertyTypes';
 import { getPropertyRoute } from '../config/routes';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getApiBaseUrl } from '../config/apiBaseUrl';
 import {
   MapPin,
   DollarSign,
@@ -24,6 +24,8 @@ const PROPERTY_STATUS = [
   'MAINTENANCE',
   'INACTIVE',
 ];
+
+const defaultImagePlaceholders = [];
 
 function AddProperty() {
   const { user } = useAuth();
@@ -57,6 +59,32 @@ function AddProperty() {
       .then(({ data }) => setCategories(data?.data ?? []))
       .catch(() => setCategories([]));
   }, []);
+
+  useEffect(() => {
+    if (!id) return;
+    propertyApi
+      .getById(id)
+      .then((res) => {
+        const p = res.data?.data;
+        if (p) {
+          setFormData({
+            title: p.title || '',
+            propertyType: p.property_type || 'apartment',
+            status: p.status || 'AVAILABLE',
+            monthlyRent: p.rent || '',
+            address: p.address || '',
+            city: p.city || '',
+            state: p.state || '',
+            amenities: p.amenities?.map?.((a) => a.name) || [],
+            categoryId: p.categoryId || '',
+          });
+          if (p.images?.length) {
+            setImagePreviews(p.images.map((img) => img.url));
+          }
+        }
+      })
+      .catch(() => {});
+  }, [id]);
 
   // themeColors used to come from useCustomization(), but that context never
   // actually provides a themeColors value (grepped the whole codebase - it's
@@ -138,72 +166,80 @@ function AddProperty() {
     e?.preventDefault?.();
     if (!validateForm()) return;
     setSubmitting(true);
+    setErrors({});
     try {
-      const apiBaseUrl = getApiBaseUrl();
-      const token = sessionStorage.getItem('accessToken') || localStorage.getItem('accessToken');
-      const endpoint = id ? `/properties/${id}` : '/properties';
-
-      // Build JSON body — align frontend fields to backend DTO (schema source of truth)
+      // Build JSON body matching backend property schema
       const body = {
-        title: formData.title,
-        address: formData.address,
-        property_type: formData.propertyType?.toLowerCase(),
+        title: formData.title.trim(),
+        address: formData.address.trim(),
+        property_type: (formData.propertyType || 'apartment').toLowerCase(),
         rent: parseFloat(formData.monthlyRent) || 0,
-        city: formData.city,
-        state: formData.state,
-        status: formData.status,
-        amenities: formData.amenities?.map?.(a => ({ name: a })) || [],
+        city: formData.city.trim(),
+        state: formData.state.trim() || undefined,
+        status: formData.status || 'AVAILABLE',
+        amenities: formData.amenities?.map?.((a) => ({ name: a })) || [],
         categoryId: formData.categoryId || undefined,
       };
 
-      const res = await fetch(`${apiBaseUrl}${endpoint}`, {
-        method: id ? 'PUT' : 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-      });
+      const res = id
+        ? await propertyApi.update(id, body)
+        : await propertyApi.create(body);
 
-      const result = await res.json();
+      const createdProperty = res?.data?.data;
+      const targetId = id || createdProperty?.id;
 
-      if (res.ok) {
-        const createdId = result.data?.id;
-        // Upload images separately via the image endpoint
-        if (createdId && images.length > 0) {
-          for (const img of images) {
-            const imgFD = new FormData();
-            imgFD.append('image', img);
-            await fetch(`${apiBaseUrl}/properties/${createdId}/images`, {
-              method: 'POST',
-              headers: { Authorization: `Bearer ${token}` },
-              body: imgFD,
-            });
+      // Upload images via propertyApi.addImage
+      if (targetId && images.length > 0) {
+        for (const img of images) {
+          const imgFD = new FormData();
+          imgFD.append('image', img);
+          try {
+            await propertyApi.addImage(targetId, imgFD);
+          } catch (uploadErr) {
+            console.error('Image upload failed:', uploadErr);
           }
         }
-        // Upload video separately via the video endpoint
-        if (createdId && video) {
-          const vidFD = new FormData();
-          vidFD.append('video', video);
-          await fetch(`${apiBaseUrl}/properties/${createdId}/videos`, {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${token}` },
-            body: vidFD,
-          });
-        }
-        setTimeout(() => {
-          navigate(getPropertyRoute(user?.role));
-        }, 800);
-      } else {
-        setErrors({
-          submit: result.error?.message || result.message || 'Failed to save property',
-        });
       }
+
+      // Upload video via propertyApi.addVideo
+      if (targetId && video) {
+        const vidFD = new FormData();
+        vidFD.append('video', video);
+        try {
+          await propertyApi.addVideo(targetId, vidFD);
+        } catch (vidErr) {
+          console.error('Video upload failed:', vidErr);
+        }
+      }
+
+      setTimeout(() => {
+        navigate(getPropertyRoute(user?.role));
+      }, 700);
     } catch (err) {
-      setErrors({ submit: err.message || 'Network error' });
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || err.message || 'Failed to save property';
+      setErrors({ submit: msg });
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleSaveAndNew = async () => {
+    await handleSubmit();
+    setFormData({
+      title: '',
+      propertyType: 'apartment',
+      status: 'AVAILABLE',
+      monthlyRent: '',
+      address: '',
+      city: '',
+      state: '',
+      amenities: [],
+      categoryId: '',
+    });
+    setImages([]);
+    setImagePreviews([]);
+    setVideo(null);
+    setVideoPreview('');
   };
 
   const sectionNav = [

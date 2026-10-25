@@ -33,6 +33,15 @@ export class UserController {
     } catch (error: any) { HELPERS(req).log({ action: 'VIEW_USERS', entity: 'User', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(500).json({ success: false, error: { message: error.message } }); }
   };
 
+  summary = async (req: Request, res: Response) => {
+    try {
+      const stats = await userService.getUserSummaryStats();
+      res.json(successResponse(stats));
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: { message: error.message } });
+    }
+  };
+
   getById = async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
