@@ -8,6 +8,7 @@ import { env } from '../../config';
 import jwt from 'jsonwebtoken';
 import { verifyFirebaseToken } from './firebase_auth';
 import { prisma } from '../../db';
+import { isStrongPassword, isValidPhoneNumber } from '../../utils/validators';
 import path from 'path';
 import fs from 'fs';
 
@@ -23,6 +24,27 @@ const HELPERS = (req: Request) => {
 };
 
 export class AuthController {
+  checkEmail = async (req: Request, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, error: { message: errors.array()[0].msg } });
+    }
+    try {
+      const { email } = req.body;
+      const normalized = String(email).toLowerCase().trim();
+      const user = await prisma.user.findUnique({
+        where: { email: normalized },
+        select: { id: true, email: true, is_active: true }
+      });
+      return res.json(successResponse({
+        exists: !!user,
+        isActive: user ? user.is_active : false,
+      }, user ? 'Email is registered' : 'Email is not registered'));
+    } catch (error: any) {
+      return res.status(500).json({ success: false, error: { message: error.message } });
+    }
+  };
+
   register = async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -112,6 +134,11 @@ export class AuthController {
 
   updateMe = async (req: AuthRequest, res: Response) => {
     try {
+      if (req.body?.phone !== undefined && req.body?.phone !== null && String(req.body.phone).trim() !== '') {
+        if (!isValidPhoneNumber(req.body.phone)) {
+          return res.status(400).json({ success: false, error: { message: 'Please enter a valid phone number (e.g. 012-345 6789 or +60123456789)' } });
+        }
+      }
       const user = await authService.updateUserProfile(req.user!.id, req.body);
       HELPERS(req).log({ userId: req.user!.id, username: req.user!.email, userRole: req.user!.role, action: 'PROFILE_UPDATE', entity: 'User', entityId: req.user!.id, description: 'User profile updated', status: 'Success', level: 'info' });
       // Flatten to the same shape getMe returns — normalizeUser on the
@@ -167,6 +194,10 @@ export class AuthController {
       if (!currentPassword || !newPassword) {
         return res.status(400).json({ success: false, error: { message: 'Current and new password required' } });
       }
+      const pwdCheck = isStrongPassword(newPassword);
+      if (!pwdCheck.isValid) {
+        return res.status(400).json({ success: false, error: { message: pwdCheck.errors[0] || 'Password must be strong (at least 8 characters, uppercase, lowercase, number, and special character)' } });
+      }
       await authService.changePassword(req.user!.id, currentPassword, newPassword);
       HELPERS(req).log({ userId: req.user!.id, username: req.user!.email, userRole: req.user!.role, action: 'PASSWORD_CHANGE', entity: 'User', entityId: req.user!.id, description: 'Password changed successfully', status: 'Success', level: 'info' });
       res.json(successResponse(null, 'Password changed successfully'));
@@ -179,8 +210,12 @@ export class AuthController {
   setPassword = async (req: AuthRequest, res: Response) => {
     try {
       const { newPassword } = req.body;
-      if (!newPassword || newPassword.length < 6) {
-        return res.status(400).json({ success: false, error: { message: 'Password must be at least 6 characters' } });
+      if (!newPassword) {
+        return res.status(400).json({ success: false, error: { message: 'Password required' } });
+      }
+      const pwdCheck = isStrongPassword(newPassword);
+      if (!pwdCheck.isValid) {
+        return res.status(400).json({ success: false, error: { message: pwdCheck.errors[0] || 'Password must be strong (at least 8 characters, uppercase, lowercase, number, and special character)' } });
       }
       await authService.setPassword(req.user!.id, newPassword);
       HELPERS(req).log({ userId: req.user!.id, username: req.user!.email, userRole: req.user!.role, action: 'PASSWORD_SET', entity: 'User', entityId: req.user!.id, description: 'Password set for Google-only account', status: 'Success', level: 'info' });
@@ -195,7 +230,6 @@ export class AuthController {
     try {
       const { idToken, email, displayName } = req.body;
 
-      let isNewUser = false;
       let firebaseUid: string;
 
       if (env.ENABLE_FIREBASE_VERIFY === true) {
@@ -229,12 +263,12 @@ export class AuthController {
         }
       }
 
-      // Step 3: create new user
+      // Step 3: Unregistered Google account check
       if (!user) {
-        isNewUser = true;
-        user = await prisma.user.create({
-          data: { firebase_uid: firebaseUid, email, full_name: displayName || '', passwordHash: null, UserRole: { create: { role: { connect: { name: 'Tenant' } } } } },
-          include: { UserRole: { include: { role: true } } },
+        HELPERS(req).log({ action: 'GOOGLE_LOGIN', entity: 'User', description: `Google login rejected: unregistered email ${email || ''}`, status: 'Failed', level: 'warning' });
+        return res.status(401).json({
+          success: false,
+          error: { message: 'This Google account is not registered. Please sign up for an account first.' }
         });
       }
 
@@ -243,7 +277,7 @@ export class AuthController {
       const tokens = authService.generateTokens(user.id);
       await authService.saveRefreshToken(user.id, tokens.refreshToken);
 
-      HELPERS(req).log({ userId: user.id, username: user.email, userRole: user.UserRole[0]?.role.name || 'Tenant', action: 'GOOGLE_LOGIN', entity: 'User', entityId: user.id, description: isNewUser ? 'New Google user registered and logged in' : 'User logged in via Google', status: 'Success', level: 'info' });
+      HELPERS(req).log({ userId: user.id, username: user.email, userRole: user.UserRole[0]?.role.name || 'Tenant', action: 'GOOGLE_LOGIN', entity: 'User', entityId: user.id, description: 'User logged in via Google', status: 'Success', level: 'info' });
 
       res.json(successResponse({
         user: {
@@ -255,7 +289,7 @@ export class AuthController {
           role: user.UserRole[0]?.role.name || 'Tenant',
         },
         tokens,
-        isNewUser: !!isNewUser,
+        isNewUser: false,
       }));
     } catch (error: any) {
       HELPERS(req).log({ action: 'GOOGLE_LOGIN', entity: 'User', description: `Google login failed: ${error.message}`, status: 'Failed', level: 'error', errorMessage: error.message });
@@ -313,9 +347,10 @@ export class AuthController {
         return res.status(400).json({ success: false, error: { message: errors.array()[0].msg } });
       }
       const { email } = req.body;
-      const code = await authService.generateOtpCode(email);
+      await authService.generateOtpCode(email);
       HELPERS(req).log({ username: email, action: 'FORGOT_PASSWORD', entity: 'User', description: `OTP generated for ${email}`, status: 'Success', level: 'info' });
-      res.json(successResponse({ code }, 'OTP generated'));
+      // Security fix: do not return OTP in response body
+      res.json(successResponse(null, 'If your email is registered, a 6-digit verification code has been dispatched.'));
     } catch (error: any) {
       HELPERS(req).log({ action: 'FORGOT_PASSWORD', entity: 'User', description: `Forgot password failed: ${error.message}`, status: 'Failed', level: 'error', errorMessage: error.message });
       res.status(400).json({ success: false, error: { message: error.message } });
@@ -331,7 +366,7 @@ export class AuthController {
       const { email, otp } = req.body;
       await authService.verifyOtpCode(email, otp);
       HELPERS(req).log({ username: email, action: 'VERIFY_OTP', entity: 'User', description: 'OTP verified successfully', status: 'Success', level: 'info' });
-      res.json(successResponse(null, 'OTP verified'));
+      res.json(successResponse(null, 'OTP verified successfully'));
     } catch (error: any) {
       HELPERS(req).log({ action: 'VERIFY_OTP', entity: 'User', description: `Verify OTP failed: ${error.message}`, status: 'Failed', level: 'error', errorMessage: error.message });
       res.status(400).json({ success: false, error: { message: error.message } });
@@ -345,13 +380,17 @@ export class AuthController {
         return res.status(400).json({ success: false, error: { message: errors.array()[0].msg } });
       }
       const { email, otp, newPassword, confirmPassword } = req.body;
+      if (!otp || typeof otp !== 'string' || !otp.trim()) {
+        return res.status(400).json({ success: false, error: { message: 'OTP verification code is required' } });
+      }
       if (!newPassword || newPassword.length < 6) {
         return res.status(400).json({ success: false, error: { message: 'New password must be at least 6 characters' } });
       }
       if (newPassword !== confirmPassword) {
         return res.status(400).json({ success: false, error: { message: 'Passwords do not match' } });
       }
-      await authService.resetPassword(email, newPassword);
+      // Critical fix: verify OTP before resetting password
+      await authService.resetPassword(email, newPassword, otp.trim());
       HELPERS(req).log({ username: email, action: 'PASSWORD_RESET', entity: 'User', description: 'Password reset successfully for ' + email, status: 'Success', level: 'info' });
       res.json(successResponse(null, 'Password reset successfully'));
     } catch (error: any) {

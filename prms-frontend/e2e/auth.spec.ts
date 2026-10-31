@@ -24,7 +24,7 @@ test.describe('Guest Home', () => {
     const searchBtn = page.locator('button').filter({ hasText: 'Search' }).first();
     if (await searchBtn.isVisible()) {
       await searchBtn.click();
-      await expect(page).toHaveURL(/\/search/);
+      await expect(page).toHaveURL(/\/(search|properties)/);
     }
   });
 });

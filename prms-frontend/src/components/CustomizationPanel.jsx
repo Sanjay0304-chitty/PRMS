@@ -57,7 +57,7 @@ export default function CustomizationPanel() {
     editingTheme, draftConfig,
   } = useCustomization();
 
-  const [, setScope] = useState(SCOPES.THIS_ELEMENT);
+  const [_scope, setScope] = useState(SCOPES.THIS_ELEMENT);
   const [themeKey, setThemeKey] = useState(editingTheme);
   const [isAdvanced, setIsAdvanced] = useState(false);
 

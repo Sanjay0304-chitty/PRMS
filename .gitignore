@@ -3,6 +3,9 @@ node_modules/
 
 # Build output
 dist/
+coverage/
+playwright-report/
+test-results/
 
 # Python
 __pycache__/
@@ -46,3 +49,7 @@ prms-backend/data/*.csv
 
 # Misc
 bcrypt_whl_file.whl
+
+# Valerie Guard session
+.valerie-session.json
+.helen-session.json

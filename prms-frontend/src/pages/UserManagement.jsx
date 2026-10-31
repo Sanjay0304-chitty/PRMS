@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useAuth } from '../contexts/AuthContext'
 import { userApi } from '../api/user'
 import Modal from '../components/Modal'
 import {
@@ -20,7 +21,11 @@ import {
   Save,
   ChevronLeft,
   ChevronRight,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react'
+import PasswordStrengthMeter from '../components/PasswordStrengthMeter'
+import { isValidPhoneNumber, isPasswordStrong } from '../utils/validators'
 import './UserManagement.css'
 
 /* ── Roles & filter defaults ── */
@@ -35,10 +40,13 @@ const roleColors = {
 
 /* ── Page ── */
 export default function UserManagement() {
+  const { user: currentUser } = useAuth()
   /* List state */
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 })
+  const [userToDelete, setUserToDelete] = useState(null)
+  const [deletingUser, setDeletingUser] = useState(false)
 
   /* Filters */
   const [searchParams] = useSearchParams()
@@ -135,11 +143,11 @@ export default function UserManagement() {
   }, [debouncedSearch, roleFilter, statusFilter])
 
   useEffect(() => {
-    loadUsers(1)
-  }, [debouncedSearch, roleFilter, statusFilter])
+    Promise.resolve().then(() => loadUsers(1))
+  }, [loadUsers])
 
   useEffect(() => {
-    loadSummary()
+    Promise.resolve().then(loadSummary)
   }, [loadSummary])
 
   /* ── Modal openers ── */
@@ -181,9 +189,15 @@ export default function UserManagement() {
   async function handleSubmit() {
     setFormError('')
     if (!formEmail.trim()) { setFormError('Email is required'); return }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formEmail)) { setFormError('Invalid email'); return }
     if (mode === 'add' && !formPassword) { setFormError('Password is required'); return }
-    if (mode === 'add' && formPassword.length < 6) { setFormError('Password must be at least 6 characters'); return }
+    if (formPassword && !isPasswordStrong(formPassword)) {
+      setFormError('Password must be strong (at least 8 characters, uppercase, lowercase, number, and special character)');
+      return
+    }
+    if (formPhone.trim() && !isValidPhoneNumber(formPhone)) {
+      setFormError('Please enter a valid phone number (e.g. 012-345 6789 or +60123456789)');
+      return
+    }
 
     setSaving(true)
     try {
@@ -240,6 +254,22 @@ export default function UserManagement() {
       loadUsers(pagination.page)
     } catch (e) {
       showToast(e.message || 'Role change failed', 'error')
+    }
+  }
+
+  async function handleConfirmDeleteUser() {
+    if (!userToDelete) return
+    setDeletingUser(true)
+    try {
+      await userApi.remove(userToDelete.id)
+      showToast('User deleted successfully')
+      setUserToDelete(null)
+      loadUsers(pagination.page)
+      loadSummary()
+    } catch (e) {
+      showToast(e.response?.data?.error?.message || e.message || 'Failed to delete user', 'error')
+    } finally {
+      setDeletingUser(false)
     }
   }
 
@@ -392,6 +422,14 @@ export default function UserManagement() {
                   <button title={u.is_active ? 'Suspend' : 'Activate'} onClick={() => handleToggleActive(u)}>
                     {u.is_active ? <UserX size={15} /> : <UserCheck size={15} />}
                   </button>
+                  <button
+                    className="danger"
+                    title={currentUser?.id === u.id ? 'Cannot delete your own account' : 'Delete user'}
+                    disabled={currentUser?.id === u.id}
+                    onClick={() => setUserToDelete(u)}
+                  >
+                    <Trash2 size={15} />
+                  </button>
                   {/* Role changer dropdown */}
                   <select
                     className="role-select"
@@ -479,15 +517,16 @@ export default function UserManagement() {
                     </label>
 
                     <label>
-                      <span>{mode === 'add' ? 'Password' : 'New Password (optional)'}</span>
+                      <span>{mode === 'add' ? 'Password (Strong)' : 'New Password (optional)'}</span>
                       <input
                         type="password"
                         className="form-input"
                         value={formPassword}
                         onChange={(e) => setFormPassword(e.target.value)}
-                        placeholder={mode === 'add' ? 'Min 6 characters' : 'Leave blank to keep current'}
+                        placeholder={mode === 'add' ? 'Strong password required' : 'Leave blank to keep current'}
                       />
                     </label>
+                    {formPassword && <PasswordStrengthMeter password={formPassword} />}
 
                     <label>
                       <span>Full Name</span>
@@ -554,6 +593,47 @@ export default function UserManagement() {
                 )}
               </div>
         )}
+      </Modal>
+
+      {/* ── Delete User Confirmation Modal ── */}
+      <Modal
+        isOpen={!!userToDelete}
+        onOpenChange={(open) => !open && setUserToDelete(null)}
+        title="Delete User"
+        footer={(
+          <div className="delete-modal-actions">
+            <button
+              type="button"
+              className="btn-outline"
+              onClick={() => setUserToDelete(null)}
+              disabled={deletingUser}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn-danger-confirm"
+              onClick={handleConfirmDeleteUser}
+              disabled={deletingUser}
+            >
+              {deletingUser ? 'Deleting...' : 'Delete User'}
+            </button>
+          </div>
+        )}
+      >
+        <div className="delete-modal-content">
+          <div className="delete-modal-warning">
+            <AlertTriangle size={24} className="delete-warning-icon" />
+            <div>
+              <p style={{ margin: 0, fontWeight: 600 }}>
+                Are you sure you want to delete user {userToDelete?.full_name ? `${userToDelete.full_name} (${userToDelete.email})` : userToDelete?.email}?
+              </p>
+              <p className="delete-modal-hint">
+                This will soft-delete their account and deactivate their login credentials.
+              </p>
+            </div>
+          </div>
+        </div>
       </Modal>
 
       {/* Toast */}

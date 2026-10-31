@@ -192,7 +192,7 @@ function AppRoutes() {
 
       {/*  Admin routes (AUTH-006: role-protected)  */}
       <Route
-        path="/admin/*"
+        path="/admin"
         element={
           <ProtectedRoute allowedRoles={['Admin']}>
             <ErrorBoundary>
@@ -274,7 +274,7 @@ function AppRoutes() {
 
       {/*  Landlord routes (AUTH-006: role-protected)  */}
       <Route
-        path="/landlord/*"
+        path="/landlord"
         element={
           <ProtectedRoute allowedRoles={['Landlord']}>
             <ErrorBoundary>
@@ -349,7 +349,7 @@ function AppRoutes() {
 
       {/*  Tenant routes (AUTH-006: role-protected)  */}
       <Route
-        path="/tenant/*"
+        path="/tenant"
         element={
           <ProtectedRoute allowedRoles={['Tenant']}>
             <ErrorBoundary>
@@ -400,7 +400,7 @@ function AppRoutes() {
 
       {/*  Agent routes (AUTH-006: role-protected)  */}
       <Route
-        path="/agent/*"
+        path="/agent"
         element={
           <ProtectedRoute allowedRoles={['Agent']}>
             <ErrorBoundary>

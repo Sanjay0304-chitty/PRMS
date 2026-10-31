@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Mail, LockKeyhole, CheckCircle2 } from 'lucide-react';
 import { authApi } from '../api/auth';
+import PasswordStrengthMeter from '../components/PasswordStrengthMeter';
+import { isPasswordStrong } from '../utils/validators';
 import './ForgotPassword.css';
 
 function ForgotPassword() {
@@ -12,7 +14,6 @@ function ForgotPassword() {
   const [step, setStep] = useState(1);
 
   const [email, setEmail] = useState('');
-  const [generatedOtp, setGeneratedOtp] = useState('');
   const [otpInput, setOtpInput] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -28,10 +29,9 @@ function ForgotPassword() {
     try {
       const res = await authApi.forgotPassword({ email });
       if (res.data.success) {
-        setGeneratedOtp(res.data.data.code);
         setStep(2);
       } else {
-        setError(res.data.message || 'Failed to send OTP.');
+        setError(res.data.message || 'Failed to send verification code.');
       }
     } catch (err) {
       setError(err.response?.data?.error?.message || err.response?.data?.message || 'Network error.');
@@ -63,6 +63,17 @@ function ForgotPassword() {
   async function handlePasswordSubmit(e) {
     e.preventDefault();
     setError('');
+
+    if (!isPasswordStrong(newPassword)) {
+      setError('Password must be strong. It must include at least 8 characters, an uppercase letter, a lowercase letter, a number, and a special character.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('New password and confirmation do not match.');
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await authApi.resetPassword({
@@ -100,7 +111,7 @@ function ForgotPassword() {
         <motion.h1 className="forgot-title">Forgot Password</motion.h1>
         <motion.p className="forgot-subtitle">
           {step === 1 && "Enter your email and we'll send you a verification code."}
-          {step === 2 && "Enter the 6-digit code shown below."}
+          {step === 2 && "Enter the 6-digit verification code sent to your account."}
           {step === 3 && "Set your new password."}
           {step === 4 && "Your password has been reset successfully."}
         </motion.p>
@@ -142,21 +153,16 @@ function ForgotPassword() {
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.25 }}
             >
-              {/* Show generated OTP as large spaced digits */}
-              <div className="otp-display">
-                {generatedOtp.split('').map((d, i) => (
-                  <motion.span
-                    key={i}
-                    className="otp-digit"
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.08, duration: 0.2 }}
-                  >
-                    {d}
-                  </motion.span>
-                ))}
+              <div style={{ textAlign: 'center', padding: '16px 12px', background: 'var(--surface-container-low, #f8fafc)', borderRadius: 12, marginBottom: 16 }}>
+                <Mail size={32} style={{ color: 'var(--primary-color, #4f46e5)', marginBottom: 8 }} />
+                <p style={{ fontSize: 13, color: 'var(--text-secondary, #64748b)', margin: '0 0 4px' }}>
+                  Verification code dispatched to:
+                </p>
+                <strong style={{ fontSize: 15, color: 'var(--on-surface, #1e293b)' }}>{email}</strong>
               </div>
-              <p className="otp-hint">Enter the code above to verify</p>
+              <p className="otp-hint" style={{ marginBottom: 14 }}>
+                Please check your inbox or notification center and enter the code below.
+              </p>
 
               <form onSubmit={handleOtpSubmit}>
                 <label>Verification Code</label>
@@ -194,27 +200,33 @@ function ForgotPassword() {
                 <LockKeyhole size={22} />
                 <input
                   type="password"
-                  placeholder="••••••••"
+                  placeholder="Strong password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
                   autoComplete="new-password"
                 />
               </div>
+              <PasswordStrengthMeter password={newPassword} />
 
               <label>Confirm Password</label>
               <div className="input-box">
                 <LockKeyhole size={22} />
                 <input
                   type="password"
-                  placeholder="••••••••"
+                  placeholder="Re-enter strong password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   autoComplete="new-password"
                 />
               </div>
-              <button type="submit" className="primary-btn" disabled={loading}>
+              <button
+                type="submit"
+                className="primary-btn"
+                disabled={loading || !isPasswordStrong(newPassword)}
+                title={!isPasswordStrong(newPassword) ? 'Password must be strong' : 'Reset Password'}
+              >
                 {loading ? 'Saving...' : 'Reset Password'}
               </button>
             </motion.form>

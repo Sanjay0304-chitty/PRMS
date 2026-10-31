@@ -16,10 +16,13 @@
 export function getApiBaseUrl() {
   const envUrl = import.meta.env.VITE_API_BASE_URL;
   if (envUrl && envUrl !== '') return envUrl;
-  // Backend runs on port 3500 by default. Only use window.location.origin
-  // when the frontend and backend are served from the same host/port
-  // (e.g. production build behind a reverse proxy).
-  // The .gitignore'd .env.development sets VITE_API_BASE_URL for dev.
+  // If served from a non-localhost host (such as a Cloudflare quick tunnel), use window.location.origin
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      return window.location.origin;
+    }
+  }
+  // Local development fallback
   return 'http://localhost:3500';
 }
 

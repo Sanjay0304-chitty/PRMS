@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { categoryApi } from '../api/categories'
+import { useAuth } from '../contexts/AuthContext'
 import Modal from '../components/Modal'
 import {
   FolderOpen,
@@ -10,8 +11,10 @@ import {
   Edit2,
   Trash2,
   X,
+  AlertCircle,
   CheckCircle2,
   EyeOff,
+  Power,
 } from 'lucide-react'
 import './LandlordCategories.css'
 
@@ -38,8 +41,8 @@ function LandlordCategories() {
         categoryApi.personalList(),
       ])
       setSharedCats(sharedRes.data?.data ?? [])
-      // Filter out disabled personal categories
-      const personal = (personalRes.data?.data ?? []).filter(c => !c.isDisabled)
+      // Include all personal categories (including disabled), filtering out soft-deleted ones
+      const personal = (personalRes.data?.data ?? []).filter(c => !c.name?.includes('(deleted-'))
       setPersonalCats(personal)
     } catch (e) {
       setError(e.message || 'Failed to load categories')
@@ -92,20 +95,21 @@ function LandlordCategories() {
     }
   }
 
-  async function toggleDisabled(id) {
+  async function toggleDisabled(cat) {
     try {
-      await categoryApi.togglePersonal(id)
-      showToast('Category toggled')
+      await categoryApi.togglePersonal(cat.id)
+      showToast(cat.isDisabled ? `Category "${cat.name}" enabled` : `Category "${cat.name}" disabled`)
       loadData()
     } catch (e) {
       showToast(e.message || 'Toggle failed', 'error')
     }
   }
 
-  async function remove(id) {
+  async function remove(cat) {
+    if (!window.confirm(`Delete category "${cat.name}"? This cannot be undone.`)) return
     try {
-      await categoryApi.removePersonal(id)
-      showToast('Category deleted')
+      await categoryApi.removePersonal(cat.id)
+      showToast(`Category "${cat.name}" deleted`)
       loadData()
     } catch (e) {
       showToast(e.message || 'Delete failed', 'error')
@@ -158,21 +162,28 @@ function LandlordCategories() {
           {cats.map((cat, i) => (
             <motion.div
               key={cat.id}
-              className="landlord-category-card-full"
+              className={`landlord-category-card-full ${cat.isDisabled ? 'is-disabled' : ''}`}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.03 }}
             >
               <div className="landlord-category-main">
-                <div className="landlord-category-icon">
+                <div className={`landlord-category-icon ${cat.isDisabled ? 'is-disabled' : ''}`}>
                   <FolderOpen size={18} />
                 </div>
                 <div className="landlord-category-info">
                   <h3>{cat.name}</h3>
                   {cat.description && <p>{cat.description}</p>}
-                  <span className="landlord-badge personal">
-                    <Lock size={11} /> Personal
-                  </span>
+                  <div className="landlord-category-badges">
+                    <span className="landlord-badge personal">
+                      <Lock size={11} /> Personal
+                    </span>
+                    {cat.isDisabled && (
+                      <span className="landlord-badge disabled">
+                        <AlertCircle size={11} /> Disabled
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="landlord-category-actions">
@@ -215,16 +226,18 @@ function LandlordCategories() {
                       <Edit2 size={15} />
                     </button>
                     <button
-                      className="action-btn toggle"
-                      onClick={() => toggleDisabled(cat.id)}
-                      title="Disable"
+                      className={`action-btn toggle ${cat.isDisabled ? 'is-disabled' : ''}`}
+                      onClick={() => toggleDisabled(cat)}
+                      title={cat.isDisabled ? 'Enable' : 'Disable'}
+                      aria-label={cat.isDisabled ? 'Enable category' : 'Disable category'}
                     >
-                      <EyeOff size={15} />
+                      {cat.isDisabled ? <Power size={15} /> : <EyeOff size={15} />}
                     </button>
                     <button
                       className="action-btn danger"
-                      onClick={() => remove(cat.id)}
+                      onClick={() => remove(cat)}
                       title="Delete"
+                      aria-label="Delete category"
                     >
                       <Trash2 size={15} />
                     </button>

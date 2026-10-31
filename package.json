@@ -1,0 +1,12 @@
+{
+  "name": "prms-project",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Property Rental Management System",
+  "scripts": {
+    "host": "node scripts/host-with-valerie.mjs",
+    "dev": "npm --prefix prms-backend run dev & npm --prefix prms-frontend run dev",
+    "build": "npm --prefix prms-frontend run build && npm --prefix prms-backend run build",
+    "test": "npm --prefix prms-backend test"
+  }
+}

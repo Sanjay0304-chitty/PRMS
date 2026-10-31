@@ -309,4 +309,54 @@ export class PropertyController {
       res.status(400).json({ success: false, error: { message: error.message } });
     }
   };
+
+  reportListing = async (req: Request, res: Response) => {
+    try {
+      const propertyId = String(req.params.id);
+      const prop = await propertyService.getPropertyById(propertyId);
+      if (!prop) {
+        return res.status(404).json({ success: false, error: { message: 'Property not found' } });
+      }
+
+      const { reason, details, email } = req.body || {};
+      if (!reason || typeof reason !== 'string' || !reason.trim()) {
+        return res.status(400).json({ success: false, error: { message: 'Please select a reason for reporting' } });
+      }
+
+      const user = (req as AuthRequest).user;
+      const reporter = user?.email || email || 'Anonymous Guest';
+
+      await HELPERS(req).log({
+        action: 'REPORT_PROPERTY_LISTING',
+        entity: 'Property',
+        entityId: propertyId,
+        description: `Listing "${prop.title}" reported by ${reporter}. Reason: ${reason.trim()}.${details ? ` Details: ${details.trim()}` : ''}`,
+        level: 'warn',
+      });
+
+      try {
+        const admins = await prisma.user.findMany({
+          where: { UserRole: { some: { role: { name: 'Admin' } } } },
+          select: { id: true },
+        });
+        for (const admin of admins) {
+          await prisma.notification.create({
+            data: {
+              userId: admin.id,
+              type: 'property_reported',
+              title: 'Property Listing Reported',
+              message: `Property "${prop.title}" was reported for: ${reason.trim()}${details ? ` - ${details.trim()}` : ''}`,
+            },
+          });
+        }
+      } catch {
+        // Notification is best-effort
+      }
+
+      res.status(200).json(successResponse(null, 'Listing report submitted successfully. Our team will review this property.'));
+    } catch (error: any) {
+      HELPERS(req).log({ action: 'REPORT_PROPERTY_LISTING', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message });
+      res.status(500).json({ success: false, error: { message: error.message || 'Failed to submit report' } });
+    }
+  };
 }

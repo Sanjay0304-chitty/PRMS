@@ -160,6 +160,28 @@
   color: var(--warning-label);
 }
 
+.landlord-badge.disabled {
+  background: var(--error-state);
+  color: var(--error-label);
+}
+
+.landlord-category-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.landlord-category-card-full.is-disabled {
+  opacity: 0.68;
+  border-style: dashed;
+}
+
+.landlord-category-icon.is-disabled {
+  opacity: 0.55;
+  filter: grayscale(0.6);
+}
+
 .landlord-category-actions {
   display: flex;
   align-items: center;
@@ -225,6 +247,16 @@
   background: var(--warning-state);
   border-color: var(--warning-state-border);
   color: var(--warning-label);
+}
+
+.action-btn.toggle.is-disabled {
+  color: var(--success-label);
+  border-color: var(--success-fixed);
+}
+
+.action-btn.toggle.is-disabled:hover {
+  background: var(--success-fixed);
+  color: var(--success-label);
 }
 
 .edit-name,

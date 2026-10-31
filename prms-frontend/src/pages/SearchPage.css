@@ -325,6 +325,70 @@
   color: var(--secondary-accent);
 }
 
+.result-flag-btn {
+  position: absolute;
+  top: var(--spacing-xs);
+  right: var(--spacing-xs);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(15, 23, 42, 0.55);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+  backdrop-filter: blur(4px);
+  z-index: 2;
+}
+
+.result-flag-btn:hover {
+  transform: scale(1.1);
+  background: var(--status-error, #ef4444);
+  color: #ffffff;
+}
+
+.result-card-footer {
+  margin-top: var(--spacing-xs);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.result-report-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 3px 6px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.result-report-link:hover {
+  color: var(--status-error, #ef4444);
+  background: var(--error-state-background, #fee2e2);
+}
+
+.tenant-book-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: #4338ca;
+  background: #eef2ff;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  border: 1px solid #c7d2fe;
+}
+
+
 /* ---------- Skeleton Loading ---------- */
 
 .loading-skeleton {

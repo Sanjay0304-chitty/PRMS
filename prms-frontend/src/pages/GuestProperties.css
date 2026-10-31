@@ -367,6 +367,30 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
+.guest-card-flag-btn {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.55);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  position: absolute;
+  right: 52px;
+  top: var(--spacing-sm);
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+  z-index: 2;
+  backdrop-filter: blur(4px);
+}
+
+.guest-card-flag-btn:hover {
+  transform: scale(1.1);
+  background: var(--status-error, #ef4444);
+  color: #ffffff;
+}
+
 .guest-property-image span {
   position: absolute;
   top: var(--spacing-sm);
@@ -434,10 +458,56 @@
 
 .guest-property-body strong {
   display: block;
-  margin-top: auto;
-  padding-top: var(--spacing-sm);
   color: var(--on-surface);
   font-size: 15px;
+}
+
+.guest-property-footer {
+  margin-top: auto;
+  padding-top: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 1px solid var(--border-low, #f1f5f9);
+}
+
+.tenant-book-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--secondary-accent, #6366f1);
+  background: var(--secondary-fixed, #eef2ff);
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.guest-property-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.guest-card-report-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary, #64748b);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 3px 7px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.guest-card-report-link:hover {
+  color: var(--status-error, #ef4444);
+  background: var(--error-state-background, #fee2e2);
+  border-color: rgba(239, 68, 68, 0.2);
 }
 
 .weekend {

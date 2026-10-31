@@ -8,18 +8,24 @@ export const apiLimiter = rateLimit({
     success: false,
     error: { message: 'Too many requests. Please try again later.' },
   },
-  skip: (req) => req.url.startsWith('/auth/login') || req.url.startsWith('/auth/register') || req.url.startsWith('/auth/refresh'),
+  skip: (req) => {
+    if (env.NODE_ENV === 'test') return true;
+    const path = req.originalUrl || req.url || '';
+    return path.includes('/auth') || path.includes('/health');
+  },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: env.NODE_ENV === 'production' ? 20 : 1000,
   message: {
     success: false,
     error: { message: 'Too many authentication attempts. Please try again in 15 minutes.' },
   },
+  skip: () => env.NODE_ENV === 'test',
   standardHeaders: true,
   legacyHeaders: false,
 });
+

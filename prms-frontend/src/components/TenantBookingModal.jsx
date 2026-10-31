@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, AlertTriangle, X, Loader2, CalendarDays } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import { bookingApi } from '../api';
 import './TenantBookingModal.css';
 
@@ -18,6 +19,7 @@ import './TenantBookingModal.css';
  *   onClose   – () => void  callback to close the modal
  */
 function TenantBookingModal({ property, isOpen, onClose }) {
+  const { user } = useAuth();
   const todayStr = new Date().toISOString().slice(0, 10);
   const maxDate = new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10);
 
@@ -76,6 +78,13 @@ function TenantBookingModal({ property, isOpen, onClose }) {
 
   /* ---- Submit rental application ---- */
   async function handleSubmitApplication() {
+    if (!user || (user.role || '').toLowerCase() !== 'tenant') {
+      setSubmitResult({
+        success: false,
+        message: 'A Tenant account is required to apply or book. Please sign in or register as a Tenant.',
+      });
+      return;
+    }
     setSubmitting(true);
     setSubmitResult(null);
     try {

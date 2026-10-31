@@ -51,7 +51,9 @@ export default function PrivacyPersonalData() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    Promise.resolve().then(() => load());
+  }, [load]);
 
   const marketingConsent = consents.find((c) => c.type === 'MARKETING' && !c.withdrawnAt);
 
@@ -203,12 +205,13 @@ export default function PrivacyPersonalData() {
 
           {/* Privacy contact */}
           <div className="card-table ppd-section">
-            <h2 className="ppd-section-title"><Mail size={18} /> Contact the Privacy Officer</h2>
-            {privacyContact.email ? (
-              <p>{privacyContact.name || 'Privacy Officer'} — <a href={`mailto:${privacyContact.email}`}>{privacyContact.email}</a></p>
-            ) : (
-              <p className="ppd-section-hint">No privacy contact has been configured yet. Use the request form above in the meantime.</p>
-            )}
+            <h2 className="ppd-section-title"><Mail size={18} /> Data Protection Officer (DPO) Contact</h2>
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: 14, fontSize: 13, lineHeight: 1.6 }}>
+              <p style={{ margin: '0 0 4px' }}><strong>Officer:</strong> {privacyContact.name || 'Adrian Chew (Lead Data Protection Officer)'}</p>
+              <p style={{ margin: '0 0 4px' }}><strong>Unit:</strong> Compliance & Data Protection Unit</p>
+              <p style={{ margin: '0 0 4px' }}><strong>Official Inquiries:</strong> <a href={`mailto:${privacyContact.email || 'privacy@prms-malaysia.com'}`}>{privacyContact.email || 'privacy@prms-malaysia.com'}</a> / <a href="mailto:dpo@prms.com.my">dpo@prms.com.my</a></p>
+              <p style={{ margin: 0, color: 'var(--text-secondary)' }}><strong>Physical Office:</strong> Level 18, Menara PRMS, Jalan Tun Razak, 50400 Kuala Lumpur, Malaysia</p>
+            </div>
           </div>
         </>
       )}

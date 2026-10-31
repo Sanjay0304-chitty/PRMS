@@ -5,7 +5,7 @@ import { UserController } from './controller_user';
 import { AuthRequest } from '../../middleware/auth';
 import upload from '../../middleware/fileUpload';
 import { FileUploadController } from './controller_fileUpload';
-import { getUserMedia, deletePropertyImage } from './service_fileUpload';
+import { getUserMedia, deletePropertyImage, successResponse } from './service_fileUpload';
 import { createUserBody, updateUserBody, userQuery, userIdParam, changeRoleBody } from './dto';
 
 const router = express.Router();
@@ -23,14 +23,19 @@ router.delete('/files/:fileId', fileCtrl.remove);
 // My Documents media endpoint (includes property images)
 router.get('/my-media', fileCtrl.getUserMedia);
 
-// Delete property image endpoint
-router.delete('/my-media/images/:imageId', async (req, res) => {
+// Delete property image endpoint with ownership/assignment verification
+router.delete('/my-media/images/:imageId', async (req: AuthRequest, res) => {
   const imageId = String(req.params.imageId);
   try {
-    const result = await deletePropertyImage(imageId);
-    res.json(result);
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ success: false, error: { message: 'Authentication required' } });
+    }
+    const result = await deletePropertyImage(imageId, user.id, user.role);
+    res.json(successResponse(result, 'Property image deleted'));
   } catch (error: any) {
-    res.status(400).json({ success: false, error: { message: error.message } });
+    const status = error.status || (error.message.includes('not found') ? 404 : (error.message.includes('permission') ? 403 : 400));
+    res.status(status).json({ success: false, error: { message: error.message } });
   }
 });
 

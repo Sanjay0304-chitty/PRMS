@@ -9,13 +9,29 @@ if (!fs.existsSync(UPLOAD_DIR)) {
 }
 
 const ALLOWED_EXTENSIONS = new Set([
-  // Images
-  '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg',
+  // Images (strictly raster only - SVGs excluded to prevent stored XSS)
+  '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp',
   // Videos
   '.mp4', '.webm', '.avi', '.mov', '.mkv', '.m4v',
   // Documents
   '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
   '.txt', '.csv', '.rtf', '.odt',
+]);
+
+const ALLOWED_MIME_TYPES = new Set([
+  'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp',
+  'video/mp4', 'video/webm', 'video/x-msvideo', 'video/quicktime', 'video/x-matroska',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'text/plain',
+  'text/csv',
+  'application/rtf',
+  'application/vnd.oasis.opendocument.text',
 ]);
 
 const storage = multer.diskStorage({
@@ -31,11 +47,16 @@ const storage = multer.diskStorage({
 
 const fileFilter = (_req: any, file: any, cb: any) => {
   const ext = path.extname(file.originalname).toLowerCase();
-  if (ALLOWED_EXTENSIONS.has(ext)) {
-    cb(null, true);
-  } else {
-    cb(new Error(`File type ${ext} is not allowed. Allowed: images (jpg, jpeg, png, gif, webp, bmp, svg) and documents (pdf, doc, docx, xls, xlsx, ppt, pptx, txt, csv, rtf, odt)`));
+  if (ext === '.svg' || file.mimetype === 'image/svg+xml') {
+    return cb(new Error('SVG files are not permitted due to security policies against embedded scripts.'));
   }
+  if (!ALLOWED_EXTENSIONS.has(ext)) {
+    return cb(new Error(`File extension ${ext} is not allowed. Only verified raster images, videos, and documents are accepted.`));
+  }
+  if (file.mimetype && !ALLOWED_MIME_TYPES.has(file.mimetype)) {
+    return cb(new Error(`File content type (${file.mimetype}) does not match authorized upload policies.`));
+  }
+  cb(null, true);
 };
 
 const upload = multer({

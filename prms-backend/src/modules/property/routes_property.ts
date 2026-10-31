@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticate } from '../../middleware/auth';
+import { authenticate, optionalAuth } from '../../middleware/auth';
 import { adminOrLandlord, agentOnly, landlordOnly } from '../../middleware/rbac';
 import { createPropertyBody, updatePropertyBody, propertyIdParam } from './dto';
 import { PropertyController } from './controller_property';
@@ -12,6 +12,7 @@ const ctrl = new PropertyController();
 router.get('/', ctrl.list);
 router.get('/my-properties', authenticate, adminOrLandlord, ctrl.myProperties);
 router.get('/:id', ctrl.getById);
+router.post('/:id/report', optionalAuth, ctrl.reportListing);
 router.post('/', authenticate, adminOrLandlord, createPropertyBody, ctrl.create);
 router.put('/:id', authenticate, adminOrLandlord, propertyIdParam, updatePropertyBody, ctrl.update);
 router.patch('/:id/operational', authenticate, agentOnly, ctrl.updateOperational);

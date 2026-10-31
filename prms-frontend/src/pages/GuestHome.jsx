@@ -22,7 +22,7 @@ import './GuestHome.css';
 
 function GuestHome() {
   const navigate = useNavigate()
-  const { settings, loadSettings } = useSettings()
+  const { settings } = useSettings()
 
   /* Track the active theme so branding colors below can pick the correct
      light_ or dark_ customizer field — without this, a light-only override
@@ -66,16 +66,12 @@ function GuestHome() {
   /* Fallback hero content from settings */
   const heroTitle = settings?.homepage_hero_title || 'Find Your Perfect Space in Malaysia\'s Most Trusted Ecosystem.'
   const heroSubtitle = settings?.homepage_hero_subtitle || 'Experience seamless property discovery with PRMS. Browse verified homes, compare listings, and connect with trusted landlords.'
-  const heroButtonText = settings?.homepage_hero_button_text || 'Browse Properties'
-  const heroButtonLink = settings?.homepage_hero_button_link || '/search'
-  const heroImage = settings?.homepage_hero_image || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1600&auto=format&fit=crop'
 
   /* Section visibility toggles */
   const showHero = settings?.homepage_show_hero !== false
   const showSearchBar = settings?.homepage_show_search_bar !== false
   const showFeatured = settings?.homepage_show_featured !== false
   const showFeatures = settings?.homepage_show_features !== false
-  const showTestimonials = settings?.homepage_show_testimonials !== false
   const showCta = settings?.homepage_show_cta !== false
   const showAbout = settings?.homepage_show_about !== false
 
@@ -184,8 +180,12 @@ function GuestHome() {
     },
   ]
 
-  function handleSearch() {
-    navigate('/search')
+  const [searchQuery, setSearchQuery] = useState('')
+
+  function handleSearch(e, customQuery) {
+    if (e && e.preventDefault) e.preventDefault()
+    const q = (customQuery !== undefined ? customQuery : searchQuery).trim()
+    navigate(q ? `/properties?search=${encodeURIComponent(q)}` : '/properties')
   }
 
   return (
@@ -199,9 +199,9 @@ function GuestHome() {
         </Link>
 
         <nav>
-          <a href="#find-home" className="active">
-            Find a Home
-          </a>
+          <Link to="/properties" className="active">
+            Browse Properties
+          </Link>
           <a href="#landlords">For Landlords</a>
           <a href="#insights">Market Insights</a>
           <a href="#help">Help Center</a>
@@ -258,27 +258,53 @@ function GuestHome() {
 
             {showSearchBar && (
               <motion.div
-                className="guest-search-box"
-                data-customize-id="home.search"
+                className="guest-search-box-wrapper"
                 initial={{ opacity: 0, y: 26, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ delay: 0.55, duration: 0.5 }}
               >
-                <div className="guest-search-input">
-                  <MapPin size={20} />
-                  <input type="text" placeholder="Enter neighborhood or property type..." />
-                </div>
-
-                <motion.button
-                  type="button"
-                  data-customize-id="home.search.button"
-                  onClick={handleSearch}
-                  whileHover={{ y: -2, scale: 1.02 }}
-                  whileTap={{ scale: 0.96 }}
+                <form
+                  className="guest-search-box"
+                  data-customize-id="home.search"
+                  onSubmit={(e) => handleSearch(e)}
                 >
-                  <Search size={18} />
-                  Search
-                </motion.button>
+                  <div className="guest-search-input">
+                    <MapPin size={20} />
+                    <input
+                      type="text"
+                      placeholder="Enter location, neighborhood, or property type..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+
+                  <motion.button
+                    type="submit"
+                    data-customize-id="home.search.button"
+                    whileHover={{ y: -2, scale: 1.02 }}
+                    whileTap={{ scale: 0.96 }}
+                  >
+                    <Search size={18} />
+                    Search
+                  </motion.button>
+                </form>
+
+                <div className="guest-quick-tags">
+                  <span className="quick-tags-label">Popular:</span>
+                  {['Kuala Lumpur', 'Mont Kiara', 'Bukit Bintang', 'Petaling Jaya', 'Condo', 'Studio'].map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      className="quick-tag-chip"
+                      onClick={(e) => {
+                        setSearchQuery(tag)
+                        handleSearch(e, tag)
+                      }}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
               </motion.div>
             )}
           </motion.div>
@@ -336,18 +362,23 @@ function GuestHome() {
 
               <h3>For Tenants</h3>
               <p>
-                Browse thousands of verified listings, book instantly, and manage
-                your stay with reminders, payments, and localized maps.
+                Browse verified listings, schedule viewings, and submit rental applications.
+                A <strong>Tenant account</strong> is required to apply or book.
               </p>
 
               <div className="guest-map-preview">
                 <MapPin size={38} />
-                <span>Verified property area</span>
+                <span>Verified Property Ecosystem</span>
               </div>
 
-              <Link to={heroButtonLink}>
-                Explore Verified Listings <ArrowRight size={18} />
-              </Link>
+              <div className="guest-role-action-links">
+                <Link to="/register?role=Tenant" className="guest-role-highlight-link">
+                  Register as Tenant <ArrowRight size={18} />
+                </Link>
+                <Link to="/properties" className="guest-role-secondary-link">
+                  Browse Properties
+                </Link>
+              </div>
             </motion.article>
 
             <motion.article
@@ -370,7 +401,7 @@ function GuestHome() {
               </p>
 
               <div className="guest-revenue-card">
-                <p>Total Revenue MYR</p>
+                <p>Total Revenue (RM)</p>
                 <h4>RM 142,500.00</h4>
                 <div className="guest-bars">
                   <span></span>

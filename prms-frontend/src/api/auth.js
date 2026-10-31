@@ -14,6 +14,10 @@ export const authApi = {
     });
   },
 
+  checkEmail({ email }) {
+    return apiClient.post('/auth/check-email', { email });
+  },
+
   login: ({ email, password }) => apiClient.post('/auth/login', { email, password }),
 
   googleLogin(googleAuth) {

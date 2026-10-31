@@ -348,3 +348,109 @@
   color: var(--text-secondary);
   font-weight: 500;
 }
+
+/* ── Filter Tabs ── */
+.payments-filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.payments-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.payments-filter-btn:hover {
+  background: var(--surface);
+  color: var(--text-primary);
+  border-color: var(--text-tertiary);
+}
+
+.payments-filter-btn.active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
+.payments-error-text {
+  flex: 1;
+}
+
+.payments-retry-btn {
+  background: var(--danger, #dc2626);
+  color: #ffffff;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: 8px;
+}
+
+.payments-retry-btn:hover {
+  opacity: 0.9;
+}
+
+.payments-filter-reset-btn {
+  margin-top: 12px;
+  background: var(--primary);
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.payments-filter-reset-btn:hover {
+  background: var(--primary-hover, #4f46e5);
+}
+
+.payment-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.payment-retry-btn {
+  background: #dc2626;
+}
+
+.payment-retry-btn:hover {
+  background: #b91c1c;
+}
+
+.payment-details-link {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.payment-details-link:hover {
+  background: var(--surface);
+  color: var(--text-primary);
+  border-color: var(--text-tertiary);
+}
+

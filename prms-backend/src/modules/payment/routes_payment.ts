@@ -9,7 +9,7 @@ const ctrl = new PaymentController();
 router.use(authenticate);
 
 // ── Static paths (must come before dynamic :id routes) ──
-router.get('/summary', adminOrLandlordOrAgent, ctrl.summary);
+router.get('/summary', ctrl.summary);
 router.get('/my-payments', tenantOnly, ctrl.myPayments);
 router.get('/my-dashboard', tenantOnly, ctrl.tenantDashboard);
 router.patch('/:id/dashboard-visibility', tenantOnly, ctrl.dashboardVisibility);
@@ -19,6 +19,7 @@ router.post('/mock-transactions/:transactionId/complete', tenantOnly, ctrl.compl
 // ── Payment-level routes ──
 router.get('/', adminOrLandlordOrAgent, ctrl.list);
 router.get('/:id', ctrl.getById);
+router.post('/', ctrl.create);
 router.patch('/:id/mark-paid', adminOrLandlord, ctrl.markPaid);
 router.post('/:paymentId/checkout', tenantOnly, ctrl.mockCheckout);
 

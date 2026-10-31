@@ -71,19 +71,42 @@
 }
 
     .receipt-status.paid {
-        background: var(--success-fixed);
-        color: var(--success-label);
+        background: var(--success-fixed, rgba(22, 163, 74, 0.12));
+        color: var(--success-label, #16a34a);
     }
 
     .receipt-status.pending {
-        background: var(--warning-state);
-        color: var(--warning-label);
+        background: var(--warning-state, rgba(217, 119, 6, 0.12));
+        color: var(--warning-label, #d97706);
+    }
+
+    .receipt-status.failed {
+        background: rgba(220, 38, 38, 0.12);
+        color: #dc2626;
+    }
+
+    .receipt-status.refunded {
+        background: rgba(124, 58, 237, 0.12);
+        color: #7c3aed;
     }
 
 .receipt-actions {
     display: flex;
     gap: var(--spacing-sm);
     margin-bottom: var(--spacing-lg);
+    flex-wrap: wrap;
+}
+
+.receipt-pay-action-btn {
+    background: var(--primary, #4f46e5);
+    color: #ffffff;
+    border-color: var(--primary, #4f46e5);
+    font-weight: 600;
+}
+
+.receipt-pay-action-btn:hover:not(:disabled) {
+    background: var(--primary-hover, #4338ca);
+    color: #ffffff;
 }
 
 .receipt-action-btn {

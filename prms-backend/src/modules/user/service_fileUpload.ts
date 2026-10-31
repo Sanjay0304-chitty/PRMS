@@ -4,6 +4,7 @@ import { successResponse } from '../../utils/response';
 import path from 'path';
 import fs from 'fs';
 import { generateThumbnail, deleteThumbnail, UPLOADS_DIR } from '../../services/thumbnail';
+import { hasPropertyAuthority } from '../../utils/propertyAuthority';
 
 const UPLOAD_DIR = path.join(__dirname, '..', '..', 'public', 'uploads');
 
@@ -142,13 +143,24 @@ export async function deleteFile(fileId: string) {
   });
 }
 
-// Delete a property image by its image ID
-export async function deletePropertyImage(imageId: string) {
+// Delete a property image by its image ID with strict authorization check
+export async function deletePropertyImage(imageId: string, userId?: string, role?: string) {
   const image = await prisma.propertyImage.findUnique({
     where: { id: imageId },
+    include: { property: { select: { id: true, ownerId: true } } },
   });
 
   if (!image) throw new Error('Property image not found');
+
+  if (userId && role) {
+    const normalizedRole = role.toLowerCase();
+    const isAllowed = await hasPropertyAuthority(userId, normalizedRole, image.property.ownerId, image.property.id);
+    if (!isAllowed) {
+      const err: any = new Error('You do not have permission to delete images for this property');
+      err.status = 403;
+      throw err;
+    }
+  }
 
   const filePath = path.join(__dirname, '..', '..', 'public', image.url.replace(/^\/images\//, ''));
   if (fs.existsSync(filePath)) {

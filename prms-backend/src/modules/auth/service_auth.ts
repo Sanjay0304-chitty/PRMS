@@ -84,7 +84,7 @@ export async function loginUser(email: string, password: string) {
     include: { UserRole: { include: { role: true } } },
   });
 
-  if (!user) throw new Error('Email not registered');
+  if (!user) throw new Error('This email is not registered. Please sign up for an account first.');
   if (!user.passwordHash) throw new Error('Please use Firebase login for this account');
   if (!user.is_active) throw new Error('Account is suspended');
 
@@ -257,37 +257,88 @@ export async function setPassword(userId: string, newPassword: string) {
 
 // In-memory OTP store (5 min expiry) - no real email/SMS service behind
 // this project, so the OTP is generated here and handed back in the API
-// response for the frontend to display directly, rather than actually
-// delivered out-of-band. Known, deliberate limitation (flagged in the
-// deployment report), not a real password-reset security model - don't
-// extend this pattern to anything that needs to be actually secure.
-const otpStore = new Map<string, { code: string; expiresAt: number }>();
+interface OtpEntry {
+  code: string;
+  expiresAt: number;
+  verified: boolean;
+}
+
+const otpStore = new Map<string, OtpEntry>();
 
 export async function generateOtpCode(email: string) {
-  const user = await prisma.user.findUnique({ where: { email } });
+  const normalizedEmail = email.toLowerCase().trim();
+  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
   if (!user) throw new Error('Email not found');
+
   const code = Math.floor(100000 + Math.random() * 900000).toString();
-  otpStore.set(email, { code, expiresAt: Date.now() + 5 * 60 * 1000 });
+  otpStore.set(normalizedEmail, {
+    code,
+    expiresAt: Date.now() + 5 * 60 * 1000,
+    verified: false,
+  });
+
+  // Dispatch in-app security notification to the user
+  try {
+    await prisma.notification.create({
+      data: {
+        userId: user.id,
+        type: 'security_alert',
+        title: 'Password Reset Verification Code',
+        message: `Your PRMS password reset code is ${code}. Valid for 5 minutes. If you did not request this, please secure your account immediately.`,
+      },
+    });
+  } catch {
+    // Notification creation is best-effort
+  }
+
+  // Log in server console for development/demo traceability
+  console.log(`[AUTH-SECURITY] OTP generated for ${normalizedEmail}: ${code}`);
   return code;
 }
 
 export async function verifyOtpCode(email: string, code: string) {
-  const entry = otpStore.get(email);
-  if (!entry) throw new Error('OTP not found. Request a new one first.');
+  const normalizedEmail = email.toLowerCase().trim();
+  const entry = otpStore.get(normalizedEmail);
+  if (!entry) throw new Error('OTP not found or expired. Please request a new verification code.');
   if (Date.now() > entry.expiresAt) {
-    otpStore.delete(email);
-    throw new Error('OTP expired. Request a new one.');
+    otpStore.delete(normalizedEmail);
+    throw new Error('Verification code expired. Please request a new code.');
   }
-  if (entry.code !== code) throw new Error('Invalid OTP code.');
-  otpStore.delete(email);
+  if (entry.code !== code.trim()) {
+    throw new Error('Invalid verification code.');
+  }
+  entry.verified = true;
+  return true;
 }
 
-export async function resetPassword(email: string, newPassword: string) {
-  const user = await prisma.user.findUnique({ where: { email } });
+export async function resetPassword(email: string, newPassword: string, otp?: string) {
+  const normalizedEmail = email.toLowerCase().trim();
+  const entry = otpStore.get(normalizedEmail);
+
+  if (!entry) {
+    throw new Error('No active password reset session. Please request a verification code first.');
+  }
+  if (Date.now() > entry.expiresAt) {
+    otpStore.delete(normalizedEmail);
+    throw new Error('Verification code has expired. Please request a new code.');
+  }
+
+  // Strictly verify that OTP was verified or matches provided code
+  const codeMatches = otp && entry.code === otp.trim();
+  if (!entry.verified && !codeMatches) {
+    throw new Error('Invalid or unverified OTP. Verification is required before password can be reset.');
+  }
+
+  // Consume OTP session
+  otpStore.delete(normalizedEmail);
+
+  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
   if (!user) throw new Error('User not found');
+
   const passwordHash = await bcrypt.hash(newPassword, 10);
   return prisma.user.update({
     where: { id: user.id },
     data: { passwordHash },
   });
 }
+

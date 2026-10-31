@@ -264,3 +264,46 @@
   background: var(--page-bg);
   color: var(--on-surface);
 }
+
+@media print {
+  .finance-export-btn,
+  .finance-filter,
+  .alert,
+  .no-print {
+    display: none !important;
+  }
+
+  .finance-dashboard {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .finance-cards {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  .finance-card {
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .finance-table {
+    border: 1px solid #cbd5e1 !important;
+  }
+
+  .finance-table th {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .finance-table tr {
+    page-break-inside: avoid;
+  }
+}
+

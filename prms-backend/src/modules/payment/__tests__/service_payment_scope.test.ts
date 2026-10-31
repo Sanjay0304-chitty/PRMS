@@ -56,3 +56,32 @@ test('agent payment rows contain only limited assigned-property fields', async (
     },
   }));
 });
+
+test('getMyPayments filters by due status (PENDING and UNPAID)', async () => {
+  await service.getMyPayments('tenant-1', 1, 10, 'due');
+  expect(findPayments).toHaveBeenCalledWith(expect.objectContaining({
+    where: { userId: 'tenant-1', status: { in: ['PENDING', 'UNPAID'] } },
+  }));
+});
+
+test('getMyPayments filters by completed status (PAID)', async () => {
+  await service.getMyPayments('tenant-1', 1, 10, 'completed');
+  expect(findPayments).toHaveBeenCalledWith(expect.objectContaining({
+    where: { userId: 'tenant-1', status: 'PAID' },
+  }));
+});
+
+test('getMyPayments filters by failed status (FAILED)', async () => {
+  await service.getMyPayments('tenant-1', 1, 10, 'failed');
+  expect(findPayments).toHaveBeenCalledWith(expect.objectContaining({
+    where: { userId: 'tenant-1', status: 'FAILED' },
+  }));
+});
+
+test('getMyPayments with all returns all user payments without status constraint', async () => {
+  await service.getMyPayments('tenant-1', 1, 10, 'all');
+  expect(findPayments).toHaveBeenCalledWith(expect.objectContaining({
+    where: { userId: 'tenant-1' },
+  }));
+});
+

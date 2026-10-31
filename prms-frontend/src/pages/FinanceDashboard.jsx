@@ -8,6 +8,7 @@ import {
   CalendarDays,
   Filter,
   Download,
+  Printer,
 } from 'lucide-react';
 import './FinanceDashboard.css';
 
@@ -35,7 +36,24 @@ function FinanceDashboard() {
   }
 
   useEffect(() => {
-    load();
+    let active = true;
+    Promise.all([
+      apiClient.get('/payments/summary'),
+      apiClient.get('/payments'),
+    ])
+      .then(([summaryRes, paymentsRes]) => {
+        if (!active) return;
+        setSummary(summaryRes.data?.data);
+        setPayments(paymentsRes.data?.data?.data ?? paymentsRes.data?.data ?? []);
+        setLoading(false);
+      })
+      .catch((e) => {
+        if (!active) return;
+        setError(e.message || 'Failed to load finance data');
+        setLoading(false);
+      });
+
+    return () => { active = false; };
   }, []);
 
   const filtered = statusFilter
@@ -69,12 +87,22 @@ function FinanceDashboard() {
 
   return (
     <div className="finance-dashboard">
-      {error && <div className="alert alert-danger">{error} <button className="btn btn-sm" onClick={load}>Retry</button></div>}
+      {error && <div className="alert alert-danger no-print">{error} <button className="btn btn-sm" onClick={load}>Retry</button></div>}
       <div className="finance-header">
         <h1>Finance &amp; Reports</h1>
-        <button className="finance-export-btn" title="Export" onClick={exportCsv}>
-          <Download size={16} /> Export
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }} className="no-print">
+          <button
+            type="button"
+            className="finance-export-btn"
+            title="Print Official Statement"
+            onClick={() => window.print()}
+          >
+            <Printer size={16} /> Print Statement
+          </button>
+          <button type="button" className="finance-export-btn" title="Export" onClick={exportCsv}>
+            <Download size={16} /> Export
+          </button>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -187,12 +215,12 @@ function FinanceDashboard() {
             <tbody>
               {filtered.slice(0, 10).map((p) => (
                 <tr key={p.id}>
-                  <td>{new Date(p.paid_at || p.due_date).toLocaleDateString()}</td>
+                  <td>{new Date(p.paid_at || p.due_date).toLocaleDateString('en-MY')}</td>
                   <td>{p.reference || '—'}</td>
                   <td>RM {Number(p.amount).toFixed(2)}</td>
                   <td>
-                    <span className={`payment-status-badge ${p.status.toLowerCase()}`}>
-                      {p.status}
+                    <span className={`payment-status-badge ${(p.status || '').toLowerCase()}`}>
+                      {p.status || '—'}
                     </span>
                   </td>
                   <td>{p.method || '—'}</td>

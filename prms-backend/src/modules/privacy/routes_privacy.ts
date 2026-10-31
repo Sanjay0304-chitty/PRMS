@@ -30,6 +30,7 @@ router.patch('/requests/:id/complete', adminOnly, ctrl.completeRequest);
 router.get('/retention', adminOnly, ctrl.getPolicies);
 router.put('/retention/:category', adminOnly, ctrl.updatePolicy);
 router.post('/retention/simulate', adminOnly, ctrl.simulateCleanup);
+router.post('/retention/cleanup', adminOnly, ctrl.executeCleanup);
 
 // Breach register (admin only)
 router.get('/breaches', adminOnly, ctrl.getIncidents);

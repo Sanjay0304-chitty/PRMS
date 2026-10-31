@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 /* --- helpers ---------------------------------------------------- */
 function canvasCtx(canvas) {

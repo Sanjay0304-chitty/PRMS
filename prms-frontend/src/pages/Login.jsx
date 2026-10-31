@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Building2, Eye, EyeOff, LockKeyhole, LogIn, Mail } from 'lucide-react';
+import { Building2, Eye, EyeOff, LockKeyhole, LogIn, Mail, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { signInWithGoogle } from '../firebase';
 import ThemeSwitcher from '../components/ThemeSwitcher';
+import { authApi } from '../api';
+import { isValidEmail } from '../utils/validators';
 
 function Login() {
   const navigate = useNavigate();
@@ -15,15 +17,82 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [remember, setRemember] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [localError, setLocalError] = useState('');
+
+  async function verifyEmailRegistration(emailToTest) {
+    const trimmed = (emailToTest || email).trim();
+    if (!trimmed) {
+      setEmailError('');
+      return false;
+    }
+    if (!isValidEmail(trimmed)) {
+      setEmailError('Please enter a valid email address.');
+      return false;
+    }
+
+    setCheckingEmail(true);
+    try {
+      const res = await authApi.checkEmail({ email: trimmed });
+      const exists = !!res?.data?.data?.exists;
+      if (!exists) {
+        setEmailError('This email is not registered with PRMS. Please sign up for an account.');
+        return false;
+      }
+      setEmailError('');
+      return true;
+    } catch {
+      // If check fails or network issue, clear inline error and let server-side login validate
+      setEmailError('');
+      return true;
+    } finally {
+      setCheckingEmail(false);
+    }
+  }
+
+  async function handleEmailBlur() {
+    if (email.trim()) {
+      await verifyEmailRegistration(email);
+    }
+  }
+
+  function handleEmailChange(e) {
+    setEmail(e.target.value);
+    if (emailError) setEmailError('');
+    if (localError) setLocalError('');
+    clearError();
+  }
 
   async function handleSubmit(e) {
     if (e) e.preventDefault();
     if (submitting) return;
 
     clearError();
+    setLocalError('');
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setEmailError('Email address is required.');
+      return;
+    }
+
+    if (!isValidEmail(trimmedEmail)) {
+      setEmailError('Please enter a valid email address.');
+      return;
+    }
+
     setSubmitting(true);
 
-    const result = await login({ email, password, remember }, navigate);
+    // Verify email is registered in system before allowing login attempt
+    const isRegistered = await verifyEmailRegistration(trimmedEmail);
+    if (!isRegistered) {
+      setSubmitting(false);
+      setLocalError('This email is not registered with PRMS. Only registered accounts can log in.');
+      return;
+    }
+
+    const result = await login({ email: trimmedEmail, password, remember }, navigate);
 
     /* Remember-me: persist refresh token to localStorage longer */
     if (result.success && remember) {
@@ -36,11 +105,16 @@ function Login() {
   /* AUTH-009: Google OAuth login handler */
   async function handleGoogleLogin() {
     clearError();
+    setLocalError('');
     try {
       const googleAuth = await signInWithGoogle();
-      await googleLogin(googleAuth,navigate);
-    } 
-    catch (err) {
+      const res = await googleLogin(googleAuth, navigate);
+      if (res && !res.success) {
+        setLocalError(res.error || 'Google login failed. Only registered accounts can log in.');
+      }
+    } catch (err) {
+      const msg = err?.response?.data?.error?.message || err?.message || 'Google login failed.';
+      setLocalError(msg);
       console.error('Google login failed', err);
     }
   }
@@ -157,17 +231,39 @@ function Login() {
             >
               <label>Email Address</label>
 
-              <div className="input-box">
+              <div className={`input-box ${emailError ? 'has-error' : ''}`}>
                 <Mail size={22} />
                 <input
                   type="email"
                   placeholder="name@example.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={handleEmailChange}
+                  onBlur={handleEmailBlur}
                   required
                   autoComplete="email"
                 />
+                {checkingEmail && (
+                  <span className="input-right-icon" title="Checking registered status...">
+                    <Loader2 size={18} className="spin" style={{ animation: 'spin 1s linear infinite' }} />
+                  </span>
+                )}
               </div>
+              {emailError && (
+                <div
+                  className="login-field-error"
+                  style={{
+                    color: '#ef4444',
+                    fontSize: '0.8rem',
+                    marginTop: '0.35rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                  }}
+                >
+                  <AlertCircle size={14} style={{ flexShrink: 0 }} />
+                  <span>{emailError}</span>
+                </div>
+              )}
             </motion.div>
 
             <motion.div
@@ -183,7 +279,11 @@ function Login() {
                   type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (localError) setLocalError('');
+                    clearError();
+                  }}
                   required
                   autoComplete="current-password"
                 />
@@ -217,14 +317,14 @@ function Login() {
             </motion.div>
 
             {/* Error message */}
-            {error && (
+            {(localError || error) && (
               <motion.div
                 className="login-error"
                 role="alert"
                 initial={false}
                 animate={{ opacity: 1, y: 0 }}
               >
-                {error}
+                {localError || error}
               </motion.div>
             )}
 

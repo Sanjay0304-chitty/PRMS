@@ -1,8 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import {
   Type as TypeIcon, ImageIcon, Palette, Maximize2,
-  AlignLeft, AlignCenter, AlignRight,
-  Eye, Lock,
+  AlignLeft, AlignCenter, AlignRight, AlignJustify,
+  Eye, EyeOff, Lock, Unlock, Grid3X3, List,
   DivideIcon as Divide, Upload, X
 } from 'lucide-react';
 

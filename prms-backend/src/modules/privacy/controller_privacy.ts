@@ -98,8 +98,8 @@ export class PrivacyController {
 
   completeRequest = async (req: AuthRequest, res: Response) => {
     try {
-      const updated = await privacyService.completeRequest(String(req.params.id));
-      await log(req, 'COMPLETE_PRIVACY_REQUEST', String(req.params.id), 'Marked privacy request completed');
+      const updated = await privacyService.completeRequest(String(req.params.id), req.body?.fulfillmentNotes);
+      await log(req, 'COMPLETE_PRIVACY_REQUEST', String(req.params.id), 'Marked privacy request completed and fulfilled action');
       res.json(successResponse(updated));
     } catch (error: any) { await log(req, 'COMPLETE_PRIVACY_REQUEST', String(req.params.id), '', 'Failed', 'error', error.message); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
@@ -127,6 +127,17 @@ export class PrivacyController {
       await log(req, 'SIMULATE_RETENTION_CLEANUP', undefined, 'Ran a retention cleanup simulation (dry run, nothing deleted)');
       res.json(successResponse(results));
     } catch (error: any) { res.status(500).json({ success: false, error: { message: error.message } }); }
+  };
+
+  executeCleanup = async (req: AuthRequest, res: Response) => {
+    try {
+      const result = await privacyService.executeRetentionCleanup();
+      await log(req, 'EXECUTE_RETENTION_CLEANUP', undefined, `Executed retention cleanup: deleted ${result.totalDeleted} expired records`, 'Success', 'warn');
+      res.json(successResponse(result, `Cleaned up ${result.totalDeleted} expired records.`));
+    } catch (error: any) {
+      await log(req, 'EXECUTE_RETENTION_CLEANUP', undefined, '', 'Failed', 'error', error.message);
+      res.status(500).json({ success: false, error: { message: error.message } });
+    }
   };
 
   /* ── Breach register ── */

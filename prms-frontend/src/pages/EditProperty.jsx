@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { propertyApi, getApiError } from '../api'
-import { getPropertyDetailPath } from '../config/routes'
+import { getPropertyRoute, getPropertyDetailPath, roleToPath } from '../config/routes'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   ArrowLeft,
   Check,
   Loader2,
   Plus,
+  Save,
   X,
 } from 'lucide-react'
 
@@ -55,6 +56,7 @@ export default function EditProperty() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { id } = useParams()
+  const [property, setProperty] = useState(null)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -88,6 +90,7 @@ export default function EditProperty() {
       const { data } = await propertyApi.getById(id)
       const p = data.property || data.data || data
 
+      setProperty(p)
       setFormData({
         title: p.title || p.name || '',
         address: p.address || '',

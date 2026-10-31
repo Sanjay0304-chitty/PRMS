@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { apiClient } from '../api/ApiClient'
 import {
   Activity,
@@ -240,7 +240,7 @@ function AdminDashboard() {
   }
 
   /* ---- Audit log mapping ---- */
-  const mappedLogs = auditLogs.map((log) => {
+  const mappedLogs = (Array.isArray(auditLogs) ? auditLogs : []).map((log) => {
     const level = (log.level || '').toLowerCase()
     const status = (log.status || '').toLowerCase()
     const isDanger = level === 'error' || level === 'warn' || status === 'failure' || status === 'failed' || log.action?.includes('FAIL') || log.action?.includes('DENIED')

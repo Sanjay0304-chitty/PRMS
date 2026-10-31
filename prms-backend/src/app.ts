@@ -1,13 +1,18 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import jwt from 'jsonwebtoken';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { env } from './config';
 import { prisma } from './db';
 import path from 'path';
+import fs from 'fs';
+import { valerieGuard } from './middleware/valerieGuard';
+import { protectAgreements, protectUserFiles, protectPropertyUploads } from './middleware/fileAuth';
 import { requestLogger } from './middleware/logging';
 import { responseCache } from './middleware/responseCache';
+import { apiLimiter } from './middleware/rateLimit';
 import { errorHandler } from './middleware/errorHandler';
 import authRoutes from './modules/auth/routes_auth';
 import userRoutes from './modules/user/routes_user';
@@ -40,50 +45,63 @@ const app = express();
 const router = express.Router();
 const PORT = env.PORT;
 
-app.use(helmet());
 // Parse CORS_ORIGIN: supports single string or comma-separated list → array
 const corsOrigins = env.CORS_ORIGIN.split(',').map((o: string) => o.trim());
-const corsOriginValue = corsOrigins.length === 1 ? corsOrigins[0] : corsOrigins;
 
-app.use(cors({ origin: corsOriginValue }));
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+      return callback(null, true);
+    }
+    if (/^https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com$/.test(origin)) {
+      return callback(null, true);
+    }
+    if (corsOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+}));
+
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
+
+// Valerie Guard: Mounted before routes and static files
 app.use(express.json());
+app.use(valerieGuard);
 app.use(responseCache);
 app.use(requestLogger);
 
-// Serve uploaded images statically with cross-origin CORP (frontend is on a different port)
+// Serve public property images statically with cross-origin CORP (frontend is on a different port)
 app.use('/images', (req, res, next) => {
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     next();
 }, express.static(path.join(__dirname, '..', 'public', 'images')));
-
-// Serve uploaded user files statically (documents, attachments)
-app.use('/files', (req, res, next) => {
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    next();
-}, express.static(path.join(__dirname, '..', 'public', 'uploads')));
 
 // Serve generated thumbnails statically
 app.use('/api/files/thumbnails', (req, res, next) => {
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     next();
 }, express.static(path.join(__dirname, '..', 'public', 'thumbnails')));
 
-// Serve uploaded property media (images, videos, documents) statically
-app.use('/uploads/properties', (req, res, next) => {
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    next();
-}, express.static(path.join(__dirname, '..', 'uploads', 'properties')));
+// Serve uploaded user files with role-based authentication (owner or admin)
+app.use('/files', protectUserFiles, express.static(path.join(__dirname, '..', 'public', 'uploads')));
 
-// Serve uploaded physically-signed agreement copies statically
-app.use('/uploads/agreements', (req, res, next) => {
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    next();
-}, express.static(path.join(__dirname, '..', 'uploads', 'agreements')));
+// Serve uploaded property media (public photos/videos stay public; documents restricted to landlord/tenant/admin)
+app.use('/uploads/properties', protectPropertyUploads, express.static(path.join(__dirname, '..', 'uploads', 'properties')));
 
-app.use('/uploads/maintenance', (req, res, next) => {
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    next();
-}, express.static(path.join(__dirname, '..', 'uploads', 'maintenance')));
+// Serve uploaded physically-signed agreement copies with strict authentication (landlord, tenant, admin)
+app.use('/uploads/agreements', protectAgreements, express.static(path.join(__dirname, '..', 'uploads', 'agreements')));
+
+// Serve uploaded maintenance attachments with strict authentication
+app.use('/uploads/maintenance', protectAgreements, express.static(path.join(__dirname, '..', 'uploads', 'maintenance')));
+
+const frontendDist = path.join(__dirname, '..', '..', 'prms-frontend', 'dist');
 
 app.get('/health', async (req, res) => {
   try {
@@ -95,6 +113,9 @@ app.get('/health', async (req, res) => {
 });
 
 app.get('/', (req, res) => {
+  if (fs.existsSync(frontendDist)) {
+    return res.sendFile(path.join(frontendDist, 'index.html'));
+  }
   res.json({ app: 'PRMS Backend', version: '1.0.0', status: 'running', documentation: '/health' });
 });
 
@@ -107,6 +128,7 @@ router.post('/auth/verify', async (req, res) => {
   } catch (error) { res.status(401).json({ error: 'Invalid Firebase token' }); }
 });
 
+router.use(apiLimiter);
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/properties', propertyRoutes);
@@ -137,7 +159,33 @@ router.use('/agreements', agreementRoutes);
 import privacyRoutes from './modules/privacy/routes_privacy';
 router.use('/privacy', privacyRoutes);
 
+app.use('/api', router);
 app.use(router);
+
+// Serve frontend dist when built (single-origin hosting mode with SPA fallback)
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  app.use((req, res, next) => {
+    if (req.method !== 'GET') return next();
+    // Skip static assets, uploads, and health/api endpoints
+    if (
+      req.path.startsWith('/api') ||
+      req.path.startsWith('/uploads') ||
+      req.path.startsWith('/files') ||
+      req.path.startsWith('/images') ||
+      req.path.startsWith('/health') ||
+      path.extname(req.path)
+    ) {
+      return next();
+    }
+    // API clients expecting JSON should not receive HTML
+    if (req.headers.accept?.includes('application/json') && !req.headers.accept?.includes('text/html')) {
+      return next();
+    }
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+}
+
 app.use(errorHandler);
 
 const server = app.listen(PORT, () => {

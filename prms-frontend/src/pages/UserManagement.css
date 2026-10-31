@@ -301,9 +301,66 @@
 }
 
 .action-group button.danger:hover {
-  background: var(--error-state-background);
-  border-color: var(--error-state-border);
-  color: var(--error-state);
+  background: var(--error-state-background, #fee2e2);
+  border-color: var(--error-state, #ef4444);
+  color: var(--error-state, #ef4444);
+}
+
+.action-group button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.delete-modal-content {
+  padding: 8px 0;
+}
+
+.delete-modal-warning {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.delete-warning-icon {
+  color: var(--error-state, #ef4444);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.delete-modal-hint {
+  margin: 6px 0 0 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.delete-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.btn-danger-confirm {
+  background: var(--error-state, #ef4444);
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.btn-danger-confirm:hover {
+  opacity: 0.9;
+}
+
+.btn-danger-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Role select dropdown in table */

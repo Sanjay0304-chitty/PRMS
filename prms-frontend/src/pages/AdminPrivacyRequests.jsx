@@ -15,6 +15,7 @@ export default function AdminPrivacyRequests() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [reasons, setReasons] = useState({});
+  const [fulfillmentNotes, setFulfillmentNotes] = useState({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -26,7 +27,9 @@ export default function AdminPrivacyRequests() {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    Promise.resolve().then(() => load());
+  }, [load]);
 
   const visible = requests.filter((r) => r.status === tab);
 
@@ -41,7 +44,8 @@ export default function AdminPrivacyRequests() {
     if (!reasons[id]?.trim()) { setError('A decision reason is required'); return; }
     return run(() => privacyApi.decideRequest(id, decision, reasons[id]));
   };
-  const complete = (id) => run(() => privacyApi.completeRequest(id));
+  const complete = (id) => run(() => privacyApi.completeRequest(id, fulfillmentNotes[id]));
+
 
   return (
     <div className="page-shell">
@@ -92,7 +96,19 @@ export default function AdminPrivacyRequests() {
                   </div>
                 )}
                 {r.status === 'APPROVED' && (
-                  <button className="btn btn-sm btn-primary" onClick={() => complete(r.id)}>Mark Completed</button>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                    <input
+                      placeholder={r.type === 'DELETION' ? 'Fulfillment note (e.g. Profile anonymized and account deactivated)' : 'Fulfillment note (e.g. Inaccurate records updated)'}
+                      value={fulfillmentNotes[r.id] || ''}
+                      onChange={(e) => setFulfillmentNotes((p) => ({ ...p, [r.id]: e.target.value }))}
+                      style={{ padding: '7px 10px', border: '1px solid var(--border-color)', borderRadius: 6, fontSize: 13 }}
+                    />
+                    <div>
+                      <button className="btn btn-sm btn-primary" onClick={() => complete(r.id)}>
+                        {r.type === 'DELETION' ? 'Fulfill Deletion & Mark Completed' : 'Fulfill Action & Mark Completed'}
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
             ))}

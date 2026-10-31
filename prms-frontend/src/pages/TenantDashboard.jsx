@@ -21,7 +21,7 @@ import './TenantDashboard.css'
 function formatAmount(amount) {
   const value = Number(amount)
   if (Number.isNaN(value)) return 'N/A'
-  return new Intl.NumberFormat('en-MY', { style: 'currency', currency: 'MYR', minimumFractionDigits: 0 }).format(value)
+  return `RM ${value.toLocaleString('en-MY', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
 }
 
 function isActiveBooking(b) {
@@ -32,7 +32,6 @@ function isActiveBooking(b) {
   const start = new Date(b.start_date)
   const end = new Date(b.end_date)
   return !Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && start <= now && now <= end
-
 }
 
 function TenantDashboard() {

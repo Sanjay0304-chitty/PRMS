@@ -251,7 +251,7 @@
 }
 .maintenance-icon.urgent {
   background: var(--error-state);
-  color: #ffffff;
+  color: var(--status-error);
 }
 .maintenance-icon.soft {
   background: var(--primary-fixed);
@@ -271,7 +271,7 @@
 }
 
 /* ---- Status badges (reused for payments & maintenance) ---- */
-.tenant-dashboard-status {
+.status-badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -281,23 +281,15 @@
   font-weight: 700;
   letter-spacing: 0.3px;
 }
-.tenant-dashboard-status.paid {
+.status-badge.paid {
   color: var(--status-success);
   background: rgba(22, 163, 74, 0.1);
 }
-.tenant-dashboard-status.pending {
-  color: var(--status-warning, #f59e0b);
-  background: rgba(245, 158, 11, 0.1);
-}
-.tenant-dashboard-status.failed {
+.status-badge.pending {
   color: var(--status-error);
   background: rgba(220, 38, 38, 0.1);
 }
-.tenant-dashboard-status.refunded {
-  color: var(--text-secondary);
-  background: var(--surface-container);
-}
-.tenant-dashboard-status.active {
+.status-badge.active {
   color: var(--status-success);
   background: rgba(22, 163, 74, 0.1);
 }

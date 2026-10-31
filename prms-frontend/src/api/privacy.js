@@ -33,8 +33,8 @@ export const privacyApi = {
   decideRequest(id, decision, decisionReason) {
     return apiClient.patch(`/privacy/requests/${id}/decide`, { decision, decisionReason });
   },
-  completeRequest(id) {
-    return apiClient.patch(`/privacy/requests/${id}/complete`);
+  completeRequest(id, fulfillmentNotes) {
+    return apiClient.patch(`/privacy/requests/${id}/complete`, { fulfillmentNotes });
   },
 
   // Retention (admin)
@@ -46,6 +46,9 @@ export const privacyApi = {
   },
   simulateCleanup() {
     return apiClient.post('/privacy/retention/simulate');
+  },
+  executeCleanup() {
+    return apiClient.post('/privacy/retention/cleanup');
   },
 
   // Breach register (admin)

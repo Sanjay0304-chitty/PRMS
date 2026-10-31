@@ -5,10 +5,15 @@ const hasPropertyAuthority = jest.fn();
 const updateProperty = jest.fn();
 const getLandlordProperties = jest.fn();
 const getAllProperties = jest.fn();
+const getPropertyById = jest.fn();
 const recordAudit = jest.fn();
 
 jest.mock('../../../db', () => ({
-  prisma: { property: { findUnique: (...args: any[]) => propertyFindUnique(...args) } },
+  prisma: {
+    property: { findUnique: (...args: any[]) => propertyFindUnique(...args) },
+    user: { findMany: jest.fn().mockResolvedValue([]) },
+    notification: { create: jest.fn().mockResolvedValue({}) },
+  },
 }));
 jest.mock('../../../utils/propertyAuthority', () => ({
   hasPropertyAuthority: (...args: any[]) => hasPropertyAuthority(...args),
@@ -17,6 +22,7 @@ jest.mock('../service_property', () => ({
   updateProperty: (...args: any[]) => updateProperty(...args),
   getLandlordProperties: (...args: any[]) => getLandlordProperties(...args),
   getAllProperties: (...args: any[]) => getAllProperties(...args),
+  getPropertyById: (...args: any[]) => getPropertyById(...args),
 }));
 jest.mock('../../admin/service_audit', () => ({
   recordAudit: (...args: any[]) => recordAudit(...args),
@@ -127,3 +133,52 @@ test('property listing rejects an unsupported status filter', async () => {
   expect(res.status).toHaveBeenCalledWith(400);
   expect(getAllProperties).not.toHaveBeenCalled();
 });
+
+test('reportListing succeeds with valid reason, logs audit, and notifies admins', async () => {
+  const res = response();
+  getPropertyById.mockResolvedValue({ id: 'property-1', title: 'Luxury Penthouse' });
+  const req: any = request({ reason: 'Fraudulent or misleading listing', details: 'Wrong photos', email: 'guest@test.com' });
+  req.originalUrl = '/properties/property-1/report';
+  req.method = 'POST';
+
+  await new PropertyController().reportListing(req, res);
+
+  expect(getPropertyById).toHaveBeenCalledWith('property-1');
+  expect(recordAudit).toHaveBeenCalledWith(expect.objectContaining({
+    action: 'REPORT_PROPERTY_LISTING',
+    entity: 'Property',
+    entityId: 'property-1',
+    level: 'warn',
+  }));
+  expect(res.status).toHaveBeenCalledWith(200);
+  expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+    success: true,
+  }));
+});
+
+test('reportListing returns 404 if property not found', async () => {
+  const res = response();
+  getPropertyById.mockResolvedValue(null);
+  const req: any = request({ reason: 'Spam' });
+  req.originalUrl = '/properties/property-999/report';
+  req.params = { id: 'property-999' };
+  req.method = 'POST';
+
+  await new PropertyController().reportListing(req, res);
+
+  expect(res.status).toHaveBeenCalledWith(404);
+});
+
+test('reportListing returns 400 if reason is missing', async () => {
+  const res = response();
+  getPropertyById.mockResolvedValue({ id: 'property-1', title: 'Luxury Penthouse' });
+  const req: any = request({ reason: '' });
+  req.originalUrl = '/properties/property-1/report';
+  req.method = 'POST';
+
+  await new PropertyController().reportListing(req, res);
+
+  expect(res.status).toHaveBeenCalledWith(400);
+  expect(recordAudit).not.toHaveBeenCalled();
+});
+

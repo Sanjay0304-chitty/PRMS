@@ -16,6 +16,9 @@ export const userApi = {
   remove(id) {
     return apiClient.delete(`/users/${id}`);
   },
+  delete(id) {
+    return apiClient.delete(`/users/${id}`);
+  },
   activate(id) {
     return apiClient.post(`/users/${id}/activate`);
   },

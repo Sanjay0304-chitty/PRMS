@@ -163,6 +163,42 @@ export async function markAsPaid(id: string) {
   return getPaymentById(id);
 }
 
+export async function getTenantFinanceSummary(userId: string) {
+  const now = new Date();
+  const [collectedAgg, pendingAgg, pendingCount, collectedCount, overdueCount, totalBookings, paidPayments] = await Promise.all([
+    prisma.payment.aggregate({ where: { userId, status: 'PAID' }, _sum: { amount: true } }),
+    prisma.payment.aggregate({ where: { userId, status: { in: ['PENDING', 'UNPAID'] } }, _sum: { amount: true } }),
+    prisma.payment.count({ where: { userId, status: { in: ['PENDING', 'UNPAID'] } } }),
+    prisma.payment.count({ where: { userId, status: 'PAID' } }),
+    prisma.payment.count({ where: { userId, status: { in: ['PENDING', 'UNPAID'] }, due_date: { lt: now } } }),
+    prisma.booking.count({ where: { userId } }),
+    prisma.payment.findMany({
+      where: { userId, status: 'PAID' },
+      include: { booking: { include: { property: { select: { title: true } } } } },
+    }),
+  ]);
+
+  const byPropertyMap = new Map<string, number>();
+  for (const p of paidPayments) {
+    const title = p.booking?.property?.title || 'Unknown';
+    byPropertyMap.set(title, (byPropertyMap.get(title) || 0) + p.amount);
+  }
+  const byProperty = [...byPropertyMap.entries()].map(([property, amount]) => ({ property, amount }));
+
+  const total = collectedAgg._sum.amount || 0;
+  return {
+    total,
+    totalRevenue: total,
+    pending: pendingCount,
+    pendingAmount: pendingAgg._sum.amount || 0,
+    collected: collectedCount,
+    collectedAmount: total,
+    overdue: overdueCount,
+    totalBookings,
+    byProperty,
+  };
+}
+
 // ── Tenant-only payments ──────────────────────────────────────────────
 
 export async function getTenantDashboardPayments(userId: string) {
@@ -189,20 +225,45 @@ export async function setDashboardPaymentDismissed(userId: string, paymentId: st
   else await prisma.recordArchive.deleteMany({ where: key });
 }
 
-export async function getMyPayments(userId: string, page = 1, limit = 10) {
+export async function getMyPayments(userId: string, page = 1, limit = 10, filter?: string) {
   const skip = (page - 1) * limit;
+  let statusCondition: any = undefined;
+  if (filter) {
+    const f = filter.toLowerCase().trim();
+    if (f === 'due' || f === 'pending' || f === 'unpaid') {
+      statusCondition = { in: ['PENDING', 'UNPAID'] };
+    } else if (f === 'completed' || f === 'paid') {
+      statusCondition = 'PAID';
+    } else if (f === 'failed') {
+      statusCondition = 'FAILED';
+    } else if (f !== 'all' && f !== '') {
+      statusCondition = filter.toUpperCase();
+    }
+  }
+
+  const where: any = { userId };
+  if (statusCondition) {
+    where.status = statusCondition;
+  }
+
   const [payments, total] = await Promise.all([
     prisma.payment.findMany({
-      where: { userId },
+      where,
       skip,
       take: limit,
       orderBy: { due_date: 'asc' },
       include: {
-        booking: { include: { property: { select: { id: true, title: true } } } },
+        booking: {
+          include: {
+            property: {
+              select: { id: true, title: true, address: true, city: true, state: true },
+            },
+          },
+        },
         transactions: { orderBy: { created_at: 'desc' } },
       },
     }),
-    prisma.payment.count({ where: { userId } }),
+    prisma.payment.count({ where }),
   ]);
   return { payments, total };
 }

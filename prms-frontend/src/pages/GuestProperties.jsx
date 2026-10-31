@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Building2,
   CalendarDays,
-  ChevronDown,
   Globe2,
   Heart,
   Home,
@@ -19,12 +18,14 @@ import {
   UserCircle,
   Users,
   X,
+  Flag,
 } from 'lucide-react';
 import { getImageUrl } from '../config/imageHelper';
-import { propertyApi, searchApi } from '../api';
+import { propertyApi } from '../api';
 import { favoritesApi } from '../api/favorites';
 import { useAuth } from '../contexts/AuthContext';
 import { PROPERTY_STATUSES, propertyStatusInfo } from '../config/propertyStatus';
+import ReportListingModal from '../components/ReportListingModal';
 import './GuestProperties.css';
 
 const PRICE_RANGES = [
@@ -44,6 +45,7 @@ function GuestProperties() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [favoriteIds, setFavoriteIds] = useState(new Set());
+  const [reportProperty, setReportProperty] = useState(null);
 
   useEffect(() => {
     if (!user) return;
@@ -86,7 +88,8 @@ function GuestProperties() {
   };
 
   /* Issue #14: Filter state */
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || searchParams.get('q') || '');
   const [priceFilter, setPriceFilter] = useState(null);
   const [typeFilter, setTypeFilter] = useState(null);
   const [statusFilter, setStatusFilter] = useState(null);
@@ -111,9 +114,8 @@ function GuestProperties() {
     }
   }, [statusFilter]);
 
-   
   useEffect(() => {
-    fetchProperties();
+    Promise.resolve().then(fetchProperties);
   }, [fetchProperties]);
 
   /* Issue #14: Apply filters */
@@ -259,7 +261,7 @@ function GuestProperties() {
       {/* Filter bar with area tabs */}
       <section className="guest-filter-bar" data-customize-id="search.filters">
         <div className="guest-area-tabs">
-          {cities.map((city, index) => (
+          {cities.map((city) => (
             <button
               type="button"
               className={searchQuery === city ? 'active' : ''}
@@ -439,6 +441,18 @@ function GuestProperties() {
                       )}
                       <button
                         type="button"
+                        className="guest-card-flag-btn"
+                        title="Report this listing"
+                        aria-label="Report this listing"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setReportProperty(property);
+                        }}
+                      >
+                        <Flag size={15} />
+                      </button>
+                      <button
+                        type="button"
                         className={`heart-btn ${favoriteIds.has(property.id) ? 'favorited' : ''}`}
                         onClick={(e) => handleToggleFavorite(e, property.id)}
                         aria-label="Save to favorites"
@@ -479,7 +493,25 @@ function GuestProperties() {
                           (property.property_type || 'Apartment').slice(1)}
                       </p>
 
-                      <strong>{formatRent(property.rent)} / month</strong>
+                      <div className="guest-property-footer">
+                        <strong>{formatRent(property.rent)} / month</strong>
+                        <div className="guest-property-footer-actions">
+                          <span className="tenant-book-tag">Tenant Account to Book</span>
+                          <button
+                            type="button"
+                            className="guest-card-report-link"
+                            title="Report this listing"
+                            aria-label="Report this listing"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setReportProperty(property);
+                            }}
+                          >
+                            <Flag size={12} />
+                            <span>Report</span>
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </motion.article>
                 );
@@ -488,6 +520,13 @@ function GuestProperties() {
           )}
         </section>
       )}
+
+      {/* Report Listing Modal */}
+      <ReportListingModal
+        isOpen={!!reportProperty}
+        onClose={() => setReportProperty(null)}
+        property={reportProperty}
+      />
     </main>
   );
 }

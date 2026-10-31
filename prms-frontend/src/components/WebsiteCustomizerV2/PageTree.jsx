@@ -1,9 +1,11 @@
-import { useState, useCallback, useMemo, memo } from 'react';
+import { useState, useCallback, memo } from 'react';
 import {
   ChevronRight, ChevronDown, Globe, Layout, Type,
   Image as ImageIcon, Menu as MenuIcon, Settings2,
-  ChevronUp, FileText, Monitor, Layers
+  ChevronUp, FolderOpen, FileText, Monitor,
+  Smartphone, Tablet, Layers
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 /* ---- Tree node definitions matching the reference design ---- */
 const buildTree = () => [
@@ -125,7 +127,7 @@ const TreeNode = memo(function TokenTreeNode({ node, depth, selectedId, onSelect
       ))}
     </div>
   );
-});
+}
 
 function SearchInput({ value, onChange }) {
   return (

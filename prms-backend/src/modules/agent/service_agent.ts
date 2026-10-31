@@ -1,5 +1,4 @@
 import { prisma } from '../../db';
-import { Role } from '@prisma/client';
 
 export async function getAllAgents(page = 1, limit = 10, search?: string, propertyId?: string, ownerId?: string) {
   const where: any = {};

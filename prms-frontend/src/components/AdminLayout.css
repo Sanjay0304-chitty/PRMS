@@ -319,3 +319,45 @@
     flex-wrap: wrap;
   }
 }
+
+/* ── Print / PDF Statement Media Rules ── */
+@media print {
+  /* Strictly hide all layout navigation, sidebar, topbar, and search bar */
+  .admin-layout-sidebar,
+  .admin-layout-topbar,
+  .admin-layout-search,
+  .admin-layout-search-dropdown,
+  .admin-layout-top-actions,
+  .no-print,
+  button:not(.statement-keep-btn) {
+    display: none !important;
+  }
+
+  .admin-layout-shell {
+    display: block !important;
+    min-height: auto !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .admin-layout-main {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .admin-layout-content {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 1.2cm 1.5cm;
+  }
+}
+

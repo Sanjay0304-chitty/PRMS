@@ -50,7 +50,7 @@ export async function getMyStoredData(userId: string) {
     prisma.consentRecord.findMany({ where: { userId }, select: { id: true, type: true, consented: true, consentedAt: true, withdrawnAt: true, version: true } }),
   ]);
 
-  return { profile, bookings, agreements, viewings, maintenanceTickets, messageCount: messages.length, favorites, consents };
+  return { profile, bookings, agreements, viewings, maintenanceTickets, messages, messageCount: messages.length, favorites, consents };
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -90,15 +90,39 @@ export async function decideRequest(id: string, data: { decision: 'APPROVED' | '
   });
 }
 
-export async function completeRequest(id: string) {
+export async function completeRequest(id: string, fulfillmentNotes?: string) {
   const request = await prisma.privacyRequest.findUnique({ where: { id } });
   if (!request) throw new Error('Request not found');
   if (request.status !== 'APPROVED') throw new Error('Only an approved request can be marked completed');
-  return prisma.privacyRequest.update({ where: { id }, data: { status: 'COMPLETED', completed_at: new Date() } });
+
+  // Actual fulfillment execution based on request type
+  if (request.type === 'DELETION') {
+    const user = await prisma.user.findUnique({ where: { id: request.userId } });
+    if (user) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          full_name: 'Anonymized User',
+          email: `deleted-${user.id.slice(0, 8)}@anonymized.prms`,
+          phone: null,
+          profile_img_url: null,
+          is_active: false,
+        },
+      });
+    }
+  }
+
+  const note = fulfillmentNotes || (request.type === 'DELETION' ? 'Account and personal profile records anonymized and deactivated.' : 'Request action verified and fulfilled.');
+  const detailsWithNote = request.details ? `${request.details} [Fulfillment Note: ${note}]` : `[Fulfillment Note: ${note}]`;
+
+  return prisma.privacyRequest.update({
+    where: { id },
+    data: { status: 'COMPLETED', completed_at: new Date(), details: detailsWithNote },
+  });
 }
 
 /* ────────────────────────────────────────────────────────────
-   Retention policies + dry-run cleanup simulation
+   Retention policies + dry-run cleanup simulation + execution
    ──────────────────────────────────────────────────────────── */
 
 const DEFAULT_POLICIES: { category: string; label: string; retentionDays: number; description: string }[] = [
@@ -149,9 +173,7 @@ async function countEligible(category: string, cutoff: Date): Promise<number> {
   }
 }
 
-// Dry-run only: reports what WOULD be eligible for deletion under the
-// current policies, without deleting anything. Real deletion is a
-// deliberate, separate, explicitly-authorised action outside this scope.
+// Dry-run only: reports what WOULD be eligible for deletion under current policies
 export async function simulateCleanup() {
   const policies = await getPolicies();
   const results = [];
@@ -162,6 +184,69 @@ export async function simulateCleanup() {
   }
   return results;
 }
+
+// Operational retention execution: permanently cleans expired personal data
+export async function executeRetentionCleanup() {
+  const policies = await getPolicies();
+  let totalDeleted = 0;
+  const breakdown: Record<string, number> = {};
+
+  for (const policy of policies) {
+    const cutoff = new Date(Date.now() - policy.retentionDays * 86400000);
+    let count = 0;
+
+    switch (policy.category) {
+      case 'rejected_cancelled_applications': {
+        const res = await prisma.booking.deleteMany({
+          where: { status: 'CANCELLED', updated_at: { lt: cutoff } },
+        });
+        count = res.count;
+        break;
+      }
+      case 'viewing_records': {
+        const res = await prisma.viewingAppointment.deleteMany({
+          where: { status: { in: ['COMPLETED', 'CANCELLED', 'NO_SHOW'] }, updated_at: { lt: cutoff } },
+        });
+        count = res.count;
+        break;
+      }
+      case 'superseded_agreements': {
+        const res = await prisma.agreement.deleteMany({
+          where: { status: { in: ['SUPERSEDED', 'CANCELLED'] }, updated_at: { lt: cutoff } },
+        });
+        count = res.count;
+        break;
+      }
+      case 'notifications': {
+        const res = await prisma.notification.deleteMany({
+          where: { created_at: { lt: cutoff } },
+        });
+        count = res.count;
+        break;
+      }
+      case 'resolved_maintenance_tickets': {
+        const res = await prisma.maintenanceTicket.deleteMany({
+          where: { status: { in: ['RESOLVED', 'CLOSED'] }, updated_at: { lt: cutoff } },
+        });
+        count = res.count;
+        break;
+      }
+      case 'audit_logs': {
+        const res = await prisma.auditLog.deleteMany({
+          where: { created_at: { lt: cutoff } },
+        });
+        count = res.count;
+        break;
+      }
+    }
+
+    breakdown[policy.category] = count;
+    totalDeleted += count;
+  }
+
+  return { totalDeleted, breakdown, executedAt: new Date() };
+}
+
 
 /* ────────────────────────────────────────────────────────────
    Data breach register (admin-only)

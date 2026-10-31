@@ -82,11 +82,14 @@ export class PaymentController {
 
   summary = async (req: AuthRequest, res: Response) => {
     try {
-      const summary = req.user!.role === 'Agent'
+      const role = req.user!.role;
+      const summary = role === 'Agent'
         ? await paymentService.getAgentFinanceSummary(req.user!.id)
-        : req.user!.role === 'Landlord'
+        : role === 'Landlord'
           ? await paymentService.getLandlordFinanceSummary(req.user!.id)
-          : await paymentService.getFinanceSummary(req.user!.id);
+          : role === 'Tenant'
+            ? await paymentService.getTenantFinanceSummary(req.user!.id)
+            : await paymentService.getFinanceSummary(req.user!.id);
       HELPERS(req).log({ action: 'VIEW_PAYMENT_SUMMARY', entity: 'Payment', description: `Viewed financial summary` });
       res.json(successResponse(summary));
     } catch (error: any) { HELPERS(req).log({ action: 'VIEW_PAYMENT_SUMMARY', entity: 'Payment', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(500).json({ success: false, error: { message: error.message } }); }
@@ -98,7 +101,8 @@ export class PaymentController {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
-      const { payments, total } = await paymentService.getMyPayments(req.user!.id, page, limit);
+      const filter = (req.query.filter as string) || (req.query.status as string);
+      const { payments, total } = await paymentService.getMyPayments(req.user!.id, page, limit, filter);
       HELPERS(req).log({ action: 'VIEW_MY_PAYMENTS', entity: 'Payment', description: `Listed own payments (page ${page})` });
       res.json(paginatedResponse(payments, page, limit, total));
     } catch (error: any) { HELPERS(req).log({ action: 'VIEW_MY_PAYMENTS', entity: 'Payment', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(500).json({ success: false, error: { message: error.message } }); }

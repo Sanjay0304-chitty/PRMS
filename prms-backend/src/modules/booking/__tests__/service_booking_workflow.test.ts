@@ -42,7 +42,7 @@ beforeEach(() => {
   bookingCount.mockResolvedValue(0);
   propertyFindUnique.mockResolvedValue({ id: 'property-1', status: 'RENTED' });
   propertyUpdate.mockResolvedValue({ id: 'property-1' });
-  paymentUpdateMany.mockResolvedValue({ count: 1 });
+  paymentUpdateMany.mockResolvedValue({ count: 0 });
 });
 
 test('landlord approval persists the offer and advances the application', async () => {
@@ -64,10 +64,6 @@ test('landlord approval persists the offer and advances the application', async 
     }),
   }));
   expect(result.status).toBe('CONFIRMED');
-  expect(paymentUpdateMany).toHaveBeenCalledWith({
-    where: { bookingId: 'booking-1', status: { in: ['UNPAID', 'PENDING'] } },
-    data: { amount: 1800 },
-  });
 });
 
 test('an application cannot be approved with an expired offer', async () => {

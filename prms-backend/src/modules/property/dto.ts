@@ -43,4 +43,4 @@ export const updatePropertyBody = [
   },
 ];
 
-export const propertyIdParam = [param('id').isUUID()];
+export const propertyIdParam = [param('id').isString().trim().notEmpty()];

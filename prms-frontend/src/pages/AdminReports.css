@@ -1,0 +1,455 @@
+/* ================= OFFICIAL REPORT STATEMENT STYLES ================= */
+
+.admin-reports-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg, 24px);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Screen action header (hidden on print) */
+.report-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 16px 20px;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme='dark'] .report-actions-bar {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.report-actions-left h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+}
+
+.report-actions-left p {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #64748b);
+}
+
+.report-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.statement-filter-select {
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--border-color, #cbd5e1);
+  border-radius: 8px;
+  background: var(--surface, #ffffff);
+  color: var(--text-primary, #0f172a);
+  font-size: 0.875rem;
+  outline: none;
+}
+
+[data-theme='dark'] .statement-filter-select {
+  background: #0f172a;
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
+}
+
+.print-statement-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+  transition: all 0.2s ease;
+}
+
+.print-statement-btn:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+/* ================= THE OFFICIAL STATEMENT SHEET ================= */
+
+.report-statement-document {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 40px 48px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+}
+
+/* Statement Header */
+.statement-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 24px;
+  border-bottom: 2px solid #0f172a;
+  margin-bottom: 24px;
+}
+
+.statement-brand-block {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.statement-logo-badge {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.statement-brand-text h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  text-transform: uppercase;
+}
+
+.statement-brand-text p {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.statement-meta-block {
+  text-align: right;
+  font-size: 0.8125rem;
+}
+
+.statement-doc-title {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: #1e3a8a;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.statement-meta-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 3px;
+  color: #475569;
+}
+
+.statement-meta-label {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* Statement Info Strip */
+.statement-info-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin-bottom: 24px;
+  font-size: 0.8125rem;
+}
+
+.statement-info-col span {
+  display: block;
+}
+
+.statement-info-col .info-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 3px;
+  letter-spacing: 0.04em;
+}
+
+.statement-info-col .info-value {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 0.875rem;
+}
+
+/* Executive Financial Summary Grid */
+.statement-summary-section {
+  margin-bottom: 28px;
+}
+
+.statement-section-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #0f172a;
+  margin: 0 0 12px 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.statement-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.statement-kpi-card {
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  border-left: 4px solid #2563eb;
+}
+
+.statement-kpi-card.collected {
+  border-left-color: #10b981;
+}
+
+.statement-kpi-card.pending {
+  border-left-color: #f59e0b;
+}
+
+.statement-kpi-card.overdue {
+  border-left-color: #ef4444;
+}
+
+.statement-kpi-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.statement-kpi-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+/* Statement Table */
+.statement-table-section {
+  margin-bottom: 32px;
+}
+
+.statement-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+
+.statement-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  text-align: left;
+}
+
+.statement-table th {
+  background: #f1f5f9;
+  color: #0f172a;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  padding: 12px 14px;
+  border-bottom: 2px solid #cbd5e1;
+}
+
+.statement-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #1e293b;
+  vertical-align: middle;
+}
+
+.statement-table tr:last-child td {
+  border-bottom: none;
+}
+
+.statement-table tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+.statement-table .num-col {
+  text-align: right;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.statement-status-tag {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.statement-status-tag.paid {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.statement-status-tag.pending {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.statement-status-tag.overdue,
+.statement-status-tag.unpaid {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* Total summary row */
+.statement-total-row td {
+  background: #f1f5f9 !important;
+  font-weight: 800;
+  font-size: 0.875rem;
+  color: #0f172a;
+  border-top: 2px solid #0f172a !important;
+  border-bottom: 2px solid #0f172a !important;
+}
+
+/* Certification & Verification Footer */
+.statement-footer-section {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr;
+  gap: 24px;
+  padding-top: 20px;
+  border-top: 2px solid #e2e8f0;
+  font-size: 0.75rem;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.statement-disclaimer-box p {
+  margin: 0 0 6px 0;
+}
+
+.statement-disclaimer-box .notice-title {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.statement-stamp-box {
+  border: 2px dashed #94a3b8;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  background: #f8fafc;
+}
+
+.statement-stamp-title {
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: #1e3a8a;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.statement-stamp-sub {
+  font-size: 0.7rem;
+  color: #475569;
+  font-weight: 600;
+}
+
+.statement-page-number {
+  margin-top: 18px;
+  font-size: 0.7rem;
+  text-align: center;
+  color: #94a3b8;
+}
+
+/* ================= PRINT MEDIA OVERRIDES ================= */
+
+@media print {
+  /* Complete cleanup of any surrounding app UI */
+  .admin-reports-container {
+    max-width: 100% !important;
+    margin: 0 !important;
+    gap: 0 !important;
+  }
+
+  .report-actions-bar,
+  .admin-simple-cards,
+  .admin-simple-hero,
+  .no-print {
+    display: none !important;
+  }
+
+  .report-statement-document {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+
+  .statement-header {
+    border-bottom: 2px solid #000000 !important;
+  }
+
+  .statement-table-wrap {
+    border: 1px solid #94a3b8 !important;
+  }
+
+  .statement-table th {
+    background: #e2e8f0 !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .statement-table tr {
+    page-break-inside: avoid;
+  }
+
+  .statement-kpi-card {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .statement-stamp-box {
+    border: 2px dashed #64748b !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

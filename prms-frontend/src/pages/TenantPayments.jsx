@@ -16,57 +16,79 @@ import {
 } from 'lucide-react';
 import './TenantPayments.css';
 
+const FILTERS = [
+  { id: 'all', label: 'All Payments' },
+  { id: 'due', label: 'Due' },
+  { id: 'completed', label: 'Completed' },
+  { id: 'failed', label: 'Failed' },
+];
+
 function TenantPayments() {
   const navigate = useNavigate();
   const [payments, setPayments] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [expandedId, setExpandedId] = useState(null);
 
   const LIMIT = 20;
 
-  useEffect(() => {
-    loadPayments();
-  }, [page]);
+  const [reloadKey, setReloadKey] = useState(0);
 
-  async function loadPayments() {
-    try {
-      setLoading(true);
-      const res = await paymentApi.myPayments({ page, limit: LIMIT });
-      setPayments(res.data?.data || []);
-      setTotal(res.data?.pagination?.total || 0);
-    } catch (err) {
-      setError(err.response?.data?.error?.message || 'Failed to load payments');
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchPayments() {
+      try {
+        const params = { page, limit: LIMIT };
+        if (filter && filter !== 'all') {
+          params.filter = filter;
+          params.status = filter;
+        }
+        const res = await paymentApi.myPayments(params);
+        if (!cancelled) {
+          setPayments(res.data?.data || []);
+          setTotal(res.data?.pagination?.total || 0);
+          setError('');
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err?.response?.data?.message || 'Failed to load payments.');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
     }
-  }
+    fetchPayments();
+    return () => { cancelled = true; };
+  }, [page, filter, reloadKey]);
+
 
   function toggleExpand(id) {
     setExpandedId((prev) => (prev === id ? null : id));
   }
 
   function statusInfo(status) {
-    switch (status) {
+    const s = String(status || '').toUpperCase();
+    switch (s) {
       case 'PAID':
-        return { label: 'Paid', icon: CheckCircle, color: '#16a34a', bg: 'rgba(22,163,74,0.08)' };
+        return { label: 'Completed', icon: CheckCircle, color: '#16a34a', bg: 'rgba(22,163,74,0.08)' };
       case 'FAILED':
         return { label: 'Failed', icon: XCircle, color: '#dc2626', bg: 'rgba(220,38,38,0.08)' };
       case 'PENDING':
       case 'UNPAID':
-        return { label: status === 'PENDING' ? 'Pending' : 'Unpaid', icon: Clock, color: '#f59e0b', bg: 'rgba(245,158,11,0.08)' };
+        return { label: 'Due', icon: Clock, color: '#d97706', bg: 'rgba(217,119,6,0.08)' };
+      case 'REFUNDED':
+        return { label: 'Refunded', icon: AlertCircle, color: '#7c3aed', bg: 'rgba(124,58,237,0.08)' };
       default:
-        return { label: status, icon: AlertCircle, color: '#6b7280', bg: 'rgba(107,114,128,0.08)' };
+        return { label: status || 'Unknown', icon: AlertCircle, color: '#6b7280', bg: 'rgba(107,114,128,0.08)' };
     }
   }
 
   const totalPages = Math.ceil(total / LIMIT);
-
-  if (loading && payments.length === 0) {
-    return <div className="payments-loading">Loading payments...</div>;
-  }
 
   return (
     <motion.div
@@ -79,17 +101,67 @@ function TenantPayments() {
         <p className="payments-subtitle">Monitor and manage your property payments</p>
       </div>
 
+      {/* Filter Tabs */}
+      <div className="payments-filters" role="tablist" aria-label="Payment status filters">
+        {FILTERS.map((f) => (
+          <button
+            key={f.id}
+            type="button"
+            role="tab"
+            aria-selected={filter === f.id}
+            className={`payments-filter-btn ${filter === f.id ? 'active' : ''}`}
+            onClick={() => {
+              setFilter(f.id);
+              setPage(1);
+            }}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       {error && (
-        <div className="payments-error">
-          <AlertCircle size={18} /> {error}
+        <div className="payments-error" role="alert">
+          <AlertCircle size={18} />
+          <span className="payments-error-text">{error}</span>
+          <button
+            type="button"
+            className="payments-retry-btn"
+            onClick={() => {
+              setLoading(true);
+              setReloadKey((k) => k + 1);
+            }}
+          >
+            Retry
+          </button>
         </div>
+      )}
+
+      {loading && payments.length === 0 && (
+        <div className="payments-loading">Loading payments...</div>
       )}
 
       {payments.length === 0 && !loading && (
         <div className="payments-empty">
           <CreditCard size={36} className="payments-empty-icon" />
-          <h3>No payments found</h3>
-          <p>There are no payments for your bookings yet.</p>
+          <h3>{filter === 'all' ? 'No payments found' : `No ${filter} payments`}</h3>
+          <p>
+            {filter === 'all'
+              ? 'There are no payments for your bookings yet.'
+              : `You currently have no payments matching the "${filter}" filter.`}
+          </p>
+          {filter !== 'all' && (
+            <button
+              type="button"
+              className="payments-filter-reset-btn"
+              onClick={() => {
+                setFilter('all');
+                setPage(1);
+              }}
+            >
+              View All Payments
+            </button>
+          )}
         </div>
       )}
 
@@ -97,10 +169,17 @@ function TenantPayments() {
         {payments.map((payment, i) => {
           const info = statusInfo(payment.status);
           const StatusIcon = info.icon;
-          const isPaid = payment.status === 'PAID';
-          const isUnpaid = !['PAID', 'FAILED', 'REFUNDED'].includes(payment.status);
+          const isPaid = String(payment.status || '').toUpperCase() === 'PAID';
+          const isUnpaid = ['PENDING', 'UNPAID'].includes(String(payment.status || '').toUpperCase());
+          const isFailed = String(payment.status || '').toUpperCase() === 'FAILED';
           const expanded = expandedId === payment.id;
           const latestTx = payment.transactions?.[0];
+
+          const propertyTitle =
+            payment.booking?.property?.title ||
+            payment.booking?.property?.address ||
+            payment.property?.title ||
+            'Property Payment';
 
           return (
             <motion.div
@@ -118,12 +197,10 @@ function TenantPayments() {
                 </div>
 
                 <div className="payment-details">
-                  {payment.booking?.property && (
-                    <div className="payment-property">
-                      <Building2 size={16} />
-                      <span>{payment.booking.property.title}</span>
-                    </div>
-                  )}
+                  <div className="payment-property">
+                    <Building2 size={16} />
+                    <span>{propertyTitle}</span>
+                  </div>
                   <div className="payment-meta">
                     {payment.type && (
                       <span className="payment-type-badge">{payment.type}</span>
@@ -133,9 +210,13 @@ function TenantPayments() {
                       Due
                     </span>
                     <span className="payment-date">
-                      {new Date(payment.due_date).toLocaleDateString('en-MY', {
-                        day: 'numeric', month: 'short', year: 'numeric',
-                      })}
+                      {payment.due_date
+                        ? new Date(payment.due_date).toLocaleDateString('en-MY', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          })
+                        : '—'}
                     </span>
                   </div>
                 </div>
@@ -143,24 +224,48 @@ function TenantPayments() {
                 <div className="payment-amount-section">
                   <span className="payment-amount">RM {Number(payment.amount).toFixed(2)}</span>
 
-                  {isUnpaid && (
-                    <button
-                      className="payment-pay-btn"
-                      onClick={() => navigate(`/tenant/payments/${payment.id}/checkout`)}
-                    >
-                      Pay Now
-                      <ArrowRight size={16} />
-                    </button>
-                  )}
+                  <div className="payment-actions-group">
+                    {isUnpaid && (
+                      <button
+                        type="button"
+                        className="payment-pay-btn"
+                        onClick={() => navigate(`/tenant/payments/${payment.id}/checkout`)}
+                      >
+                        Pay Now
+                        <ArrowRight size={16} />
+                      </button>
+                    )}
 
-                  {isPaid && (
+                    {isFailed && (
+                      <button
+                        type="button"
+                        className="payment-pay-btn payment-retry-btn"
+                        onClick={() => navigate(`/tenant/payments/${payment.id}/checkout`)}
+                      >
+                        Retry Pay
+                        <ArrowRight size={16} />
+                      </button>
+                    )}
+
+                    {isPaid && (
+                      <button
+                        type="button"
+                        className="payment-receipt-link"
+                        onClick={() => navigate(`/tenant/payments/${payment.id}`)}
+                      >
+                        View Receipt
+                      </button>
+                    )}
+
                     <button
-                      className="payment-receipt-link"
+                      type="button"
+                      className="payment-details-link"
                       onClick={() => navigate(`/tenant/payments/${payment.id}`)}
+                      title="View payment receipt and details"
                     >
-                      View Receipt
+                      Receipt
                     </button>
-                  )}
+                  </div>
                 </div>
               </div>
 

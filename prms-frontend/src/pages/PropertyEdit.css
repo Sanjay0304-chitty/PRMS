@@ -21,8 +21,7 @@
   gap: 24px;
   position: sticky;
   top: 0;
-  /* Stay below portal headers (z-index: 9) and their dropdown menus. */
-  z-index: 5;
+  z-index: 50;
 }
 
 .pe-back-btn {

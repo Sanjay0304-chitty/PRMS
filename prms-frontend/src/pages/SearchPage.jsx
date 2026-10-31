@@ -11,7 +11,9 @@ import {
   Search,
   SlidersHorizontal,
   X,
+  Flag,
 } from 'lucide-react'
+import ReportListingModal from '../components/ReportListingModal'
 import './SearchPage.css'
 
 function SearchPage() {
@@ -23,6 +25,7 @@ function SearchPage() {
   const [sort, setSort] = useState('relevance')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [results, setResults] = useState([])
+  const [reportProperty, setReportProperty] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [total, setTotal] = useState(0)
@@ -71,7 +74,10 @@ function SearchPage() {
   // from the sidebar search box) - otherwise landing here just shows the
   // empty filter panel with no results until the user re-submits.
   useEffect(() => {
-    if (searchParams.get('q')) handleSearch()
+    if (searchParams.get('q')) {
+      Promise.resolve().then(() => handleSearch())
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const clearFilters = useCallback(() => {
@@ -245,6 +251,18 @@ function SearchPage() {
                   {isPropertyAvailable(property.status) && (
                     <span className="status-badge available">Available</span>
                   )}
+                  <button
+                    type="button"
+                    className="result-flag-btn"
+                    title="Report this listing"
+                    aria-label="Report this listing"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setReportProperty(property)
+                    }}
+                  >
+                    <Flag size={14} />
+                  </button>
                 </div>
 
                 <div className="result-info">
@@ -258,12 +276,34 @@ function SearchPage() {
                     <span>{property.rent && `RM ${property.rent}/month`}</span>
                     {property.area && <span>{property.area} sqft</span>}
                   </div>
+                  <div className="result-card-footer">
+                    <button
+                      type="button"
+                      className="result-report-link"
+                      title="Report this listing"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setReportProperty(property)
+                      }}
+                    >
+                      <Flag size={12} />
+                      <span>Report</span>
+                    </button>
+                    <span className="tenant-book-tag">Tenant Account to Book</span>
+                  </div>
                 </div>
               </article>
             ))}
           </div>
         </section>
       </main>
+
+      {/* Report Listing Modal */}
+      <ReportListingModal
+        isOpen={!!reportProperty}
+        onClose={() => setReportProperty(null)}
+        property={reportProperty}
+      />
     </div>
   )
 }

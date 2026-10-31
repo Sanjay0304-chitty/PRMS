@@ -5,6 +5,8 @@ import {
   Camera, X, User, Mail, Phone, Lock, Eye, EyeOff,
   CheckCircle, AlertCircle, Loader2, Pencil, Save,
 } from 'lucide-react';
+import PasswordStrengthMeter from '../components/PasswordStrengthMeter';
+import { isValidPhoneNumber, isPasswordStrong } from '../utils/validators';
 import './Profile.css';
 
 function AvatarFallback({ name, size = 96 }) {
@@ -36,14 +38,6 @@ function PwdToggle({ show, onToggle }) {
       {show ? <EyeOff size={18} /> : <Eye size={18} />}
     </button>
   );
-}
-
-function PwdStrength({ value }) {
-  if (!value) return null;
-  const s = [value.length >= 8, /[A-Z]/.test(value), /[a-z]/.test(value), /[0-9]/.test(value), /[^A-Za-z0-9]/.test(value)]
-    .filter(Boolean).length;
-  const cls = s <= 2 ? 'weak' : s <= 3 ? 'fair' : s <= 4 ? 'good' : 'strong';
-  return <div className={`password-strength ${cls}`}>{s * 20}%</div>;
 }
 
 /* ------ Avatar upload ------ */
@@ -119,6 +113,10 @@ export default function ProfilePage() {
     setMsg({ type: '', text: '' });
   };
   const save = async (f) => {
+    if (f === 'phone' && tmp.phone && !isValidPhoneNumber(tmp.phone)) {
+      setMsg({ type: 'error', text: 'Please enter a valid phone number (e.g. 012-345 6789 or +60123456789)' });
+      return;
+    }
     const body = f === 'name' ? { full_name: tmp.full_name } : { phone: tmp.phone };
     setSaving(true);
     const r = await updateProfile(body);
@@ -143,7 +141,7 @@ export default function ProfilePage() {
     try {
       if (!hasPwd) {
         // Firebase-only: set password
-        if (nwd.length < 6) throw 'Password must be at least 6 characters';
+        if (!isPasswordStrong(nwd)) throw 'Password must be strong. It must include at least 8 characters, an uppercase letter, a lowercase letter, a number, and a special character.';
         if (nwd !== cwd) throw 'Passwords do not match';
         const r = await setPassword({ newPassword: nwd });
         if (!r.success) throw r.error;
@@ -160,7 +158,7 @@ export default function ProfilePage() {
       } else {
         // Step 2: actual change
         if (!cur.trim()) throw 'Current password required';
-        if (nwd.length < 6) throw 'New password must be at least 6 characters';
+        if (!isPasswordStrong(nwd)) throw 'New password must be strong. It must include at least 8 characters, an uppercase letter, a lowercase letter, a number, and a special character.';
         if (nwd !== cwd) throw 'Passwords do not match';
         const r = await changePassword({ currentPassword: cur, newPassword: nwd });
         if (!r.success) throw r.error;
@@ -253,10 +251,10 @@ export default function ProfilePage() {
                 </p>
                 <div className="pwd-field">
                   <input type={vis.nwd ? 'text' : 'password'} className="info-input"
-                    placeholder="New password" value={nwd} onChange={(e) => setNwd(e.target.value)} />
+                    placeholder="New password (strong)" value={nwd} onChange={(e) => setNwd(e.target.value)} />
                   <PwdToggle show={vis.nwd} onToggle={() => setVis(s => ({ ...s, nwd: !s.nwd }))} />
                 </div>
-                <PwdStrength value={nwd} />
+                <PasswordStrengthMeter password={nwd} />
                 <div className="pwd-field">
                   <input type={vis.cwd ? 'text' : 'password'} className="info-input"
                     placeholder="Repeat new password" value={cwd} onChange={(e) => setCwd(e.target.value)} />
@@ -282,10 +280,10 @@ export default function ProfilePage() {
                 </div>
                 <div className="pwd-field">
                   <input type={vis.nwd ? 'text' : 'password'} className="info-input"
-                    placeholder="New password" value={nwd} onChange={(e) => setNwd(e.target.value)} />
+                    placeholder="New password (strong)" value={nwd} onChange={(e) => setNwd(e.target.value)} />
                   <PwdToggle show={vis.nwd} onToggle={() => setVis(s => ({ ...s, nwd: !s.nwd }))} />
                 </div>
-                <PwdStrength value={nwd} />
+                <PasswordStrengthMeter password={nwd} />
                 <div className="pwd-field">
                   <input type={vis.cwd ? 'text' : 'password'} className="info-input"
                     placeholder="Repeat new password" value={cwd} onChange={(e) => setCwd(e.target.value)} />
@@ -295,7 +293,12 @@ export default function ProfilePage() {
             )}
 
             <div className="pwd-actions">
-              <button className="pwd-btn" onClick={doPwd} disabled={pdl}>
+              <button
+                className="pwd-btn"
+                onClick={doPwd}
+                disabled={pdl || ((!hasPwd || step === 2) && !isPasswordStrong(nwd))}
+                title={((!hasPwd || step === 2) && !isPasswordStrong(nwd)) ? 'Password must be strong' : ''}
+              >
                 {pdl ? <Loader2 size={16} className="spin" /> : <Lock size={16} />}
                 {!hasPwd ? 'Set Password' : step === 1 ? 'Verify Password' : 'Change Password'}
               </button>

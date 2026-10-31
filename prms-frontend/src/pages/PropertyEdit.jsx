@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
@@ -22,6 +22,8 @@ import {
   Info,
 } from 'lucide-react';
 import { propertyApi } from '../api';
+import { useAuth } from '../contexts/AuthContext';
+import ImageGallery from '../components/ImageGallery';
 import { PROPERTY_TYPES } from '../config/propertyTypes';
 import './PropertyEdit.css';
 
@@ -44,7 +46,7 @@ function validateField(fieldName, value) {
       if (!value || value === '') errors.push('Rent is required.');
       else if (isNaN(num)) errors.push('Rent must be a valid number.');
       else if (num <= 0) errors.push('Rent must be greater than zero.');
-      else if (num > 9999999) errors.push('Rent must be under 9,999,999 MYR.');
+      else if (num > 9999999) errors.push('Rent must be under 9,999,999 RM.');
       break;
     }
     case 'city':
@@ -458,6 +460,8 @@ function AmenityItem({ amenity, onEdit, onRemove }) {
 function PropertyEdit() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
 
   /* ---- State ---- */
   const [property, setProperty] = useState(null);
@@ -494,6 +498,20 @@ function PropertyEdit() {
   /* ---- Fetch property data ---- */
   useEffect(() => {
     let cancelled = false;
+    if (!id) {
+      setError('No property ID specified.');
+      setLoading(false);
+      return;
+    }
+    const safeDate = (val) => {
+      if (!val) return '';
+      try {
+        const d = new Date(val);
+        return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+      } catch {
+        return '';
+      }
+    };
     async function fetch() {
       try {
         const res = await propertyApi.getById(id);
@@ -505,8 +523,8 @@ function PropertyEdit() {
           setPropertyType(prop.property_type || prop.propertyType || '');
           setRent(prop.rent ? String(prop.rent) : '');
           setStatus(prop.status || 'AVAILABLE');
-          setAvailableFrom(prop.availableFrom ? new Date(prop.availableFrom).toISOString().slice(0, 10) : '');
-          setAvailableTo(prop.availableTo ? new Date(prop.availableTo).toISOString().slice(0, 10) : '');
+          setAvailableFrom(safeDate(prop.availableFrom));
+          setAvailableTo(safeDate(prop.availableTo));
           setCity(prop.city || '');
           setState(prop.state || '');
           setDescription(prop.description || '');
@@ -603,6 +621,14 @@ function PropertyEdit() {
     setImages((prev) => prev.filter((img) => img.id !== imgId));
   };
 
+  const reorderImages = (imgIds) => {
+    const sorted = imgIds.map((id) => {
+      const idx = images.findIndex((img) => img.id === id);
+      return idx !== -1 ? images[idx] : null;
+    }).filter(Boolean);
+    setImages(sorted);
+  };
+
   /* ---- Video handlers ---- */
   const addVideo = (newVideos) => {
     setVideos((prev) => [...prev, ...newVideos]);
@@ -689,7 +715,7 @@ function PropertyEdit() {
         <div className="pe-topbar-center">
           <h1 className="pe-topbar-title" data-customize-id="edit.title">Edit Property</h1>
           <span className="pe-topbar-sub">
-            {property ? property.property_type || property.propertyType : 'Property'} &middot; {property ? property.rent || 0 : 0} MYR
+            {property ? property.property_type || property.propertyType : 'Property'} &middot; RM {property ? property.rent || 0 : 0}
           </span>
         </div>
         <div className="pe-topbar-actions" data-customize-id="edit.actions">
@@ -821,7 +847,7 @@ function PropertyEdit() {
               <div className="pe-group">
                 <label htmlFor="editRent" className="pe-field-label">
                   <DollarSign size={18} />
-                  Rent (MYR)
+                  Rent (RM)
                 </label>
                 <input
                   id="editRent"
@@ -837,7 +863,7 @@ function PropertyEdit() {
                   aria-required="true"
                   aria-describedby={validationResults.rent?.length > 0 ? 'rentErr' : 'rentHelp'}
                 />
-                <span id="rentHelp" className="pe-field-help">Monthly rent in MYR.</span>
+                <span id="rentHelp" className="pe-field-help">Monthly rent in RM.</span>
                 {validationResults.rent?.length > 0 && (
                   <span id="rentErr" className="pe-validation-msg" role="alert">
                     {validationResults.rent.join(' ')}
@@ -1039,7 +1065,7 @@ function PropertyEdit() {
               <div className="pe-summary-row">
                 <span className="pe-summary-label">Rent</span>
                 <span className="pe-summary-value">
-                  {rent ? `${Number(rent).toLocaleString()} MYR/mo` : '---'}
+                  {rent ? `RM ${Number(rent).toLocaleString()}/mo` : '---'}
                 </span>
               </div>
               <div className="pe-summary-row">

@@ -1,18 +1,39 @@
 import { apiClient } from './ApiClient';
 
+const resolveId = (param) => (typeof param === 'object' && param !== null ? param.propertyId || param.id : param);
+
 export const favoritesApi = {
   getMyFavorites() {
     return apiClient.get('/favorites');
   },
-  toggleFavorite({ propertyId }) {
-    return apiClient.post(`/favorites/${propertyId}`);
+  list() {
+    return apiClient.get('/favorites');
   },
-  removeFavorite({ propertyId }) {
-    return apiClient.delete(`/favorites/${propertyId}`);
+  addFavorite(propertyId) {
+    const id = resolveId(propertyId);
+    return apiClient.post(`/favorites/${id}`);
   },
-  isFavorited: async ({ propertyId }) => {
+  removeFavorite(propertyId) {
+    const id = resolveId(propertyId);
+    return apiClient.delete(`/favorites/${id}`);
+  },
+  toggleFavorite(propertyId) {
+    const id = resolveId(propertyId);
+    return apiClient.post(`/favorites/${id}`);
+  },
+  checkFavorite: async (propertyId) => {
     try {
-      const res = await apiClient.get(`/favorites/${propertyId}`);
+      const id = resolveId(propertyId);
+      const res = await apiClient.get(`/favorites/${id}`);
+      return res.data?.data?.favorited ?? res.data?.data ?? false;
+    } catch {
+      return false;
+    }
+  },
+  isFavorited: async (propertyId) => {
+    try {
+      const id = resolveId(propertyId);
+      const res = await apiClient.get(`/favorites/${id}`);
       return res.data?.data?.favorited ?? false;
     } catch {
       return false;

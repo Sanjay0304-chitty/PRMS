@@ -11,6 +11,9 @@ import {
     Building2,
     CalendarDays,
     Hash,
+    XCircle,
+    AlertTriangle,
+    CreditCard,
 } from 'lucide-react';
 import './PaymentReceipt.css';
 
@@ -22,6 +25,23 @@ function formatDate(value, options = { day: 'numeric', month: 'long', year: 'num
 
 function safeFilename(value) {
     return String(value || 'receipt').replace(/[^a-z0-9-_]/gi, '-');
+}
+
+function getReceiptStatusConfig(status) {
+    const s = String(status || '').toUpperCase();
+    switch (s) {
+        case 'PAID':
+            return { label: 'Paid', icon: CheckCircle, className: 'paid' };
+        case 'FAILED':
+            return { label: 'Failed', icon: XCircle, className: 'failed' };
+        case 'REFUNDED':
+            return { label: 'Refunded', icon: AlertTriangle, className: 'refunded' };
+        case 'PENDING':
+        case 'UNPAID':
+            return { label: 'Pending', icon: Clock, className: 'pending' };
+        default:
+            return { label: status || 'Pending', icon: Clock, className: 'pending' };
+    }
 }
 
 function PaymentReceipt() {
@@ -36,22 +56,26 @@ function PaymentReceipt() {
     useEffect(() => {
         let cancelled = false;
         async function loadReceipt() {
-            setLoading(true);
-            setError('');
+            if (!id) {
+                if (!cancelled) {
+                    setError('Payment ID is missing');
+                    setLoading(false);
+                }
+                return;
+            }
             try {
                 const res = await apiClient.get(`/payments/${id}`);
-                if (!cancelled) setReceipt(res.data?.data ?? null);
+                if (!cancelled) {
+                    setReceipt(res.data?.data ?? null);
+                    setError('');
+                }
             } catch (e) {
                 if (!cancelled) setError(e.response?.data?.error?.message || 'Payment not found');
             } finally {
                 if (!cancelled) setLoading(false);
             }
         }
-        if (id) loadReceipt();
-        else {
-            setError('Payment ID is missing');
-            setLoading(false);
-        }
+        loadReceipt();
         return () => { cancelled = true; };
     }, [id]);
 
@@ -105,13 +129,14 @@ function PaymentReceipt() {
 
             doc.setFontSize(11);
 
-            addRow('Payment Status', receipt.status || '—');
+            const statusText = getReceiptStatusConfig(receipt.status).label;
+            addRow('Payment Status', statusText);
             addRow(
                 'Receipt Number',
                 receipt.id ? receipt.id.slice(0, 8).toUpperCase() : '—'
             );
             addRow('Amount', `RM ${Number(receipt.amount || 0).toFixed(2)}`);
-            addRow('Property', receipt.booking?.property?.title || '—');
+            addRow('Property', receipt.booking?.property?.title || receipt.booking?.property?.address || '—');
             addRow('Booking Start', formatDate(receipt.booking?.start_date));
             addRow('Booking End', formatDate(receipt.booking?.end_date));
             addRow('Date Issued', formatDate(receipt.due_date));
@@ -169,7 +194,10 @@ function PaymentReceipt() {
     if (error) return <div className="receipt-error">{error}</div>;
     if (!receipt) return <div className="receipt-error">Payment not found</div>;
 
-    const isPaid = receipt.status === 'PAID';
+    const isPaid = String(receipt.status || '').toUpperCase() === 'PAID';
+    const statusConfig = getReceiptStatusConfig(receipt.status);
+    const StatusIcon = statusConfig.icon;
+    const propertyTitle = receipt.booking?.property?.title || receipt.booking?.property?.address || '—';
 
     return (
         <motion.div
@@ -177,7 +205,10 @@ function PaymentReceipt() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
         >
-            <button className="receipt-back" onClick={() => navigate(-1)}>
+            <button
+                className="receipt-back"
+                onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/tenant/payments')}
+            >
                 <ArrowLeft size={16} /> Back
             </button>
 
@@ -187,12 +218,21 @@ function PaymentReceipt() {
                         <h1>PRMS</h1>
                         <span>Payment Receipt</span>
                     </div>
-                    <div className={`receipt-status ${isPaid ? 'paid' : 'pending'}`}>
-                        {isPaid ? <><CheckCircle size={18} /> Paid</> : <><Clock size={18} /> Pending</>}
+                    <div className={`receipt-status ${statusConfig.className}`}>
+                        <StatusIcon size={18} /> {statusConfig.label}
                     </div>
                 </div>
 
                 <div className="receipt-actions">
+                    {!isPaid && (
+                        <button
+                            type="button"
+                            className="receipt-action-btn receipt-pay-action-btn"
+                            onClick={() => navigate(`/tenant/payments/${receipt.id}/checkout`)}
+                        >
+                            <CreditCard size={14} /> Pay Now
+                        </button>
+                    )}
                     <button
                         type="button"
                         className="receipt-action-btn"
@@ -213,12 +253,10 @@ function PaymentReceipt() {
                         <div className="receipt-label">Amount</div>
                         <div className="receipt-value receipt-amount">RM {Number(receipt.amount).toFixed(2)}</div>
                     </div>
-                    {receipt.booking?.property && (
-                        <div className="receipt-row">
-                            <div className="receipt-label">Property</div>
-                            <div className="receipt-value"><Building2 size={14} className="receipt-icon" />{receipt.booking.property.title}</div>
-                        </div>
-                    )}
+                    <div className="receipt-row">
+                        <div className="receipt-label">Property</div>
+                        <div className="receipt-value"><Building2 size={14} className="receipt-icon" />{propertyTitle}</div>
+                    </div>
                     <div className="receipt-row">
                         <div className="receipt-label">Booking Period</div>
                         <div className="receipt-value">

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import Modal from './Modal'
 import { useAuth } from '../contexts/AuthContext'
+import PasswordStrengthMeter from './PasswordStrengthMeter'
+import { isPasswordStrong } from '../utils/validators'
 
 export default function ChangePasswordModal({ isOpen, onClose }) {
   const { changePassword } = useAuth()
@@ -28,8 +30,8 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
     e.preventDefault()
     setError('')
 
-    if (newPassword.length < 6) {
-      setError('New password must be at least 6 characters.')
+    if (!isPasswordStrong(newPassword)) {
+      setError('New password must be strong (at least 8 characters, with uppercase, lowercase, number, and special character).')
       return
     }
     if (newPassword !== confirmPassword) {
@@ -79,9 +81,10 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             autoComplete="new-password"
-            minLength={6}
+            placeholder="Strong password"
             required
           />
+          <PasswordStrengthMeter password={newPassword} />
 
           <label className="mt-2">Confirm New Password</label>
           <input
@@ -89,13 +92,18 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             autoComplete="new-password"
-            minLength={6}
+            placeholder="Re-enter strong password"
             required
           />
 
           <div className="flex gap-2 mt-4" style={{ justifyContent: 'flex-end' }}>
             <button type="button" className="btn-outline" onClick={handleClose} disabled={submitting}>Cancel</button>
-            <button type="submit" className="btn-primary" disabled={submitting}>
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={submitting || !isPasswordStrong(newPassword)}
+              title={!isPasswordStrong(newPassword) ? 'Password must be strong' : ''}
+            >
               {submitting ? 'Saving...' : 'Change Password'}
             </button>
           </div>

@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsx watch src/app.ts",
+    "host": "node ../scripts/host-with-valerie.mjs",
     "build": "tsc",
     "start": "node dist/app.js",
     "prisma:migrate": "npx prisma migrate dev --name init_migration",
@@ -25,7 +26,7 @@
     "express-validator": "^7.3.2",
     "firebase-admin": "^14.0.0",
     "helmet": "^8.2.0",
-    "jsonwebtoken": "latest",
+    "jsonwebtoken": "9.0.3",
     "morgan": "^1.11.0",
     "multer": "^2.2.0",
     "mysql2": "^3.24.4",

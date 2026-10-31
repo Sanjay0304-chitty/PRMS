@@ -25,6 +25,12 @@ export const propertyApi = {
   deactivate(id) {
     return apiClient.delete(`/properties/${id}`);
   },
+  delete(id) {
+    return apiClient.delete(`/properties/${id}`);
+  },
+  report(id, data) {
+    return apiClient.post(`/properties/${id}/report`, data);
+  },
 
   /* Images */
   addImage(propertyId, formData) {
