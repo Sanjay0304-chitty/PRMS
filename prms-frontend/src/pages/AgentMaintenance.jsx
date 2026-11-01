@@ -3,13 +3,13 @@ import { useRecordList, ArchiveAction, ArchiveHint, RecordPagination } from '../
 import Modal from '../components/Modal';
 import { maintenanceApi } from '../api/maintenance';
 import { agentApi } from '../api/agents';
-import { getFullUrl } from '../config/apiBaseUrl';
+import PrivateFileLink from '../components/PrivateFileLink';
 import './SharedPageShell.css';
 
 const STATUS_TABS = ['all', 'open', 'in_progress', 'resolved', 'closed', 'archived'];
 
 export default function AgentMaintenance() {
-  const [tab, setTab] = useState('open');
+  const [tab, setTab] = useState('all');
   const list = useRecordList('maintenance', tab);
   const { records: tickets, loading, load } = list;
   const [propertyNames, setPropertyNames] = useState({});
@@ -93,7 +93,7 @@ export default function AgentMaintenance() {
                   </td>
                 </tr>
               ))}
-              {!tickets.length && <tr><td colSpan={6}>No tickets.</td></tr>}
+              {!tickets.length && <tr><td colSpan={6}>{tab === 'all' ? 'No maintenance requests for your assigned properties.' : 'No tickets in this filter. Select All to see other statuses.'}</td></tr>}
             </tbody>
           </table>
         )}
@@ -122,7 +122,7 @@ export default function AgentMaintenance() {
             </label>
             {!!selected.attachments?.length && (
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {selected.attachments.map((photo) => <a key={photo.id} href={getFullUrl(photo.url)} target="_blank" rel="noreferrer">View photo</a>)}
+                {selected.attachments.map((photo) => <PrivateFileLink key={photo.id} url={photo.url}>View photo</PrivateFileLink>)}
               </div>
             )}
           </div>

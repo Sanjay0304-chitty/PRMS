@@ -51,7 +51,7 @@ test.each(['REQUESTED', 'ACCEPTED', 'CONFIRMED', 'PROPOSED_ALTERNATE'])('cannot 
   expect(prisma.recordArchive.upsert).not.toHaveBeenCalled();
 });
 
-test.each(['OPEN', 'IN_PROGRESS', 'RESOLVED'])('cannot archive a %s maintenance ticket', async status => {
+test.each(['OPEN', 'IN_PROGRESS'])('cannot archive a %s maintenance ticket', async status => {
   (prisma.maintenanceTicket.findUnique as jest.Mock).mockResolvedValue({ userId: 'actor', propertyId: 'property', status });
   const res = response();
   await endpoint('maintenance', 'patch')(request(), res);
@@ -64,6 +64,14 @@ test('rejects guessing an unrelated ticket ID', async () => {
   await endpoint('maintenance', 'patch')(request(), res);
   expect(res.status).toHaveBeenCalledWith(403);
   expect(prisma.recordArchive.upsert).not.toHaveBeenCalled();
+});
+
+test.each(['Tenant', 'Landlord', 'Agent', 'Admin'])('%s can personally archive a resolved ticket with access', async role => {
+  (prisma.maintenanceTicket.findUnique as jest.Mock).mockResolvedValue({ userId: 'actor', propertyId: 'property', status: 'RESOLVED' });
+  const res = response();
+  await endpoint('maintenance', 'patch')(request(role), res);
+  expect(res.status).not.toHaveBeenCalled();
+  expect(prisma.recordArchive.upsert).toHaveBeenCalledWith(expect.objectContaining({ create: { userId: 'actor', kind: 'maintenance', recordId: 'record' } }));
 });
 
 test.each(['Landlord', 'Agent'])('%s must have property authority', async role => {
@@ -99,6 +107,6 @@ test('archived lists intersect personal archive markers with closed state', asyn
   (prisma.recordArchive.findMany as jest.Mock).mockResolvedValue([{ recordId: 'record', archivedAt: new Date() }]);
   await endpoint('maintenance', 'get')({ ...request(), query: { tab: 'archived' } }, response());
   const args = (prisma.maintenanceTicket.findMany as jest.Mock).mock.calls[0][0];
-  expect(args.where.AND).toEqual([{ userId: 'actor' }, { id: { in: ['record'] } }, { status: 'CLOSED' }]);
+  expect(args.where.AND).toEqual([{ userId: 'actor' }, { id: { in: ['record'] } }, { status: { in: ['RESOLVED', 'CLOSED'] } }]);
   expect(prisma.recordArchive.findMany).toHaveBeenCalledWith({ where: { userId: 'actor', kind: 'maintenance' } });
 });

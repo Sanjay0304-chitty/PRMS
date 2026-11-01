@@ -46,7 +46,7 @@ export function useRecordList(kind, tab) {
 }
 
 export function ArchiveAction({ record, list, kind }) {
-  if (!record.archivedAt && !(kind === 'viewing' ? ['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(record.status) : record.status === 'CLOSED')) return null;
+  if (!record.archivedAt && !(kind === 'viewing' ? ['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(record.status) : ['RESOLVED', 'CLOSED'].includes(record.status))) return null;
   return <button type="button" className="btn btn-sm btn-outline record-archive-button" disabled={list.busy} onClick={() => list.archive(record.id, !record.archivedAt)}>{record.archivedAt ? 'Restore' : 'Archive'}</button>;
 }
 

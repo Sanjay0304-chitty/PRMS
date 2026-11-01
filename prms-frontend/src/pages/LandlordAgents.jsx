@@ -185,7 +185,7 @@ export default function LandlordAgents() {
                     aria-label={`Property to assign to ${displayName}`}
                   >
                     <option value="">{availableProperties.length ? 'Select a property' : 'All properties assigned'}</option>
-                    {availableProperties.map((property) => <option key={property.id} value={property.id}>{property.title}</option>)}
+                    {availableProperties.map((property) => <option key={property.id} value={property.id}>{property.title} — {property.address || 'Address unavailable'} ({property.id})</option>)}
                   </select>
                   <button
                     type="button"

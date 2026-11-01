@@ -34,7 +34,7 @@ export function recordArchiveRoutes(kind: Kind) {
       const archiveIds = archives.map(a => a.recordId);
       // A closed ticket may subsequently be reopened by another participant.
       // Such tickets return to active lists automatically, retaining history.
-      const terminal = isViewing ? { status: { in: finishedViewings } } : { status: 'CLOSED' };
+      const terminal = isViewing ? { status: { in: finishedViewings } } : { status: { in: ['RESOLVED', 'CLOSED'] } };
       const archivedWhere = { AND: [where, { id: { in: archiveIds } }, terminal] };
       const visibleWhere: any = { AND: [where, { NOT: { AND: [{ id: { in: archiveIds } }, terminal] } }] };
       const filtered: any = tab === 'archived' ? archivedWhere : visibleWhere;
@@ -74,8 +74,8 @@ export function recordArchiveRoutes(kind: Kind) {
       const allowed = owner || role === 'admin' || (property && await hasPropertyAuthority(userId, role, property.ownerId, record.propertyId));
       if (!allowed) return res.status(403).json({ error: { message: 'You do not have access to this record' } });
       const archived = req.body.archived;
-      if (archived && !(isViewing ? finishedViewings.includes(record.status) : record.status === 'CLOSED')) {
-        return res.status(400).json({ error: { message: isViewing ? 'Only cancelled, completed or no-show viewings can be archived' : 'Only closed maintenance tickets can be archived' } });
+      if (archived && !(isViewing ? finishedViewings.includes(record.status) : ['RESOLVED', 'CLOSED'].includes(record.status))) {
+        return res.status(400).json({ error: { message: isViewing ? 'Only cancelled, completed or no-show viewings can be archived' : 'Only resolved or closed maintenance tickets can be archived' } });
       }
       const key = { userId, kind, recordId };
       if (archived) await prisma.recordArchive.upsert({ where: { userId_kind_recordId: key }, create: key, update: {} });
