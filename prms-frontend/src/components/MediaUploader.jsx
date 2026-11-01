@@ -5,6 +5,8 @@ import {
   Trash2, Download
 } from 'lucide-react';
 import { apiClient } from '../api/ApiClient';
+import PrivateVideo from './PrivateVideo';
+import { openPrivateFile } from '../utils/privateFiles';
 import './MediaUploader.css';
 
 const VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm'];
@@ -19,11 +21,6 @@ const DOC_TYPES = [
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100 MB
 const MAX_DOC_SIZE = 20 * 1024 * 1024; // 20 MB
 
-function getFullUrl(url) {
-  if (!url) return '';
-  const base = import.meta.env.VITE_API_BASE_URL || window.location.origin || 'http://localhost:3500';
-  return url.startsWith('http') ? url : `${base}${url}`;
-}
 
 /* ================= VIDEO UPLOADER ================= */
 function VideoUploader({ propertyId, videos = [], onChange }) {
@@ -114,7 +111,7 @@ function VideoUploader({ propertyId, videos = [], onChange }) {
         <div className="media-grid">
           {videos.map((url, i) => (
             <div key={i} className="media-item media-video-item">
-              <video src={getFullUrl(url)} className="media-thumb-video" controls preload="metadata" />
+              <PrivateVideo key={url} url={url} className="media-thumb-video" controls preload="metadata" />
               <button
                 className="media-delete"
                 onClick={() => handleDelete(url)}
@@ -203,12 +200,9 @@ function DocumentUploader({ propertyId, documents = [], onChange }) {
     [propertyId, documents, onChange]
   );
 
-  const handleDownload = useCallback((url) => {
-    const a = document.createElement('a');
-    a.href = getFullUrl(url);
-    a.download = url.split('/').pop();
-    a.target = '_blank';
-    a.click();
+  const handleDownload = useCallback(async (url) => {
+    try { await openPrivateFile(url, true); }
+    catch (err) { setError(err.message); }
   }, []);
 
   return (

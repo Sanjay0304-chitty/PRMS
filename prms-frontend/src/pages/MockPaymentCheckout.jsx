@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { paymentApi } from '../api';
@@ -12,8 +12,6 @@ import {
   XCircle,
   Clock,
   Building2,
-  CalendarDays,
-  Hash,
   Shield,
 } from 'lucide-react';
 import './MockPaymentCheckout.css';
@@ -25,7 +23,7 @@ const METHODS = [
 ];
 
 function MockPaymentCheckout() {
-  const { paymentId, transactionId } = useParams();
+  const { paymentId } = useParams();
   const navigate = useNavigate();
   const [phase, setPhase] = useState('SELECT'); // SELECT | PROCESSING | SUCCESS | FAILED | CANCELLED
   const [paymentInfo, setPaymentInfo] = useState(null);

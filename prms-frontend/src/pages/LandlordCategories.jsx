@@ -1,7 +1,6 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { categoryApi } from '../api/categories'
-import { useAuth } from '../contexts/AuthContext'
 import Modal from '../components/Modal'
 import {
   FolderOpen,

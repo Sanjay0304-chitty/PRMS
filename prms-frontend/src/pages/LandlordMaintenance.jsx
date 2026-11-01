@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import Modal from '../components/Modal';
 import { maintenanceApi } from '../api/maintenance';
 import { propertyApi } from '../api/property';
-import { getFullUrl } from '../config/apiBaseUrl';
+import PrivateFileLink from '../components/PrivateFileLink';
 import './SharedPageShell.css';
 
 const STATUS_TABS = ['all', 'open', 'in_progress', 'resolved', 'closed', 'archived'];
@@ -108,7 +108,7 @@ export default function LandlordMaintenance({ embedded = false }) {
           <label className="mt-2">Maintenance note
             <textarea className="input" rows={3} value={note} disabled={saving} onChange={(e) => setNote(e.target.value)} />
           </label>
-          {!!selected.attachments?.length && <div className="mt-2"><strong>Photographs:</strong> {selected.attachments.map((photo) => <a key={photo.id} href={getFullUrl(photo.url)} target="_blank" rel="noreferrer" style={{ marginLeft: 8 }}>View</a>)}</div>}
+          {!!selected.attachments?.length && <div className="mt-2"><strong>Photographs:</strong> {selected.attachments.map((photo) => <PrivateFileLink key={photo.id} url={photo.url} style={{ marginLeft: 8 }}>View</PrivateFileLink>)}</div>}
           <button className="btn btn-outline mt-2" disabled={saving} onClick={() => saveTicket()}>{saving ? 'Saving…' : 'Save Note'}</button>
           {['OPEN', 'IN_PROGRESS'].includes(selected.status) && (
             <div className="flex gap-2 flex-wrap mt-4">

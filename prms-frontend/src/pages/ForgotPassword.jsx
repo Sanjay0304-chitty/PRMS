@@ -15,6 +15,7 @@ function ForgotPassword() {
 
   const [email, setEmail] = useState('');
   const [otpInput, setOtpInput] = useState('');
+  const [resetToken, setResetToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
@@ -47,7 +48,8 @@ function ForgotPassword() {
     setLoading(true);
     try {
       const res = await authApi.verifyOtp({ email, otp: otpInput });
-      if (res.data.success) {
+      if (res.data.success && res.data.data?.resetToken) {
+        setResetToken(res.data.data.resetToken);
         setStep(3);
       } else {
         setError(res.data.message || 'Invalid OTP.');
@@ -78,7 +80,7 @@ function ForgotPassword() {
     try {
       const res = await authApi.resetPassword({
         email,
-        otp: otpInput,
+        resetToken,
         newPassword,
         confirmPassword,
       });
@@ -161,7 +163,7 @@ function ForgotPassword() {
                 <strong style={{ fontSize: 15, color: 'var(--on-surface, #1e293b)' }}>{email}</strong>
               </div>
               <p className="otp-hint" style={{ marginBottom: 14 }}>
-                Please check your inbox or notification center and enter the code below.
+                Please check your email inbox and enter the code below.
               </p>
 
               <form onSubmit={handleOtpSubmit}>

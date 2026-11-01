@@ -1,3 +1,4 @@
+import PrivateImage from '../components/PrivateImage';
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -377,8 +378,9 @@ function Properties() {
                             const imageUrl = p.images?.[0]?.url || p.image || p.thumbnail;
                             if (imageUrl) {
                               return (
-                                <img
+                                <PrivateImage
                                   src={getImageUrl(imageUrl)}
+                                  fallbackSources={(p.images || []).filter(image => image.type === 'image' || !image.type).slice(1).map(image => image.url)}
                                   alt={p.name || p.title}
                                   onError={(e) => {
                                     e.currentTarget.style.display = 'none';

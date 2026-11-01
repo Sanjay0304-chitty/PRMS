@@ -1,3 +1,4 @@
+import PrivateImage from '../components/PrivateImage';
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '../config/routes'
@@ -394,10 +395,8 @@ function LandlordDashboard() {
                     }
                   }}
                 >
-                  <div className={`summary-image ${imageUrl ? '' : 'summary-image-empty'}`} style={{
-                    backgroundImage: imageUrl ? `url(${getImageUrl(imageUrl)})` : 'none'
-                  }}>
-                    {!imageUrl && <Building2 size={28} />}
+                  <div className={`summary-image ${imageUrl ? '' : 'summary-image-empty'}`}>
+                    {imageUrl ? <PrivateImage src={getImageUrl(imageUrl)} alt={p.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Building2 size={28} />}
                   </div>
                   <div className="summary-body">
                     <h4 className="summary-title">{p.title}</h4>

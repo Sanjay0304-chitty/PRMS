@@ -115,7 +115,7 @@ export default function AdminRetention() {
           <div>
             <h2 style={{ fontSize: 16, margin: 0 }}>Retention Enforcement & Cleanup Actions</h2>
             <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '4px 0 0' }}>
-              Run dry-run simulation to review eligible records, or execute operational disposal under compliance authorization.
+              Preview eligible records without changing them. Permanent cleanup is disabled pending disposal-policy review.
             </p>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -123,7 +123,7 @@ export default function AdminRetention() {
               <Play size={14} style={{ marginRight: 6 }} />
               {simulating ? 'Simulating…' : 'Run Simulation'}
             </button>
-            <button className="btn btn-sm btn-danger" onClick={() => setShowConfirmModal(true)} disabled={executing}>
+            <button className="btn btn-sm btn-danger" disabled title="Permanent cleanup is disabled pending disposal-policy review">
               <Trash2 size={14} style={{ marginRight: 6 }} />
               {executing ? 'Executing…' : 'Execute Retention Cleanup'}
             </button>

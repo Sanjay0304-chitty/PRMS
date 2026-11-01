@@ -77,10 +77,10 @@ export const authApi = {
     return apiClient.post('/auth/verify-otp', { email, otp });
   },
 
-  resetPassword({ email, otp, newPassword, confirmPassword }) {
+  resetPassword({ email, resetToken, newPassword, confirmPassword }) {
     return apiClient.post('/auth/reset-password', {
       email,
-      otp,
+      resetToken,
       newPassword,
       confirmPassword,
     });

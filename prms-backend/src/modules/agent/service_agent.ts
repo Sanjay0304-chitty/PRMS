@@ -1,3 +1,4 @@
+import { photoOrder } from '../../utils/catalogueOrder';
 import { prisma } from '../../db';
 
 export async function getAllAgents(page = 1, limit = 10, search?: string, propertyId?: string, ownerId?: string) {
@@ -262,7 +263,7 @@ export async function getAssignedProperties(agentId: string, page = 1, limit = 1
             address: true,
             rent: true,
             status: true,
-            images: { select: { url: true }, take: 1 }
+            images: { select: { url: true }, take: 1, orderBy: photoOrder }
           }
         }
       }

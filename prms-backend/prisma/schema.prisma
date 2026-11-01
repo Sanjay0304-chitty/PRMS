@@ -235,8 +235,10 @@ model Property {
   rating              Float?               @default(4.8)
   reviewsCount        Int?                 @default(0)
   reviews             Review[]
+  catalogueOrder      Int                  @default(2147483647)
 
   @@index([ownerId])
+  @@index([catalogueOrder, id])
   @@map("properties")
 }
 
@@ -271,9 +273,11 @@ model PropertyImage {
   thumbnailUrl String?
   type         String   @default("image")
   documentName String?
+  sortOrder    Int      @default(0)
   propertyId   String
   property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
+  @@index([propertyId, sortOrder])
   @@map("property_images")
 }
 

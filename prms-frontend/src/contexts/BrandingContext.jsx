@@ -40,6 +40,14 @@ function getTheme() {
 
 function paintTheme(data, theme) {
   const root = document.documentElement.style
+  // Header text must follow its own background rather than the page theme.
+  const headerHex = (theme === 'light' ? data.light_header_bg : null) || '#0f172a'
+  const hex = headerHex.replace('#', '')
+  const expanded = hex.length === 3 ? hex.split('').map(c => c + c).join('') : hex
+  const channels = [0, 2, 4].map(offset => parseInt(expanded.slice(offset, offset + 2), 16) / 255)
+  const linear = channels.map(value => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4)
+  const luminance = linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722
+  root.setProperty('--header-foreground', luminance > 0.179 ? '#111827' : '#ffffff')
   if (theme !== 'light') {
     // Dark mode is not customizable - remove any painted light-mode
     // values so the app's own default dark styling shows through.

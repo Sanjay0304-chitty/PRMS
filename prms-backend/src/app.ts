@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import jwt from 'jsonwebtoken';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { env } from './config';
@@ -9,7 +8,8 @@ import { prisma } from './db';
 import path from 'path';
 import fs from 'fs';
 import { valerieGuard } from './middleware/valerieGuard';
-import { protectAgreements, protectUserFiles, protectPropertyUploads } from './middleware/fileAuth';
+import { protectAgreements, protectUserFiles, protectPropertyUploads, protectMaintenance, protectUserThumbnails } from './middleware/fileAuth';
+import { isAllowedOrigin } from './middleware/corsPolicy';
 import { requestLogger } from './middleware/logging';
 import { responseCache } from './middleware/responseCache';
 import { apiLimiter } from './middleware/rateLimit';
@@ -50,17 +50,7 @@ const corsOrigins = env.CORS_ORIGIN.split(',').map((o: string) => o.trim());
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
-      return callback(null, true);
-    }
-    if (/^https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com$/.test(origin)) {
-      return callback(null, true);
-    }
-    if (corsOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    return callback(null, true);
+    return callback(null, isAllowedOrigin(origin, corsOrigins, env.NODE_ENV));
   },
   credentials: true,
 }));
@@ -83,11 +73,7 @@ app.use('/images', (req, res, next) => {
 }, express.static(path.join(__dirname, '..', 'public', 'images')));
 
 // Serve generated thumbnails statically
-app.use('/api/files/thumbnails', (req, res, next) => {
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    next();
-}, express.static(path.join(__dirname, '..', 'public', 'thumbnails')));
+app.use('/api/files/thumbnails', protectUserThumbnails, express.static(path.join(__dirname, '..', 'public', 'thumbnails')));
 
 // Serve uploaded user files with role-based authentication (owner or admin)
 app.use('/files', protectUserFiles, express.static(path.join(__dirname, '..', 'public', 'uploads')));
@@ -99,7 +85,7 @@ app.use('/uploads/properties', protectPropertyUploads, express.static(path.join(
 app.use('/uploads/agreements', protectAgreements, express.static(path.join(__dirname, '..', 'uploads', 'agreements')));
 
 // Serve uploaded maintenance attachments with strict authentication
-app.use('/uploads/maintenance', protectAgreements, express.static(path.join(__dirname, '..', 'uploads', 'maintenance')));
+app.use('/uploads/maintenance', protectMaintenance, express.static(path.join(__dirname, '..', 'uploads', 'maintenance')));
 
 const frontendDist = path.join(__dirname, '..', '..', 'prms-frontend', 'dist');
 

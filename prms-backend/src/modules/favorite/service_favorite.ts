@@ -1,3 +1,4 @@
+import { photoOrder } from '../../utils/catalogueOrder';
 import { prisma } from '../../db';
 
 export const getMyFavorites = async (userId: string) => {
@@ -7,7 +8,7 @@ export const getMyFavorites = async (userId: string) => {
     // would leave property.images empty (this model's own nested
     // relation), showing a placeholder for every card even when the
     // property has real photos.
-    include: { property: { include: { images: true } } },
+    include: { property: { include: { images: { orderBy: photoOrder } } } },
   });
 };
 

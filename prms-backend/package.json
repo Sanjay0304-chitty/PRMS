@@ -4,14 +4,15 @@
   "description": "PRMS Backend",
   "main": "src/app.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest --runInBand",
     "dev": "tsx watch src/app.ts",
     "host": "node ../scripts/host-with-valerie.mjs",
     "build": "tsc",
     "start": "node dist/app.js",
     "prisma:migrate": "npx prisma migrate dev --name init_migration",
     "prisma:generate": "npx prisma generate",
-    "prisma:seed": "npx tsx prisma/seed.ts"
+    "prisma:seed": "npx tsx prisma/seed.ts",
+    "demo:catalogue": "node scripts/import-demo-catalogue.cjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.8.0",
@@ -30,8 +31,9 @@
     "morgan": "^1.11.0",
     "multer": "^2.2.0",
     "mysql2": "^3.24.4",
+    "nodemailer": "^10.3.1",
     "pdfjs-dist": "^6.2.108",
-    "sharp": "^0.35.3",
+    "sharp": "^0.35.5",
     "uuid": "^14.0.0"
   },
   "devDependencies": {
@@ -43,6 +45,7 @@
     "@types/morgan": "^1.9.10",
     "@types/multer": "^2.2.0",
     "@types/node": "^25.9.3",
+    "@types/nodemailer": "^7.0.0",
     "@types/uuid": "^10.0.0",
     "jest": "^30.4.2",
     "nodemon": "^3.0.2",

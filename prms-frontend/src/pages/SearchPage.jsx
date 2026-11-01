@@ -1,3 +1,4 @@
+import PrivateImage from '../components/PrivateImage';
 import { useState, useCallback, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { getImageUrl } from '../config/imageHelper';
@@ -77,7 +78,7 @@ function SearchPage() {
     if (searchParams.get('q')) {
       Promise.resolve().then(() => handleSearch())
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [])
 
   const clearFilters = useCallback(() => {
@@ -240,9 +241,9 @@ function SearchPage() {
               >
                 <div className="result-image">
                   {property.images?.[0]?.url ? (
-                    <img src={getImageUrl(property.images[0].url)} alt={property.title || property.name} />
+                    <PrivateImage src={getImageUrl(property.images[0].url)} alt={property.title || property.name} />
                   ) : property.image ? (
-                    <img src={property.image} alt={property.title} />
+                    <PrivateImage src={property.image} alt={property.title} />
                   ) : (
                     <div className="result-image-placeholder">
                       <Building2 size={32} />

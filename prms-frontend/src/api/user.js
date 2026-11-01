@@ -1,6 +1,9 @@
 import { apiClient } from './ApiClient';
 
 export const userApi = {
+  summary() {
+    return apiClient.get('/users/summary');
+  },
   list(params) {
     return apiClient.get('/users', { params });
   },

@@ -135,20 +135,18 @@ export default function UserManagement() {
         totalPages: pag.totalPages ?? Math.ceil(items.length / 20),
       })
 
+      await loadSummary()
+
     } catch (e) {
       showToast(e.message || 'Failed to load users', 'error')
     } finally {
       setLoading(false)
     }
-  }, [debouncedSearch, roleFilter, statusFilter])
+  }, [debouncedSearch, roleFilter, statusFilter, loadSummary])
 
   useEffect(() => {
-    Promise.resolve().then(() => loadUsers(1))
+    loadUsers(1)
   }, [loadUsers])
-
-  useEffect(() => {
-    Promise.resolve().then(loadSummary)
-  }, [loadSummary])
 
   /* ── Modal openers ── */
   function openEdit(user) {

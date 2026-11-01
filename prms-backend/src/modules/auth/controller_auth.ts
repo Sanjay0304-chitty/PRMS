@@ -364,9 +364,9 @@ export class AuthController {
         return res.status(400).json({ success: false, error: { message: errors.array()[0].msg } });
       }
       const { email, otp } = req.body;
-      await authService.verifyOtpCode(email, otp);
+      const grant = await authService.verifyOtpCode(email, otp);
       HELPERS(req).log({ username: email, action: 'VERIFY_OTP', entity: 'User', description: 'OTP verified successfully', status: 'Success', level: 'info' });
-      res.json(successResponse(null, 'OTP verified successfully'));
+      res.json(successResponse(grant, 'OTP verified successfully'));
     } catch (error: any) {
       HELPERS(req).log({ action: 'VERIFY_OTP', entity: 'User', description: `Verify OTP failed: ${error.message}`, status: 'Failed', level: 'error', errorMessage: error.message });
       res.status(400).json({ success: false, error: { message: error.message } });
@@ -379,9 +379,9 @@ export class AuthController {
       if (!errors.isEmpty()) {
         return res.status(400).json({ success: false, error: { message: errors.array()[0].msg } });
       }
-      const { email, otp, newPassword, confirmPassword } = req.body;
-      if (!otp || typeof otp !== 'string' || !otp.trim()) {
-        return res.status(400).json({ success: false, error: { message: 'OTP verification code is required' } });
+      const { email, resetToken, newPassword, confirmPassword } = req.body;
+      if (!resetToken || typeof resetToken !== 'string') {
+        return res.status(400).json({ success: false, error: { message: 'Password reset permission is required' } });
       }
       if (!newPassword || newPassword.length < 6) {
         return res.status(400).json({ success: false, error: { message: 'New password must be at least 6 characters' } });
@@ -390,7 +390,7 @@ export class AuthController {
         return res.status(400).json({ success: false, error: { message: 'Passwords do not match' } });
       }
       // Critical fix: verify OTP before resetting password
-      await authService.resetPassword(email, newPassword, otp.trim());
+      await authService.resetPassword(email, newPassword, resetToken);
       HELPERS(req).log({ username: email, action: 'PASSWORD_RESET', entity: 'User', description: 'Password reset successfully for ' + email, status: 'Success', level: 'info' });
       res.json(successResponse(null, 'Password reset successfully'));
     } catch (error: any) {

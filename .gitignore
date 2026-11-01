@@ -53,3 +53,6 @@ bcrypt_whl_file.whl
 # Valerie Guard session
 .valerie-session.json
 .helen-session.json
+
+# Local backups and integration reports (may contain private data)
+.artifacts/

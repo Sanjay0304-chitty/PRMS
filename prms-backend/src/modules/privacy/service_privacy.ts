@@ -186,67 +186,10 @@ export async function simulateCleanup() {
 }
 
 // Operational retention execution: permanently cleans expired personal data
-export async function executeRetentionCleanup() {
-  const policies = await getPolicies();
-  let totalDeleted = 0;
-  const breakdown: Record<string, number> = {};
-
-  for (const policy of policies) {
-    const cutoff = new Date(Date.now() - policy.retentionDays * 86400000);
-    let count = 0;
-
-    switch (policy.category) {
-      case 'rejected_cancelled_applications': {
-        const res = await prisma.booking.deleteMany({
-          where: { status: 'CANCELLED', updated_at: { lt: cutoff } },
-        });
-        count = res.count;
-        break;
-      }
-      case 'viewing_records': {
-        const res = await prisma.viewingAppointment.deleteMany({
-          where: { status: { in: ['COMPLETED', 'CANCELLED', 'NO_SHOW'] }, updated_at: { lt: cutoff } },
-        });
-        count = res.count;
-        break;
-      }
-      case 'superseded_agreements': {
-        const res = await prisma.agreement.deleteMany({
-          where: { status: { in: ['SUPERSEDED', 'CANCELLED'] }, updated_at: { lt: cutoff } },
-        });
-        count = res.count;
-        break;
-      }
-      case 'notifications': {
-        const res = await prisma.notification.deleteMany({
-          where: { created_at: { lt: cutoff } },
-        });
-        count = res.count;
-        break;
-      }
-      case 'resolved_maintenance_tickets': {
-        const res = await prisma.maintenanceTicket.deleteMany({
-          where: { status: { in: ['RESOLVED', 'CLOSED'] }, updated_at: { lt: cutoff } },
-        });
-        count = res.count;
-        break;
-      }
-      case 'audit_logs': {
-        const res = await prisma.auditLog.deleteMany({
-          where: { created_at: { lt: cutoff } },
-        });
-        count = res.count;
-        break;
-      }
-    }
-
-    breakdown[policy.category] = count;
-    totalDeleted += count;
-  }
-
-  return { totalDeleted, breakdown, executedAt: new Date() };
+export async function executeRetentionCleanup(): Promise<{ totalDeleted: number; breakdown: Record<string, number>; executedAt: Date }> {
+  // Keep the preview available while disposal rules and dependency handling are reviewed.
+  throw new Error('Permanent retention cleanup is disabled pending a verified disposal policy. Use the preview only.');
 }
-
 
 /* ────────────────────────────────────────────────────────────
    Data breach register (admin-only)

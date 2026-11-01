@@ -2,7 +2,7 @@
    Supports: text, textarea, color, toggle, select, tel, email.
 */
 
-export default function SettingField({ field, value, onChange, onToggleEdit, isEditing, settingsRef, id }) {
+export default function SettingField({ field, value, onChange, id }) {
   const handleOnChange = (key, val) => {
     onChange?.(val);
   };
@@ -49,8 +49,8 @@ export default function SettingField({ field, value, onChange, onToggleEdit, isE
         </div>
       );
 
-    case 'select':
-      const opts = field.options;
+    case 'select': {
+      const opts = field.options || [];
       return (
         <div className="wc-field">
           <label className="wc-label">{field.label}</label>
@@ -70,6 +70,7 @@ export default function SettingField({ field, value, onChange, onToggleEdit, isE
         </div>
       );
 
+    }
     case 'textarea':
       return (
         <div className="wc-field">

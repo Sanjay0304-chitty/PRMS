@@ -1,3 +1,4 @@
+import { photoOrder } from '../../utils/catalogueOrder';
 import { prisma } from '../../db';
 
 export async function getBookings(page = 1, limit = 10, userId?: string, status?: string) {
@@ -341,7 +342,7 @@ export async function getMyBookings(userId: string) {
   // `property: true` leaves that nested relation empty, so MyBookings.jsx
   // would always fall back to the placeholder image even when the
   // property has real photos.
-  return prisma.booking.findMany({ where: { userId }, include: { property: { include: { images: true } } } });
+  return prisma.booking.findMany({ where: { userId }, include: { property: { include: { images: { orderBy: photoOrder } } } } });
 }
 
 export async function checkOverlap(

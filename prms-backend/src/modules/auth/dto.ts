@@ -37,12 +37,12 @@ export const refreshBody = [
 
 export const verifyOtpBody = [
   body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
-  body('otp').notEmpty().withMessage('OTP code required'),
+  body('otp').isString().matches(/^\d{6}$/).withMessage('Enter a 6-digit verification code'),
 ];
 
 export const resetPasswordBody = [
   body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
-  body('otp').notEmpty().withMessage('OTP code required'),
+  body('resetToken').isString().isLength({ min: 43, max: 43 }).withMessage('Password reset permission is required'),
   body('newPassword').custom((val) => {
     const res = isStrongPassword(val);
     if (!res.isValid) {

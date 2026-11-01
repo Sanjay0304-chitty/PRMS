@@ -11,14 +11,14 @@ export interface AuthenticatedFileInfo {
 }
 
 /**
- * Extracts and verifies JWT credentials from Authorization header or ?token= query parameter.
+ * File requests use the same bearer credentials as API requests, never URL tokens.
  */
 export async function authenticateFileUser(req: Request): Promise<AuthenticatedFileInfo | null> {
   try {
     const authHeader = req.headers.authorization;
     const token = (authHeader && authHeader.startsWith('Bearer '))
       ? authHeader.substring(7).trim()
-      : (typeof req.query?.token === 'string' ? req.query.token : null);
+      : null;
 
     if (!token) return null;
 
@@ -65,7 +65,7 @@ export async function protectAgreements(req: Request, res: Response, next: NextF
     const filename = path.basename(req.path);
     const agreement = await prisma.agreement.findFirst({
       where: {
-        physicalCopyUrl: { contains: filename },
+        physicalCopyUrl: `/uploads/agreements/${filename}`,
       },
       include: {
         booking: {
@@ -109,7 +109,7 @@ export async function protectUserFiles(req: Request, res: Response, next: NextFu
     const branding = await prisma.systemSetting.findFirst({
       where: {
         key: 'branding_logo_url',
-        value: { contains: filename },
+        value: `/files/${filename}`,
       },
     });
     if (branding) {
@@ -134,7 +134,7 @@ export async function protectUserFiles(req: Request, res: Response, next: NextFu
       where: {
         OR: [
           { storageName: filename },
-          { url: { contains: filename } },
+          { url: `/files/${filename}` },
         ],
       },
     });
@@ -165,8 +165,8 @@ export async function protectPropertyUploads(req: Request, res: Response, next: 
     const image = await prisma.propertyImage.findFirst({
       where: {
         OR: [
-          { url: { contains: filename } },
-          { thumbnailUrl: { contains: filename } },
+          { url: `/uploads/properties/${filename}` },
+          { thumbnailUrl: `/uploads/properties/${filename}` },
         ],
       },
       include: {
@@ -215,6 +215,7 @@ export async function protectPropertyUploads(req: Request, res: Response, next: 
         where: {
           propertyId: image.property.id,
           userId: user.id,
+          status: { in: ['CONFIRMED', 'CHECKED_IN'] },
         },
       });
       if (tenantBooking) {
@@ -228,14 +229,7 @@ export async function protectPropertyUploads(req: Request, res: Response, next: 
       });
     }
 
-    // Fallback if not tracked in PropertyImage: allow if public image extension, else require admin
-    const ext = path.extname(filename).toLowerCase();
-    const isImageExt = ['.jpg', '.jpeg', '.png', '.webp', '.svg', '.gif'].includes(ext);
-    if (isImageExt) {
-      setFileHeaders(res);
-      return next();
-    }
-
+    // An untracked filename must not become public merely because it ends in .jpg.
     const user = await authenticateFileUser(req);
     if (user?.role === 'admin') {
       setFileHeaders(res);
@@ -254,4 +248,43 @@ export async function protectPropertyUploads(req: Request, res: Response, next: 
 function setFileHeaders(res: Response) {
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Cache-Control', 'private, no-store');
+}
+
+/** Ticket attachments follow ticket ownership and property management authority. */
+export async function protectMaintenance(req: Request, res: Response, next: NextFunction) {
+  try {
+    const user = await authenticateFileUser(req);
+    if (!user) return res.status(401).json({ success: false, error: { message: 'Authentication required' } });
+    const filename = path.basename(req.path);
+    const attachment = await prisma.maintenanceAttachment.findFirst({
+      where: { url: `/uploads/maintenance/${filename}` },
+      include: { ticket: { select: { userId: true, propertyId: true } } },
+    });
+    if (!attachment) return res.status(404).json({ success: false, error: { message: 'Attachment not found' } });
+    let allowed = user.role === 'admin' || attachment.ticket.userId === user.id;
+    if (!allowed && attachment.ticket.propertyId) {
+      const property = await prisma.property.findUnique({ where: { id: attachment.ticket.propertyId }, select: { id: true, ownerId: true } });
+      if (property) allowed = await hasPropertyAuthority(user.id, user.role, property.ownerId, property.id);
+    }
+    if (!allowed) return res.status(403).json({ success: false, error: { message: 'You do not have permission to access this attachment' } });
+    setFileHeaders(res);
+    return next();
+  } catch {
+    return res.status(500).json({ success: false, error: { message: 'Unable to access attachment' } });
+  }
+}
+
+/** Private-file thumbnails need the same owner check as their source document. */
+export async function protectUserThumbnails(req: Request, res: Response, next: NextFunction) {
+  try {
+    const user = await authenticateFileUser(req);
+    if (!user) return res.status(401).json({ success: false, error: { message: 'Authentication required' } });
+    const file = await prisma.userProfileFile.findFirst({ where: { thumbnailUrl: `/api/files/thumbnails/${path.basename(req.path)}` } });
+    if (!file || (user.role !== 'admin' && file.userId !== user.id)) return res.status(403).json({ success: false, error: { message: 'Access denied' } });
+    setFileHeaders(res);
+    return next();
+  } catch {
+    return res.status(500).json({ success: false, error: { message: 'Unable to access thumbnail' } });
+  }
 }

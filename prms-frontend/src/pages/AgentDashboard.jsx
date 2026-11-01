@@ -1,3 +1,4 @@
+import PrivateImage from '../components/PrivateImage';
 import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
@@ -238,7 +239,7 @@ function AgentDashboard() {
             <div className="agent-property-card" key={prop.id}>
               <div className="agent-property-img">
                 {prop.image ? (
-                  <img src={prop.image} alt={prop.title} />
+                  <PrivateImage src={prop.image} alt={prop.title} />
                 ) : (
                   <div className="agent-property-img-placeholder">
                     <Building2 size={28} />

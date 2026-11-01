@@ -1,5 +1,9 @@
 /* ============ IMAGE GALLERY ============ */
 /* Enhanced gallery: main image, nav arrows, thumbnails, upload, drag-and-drop, delete */
+.property-image-gallery {
+  min-width: 0;
+  margin-bottom: 32px;
+}
 
 /* ── Hidden File Input ── */
 .gallery-file-input {
@@ -174,6 +178,8 @@
   margin-top: 10px;
   overflow-x: auto;
   padding-bottom: 4px;
+  flex-wrap: nowrap;
+  align-items: center;
 }
 
 .gallery-thumb {

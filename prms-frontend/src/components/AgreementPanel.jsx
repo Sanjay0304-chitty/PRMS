@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { agreementApi } from '../api';
+import PrivateFileLink from './PrivateFileLink';
 import './AgreementPanel.css';
 
 function formatDate(d) {
@@ -323,7 +324,7 @@ export default function AgreementPanel({ bookingId, booking, role, userId }) {
           {latest.status === 'PHYSICAL_COPY_PENDING' && (
             <div className="agreement-panel-terms">
               <AgreementSummary a={latest} />
-              <a href={`http://localhost:3500${latest.physicalCopyUrl}`} target="_blank" rel="noopener noreferrer" className="agreement-doc-link">View Uploaded Copy</a>
+              <PrivateFileLink url={latest.physicalCopyUrl} className="agreement-doc-link">View Uploaded Copy</PrivateFileLink>
               {canManageAgreement && (
                 <button className="btn btn-sm btn-primary" onClick={handleVerifyPhysical} disabled={busy}>Verify Physical Copy</button>
               )}

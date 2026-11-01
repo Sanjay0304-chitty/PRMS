@@ -1,11 +1,10 @@
-import { useState, useCallback, useRef, DragEvent, ChangeEvent } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
   ChevronLeft,
   ChevronRight,
   Upload,
-  XCircle,
   Loader2,
   CheckCircle2,
   ImagePlus,
@@ -15,6 +14,9 @@ import {
 import { propertyApi } from '../api';
 import { getFullUrl } from '../config/apiBaseUrl';
 import './ImageGallery.css';
+import PrivateImage from './PrivateImage';
+
+const AnimatedPrivateImage = motion.create(PrivateImage);
 
 const PLACEHOLDER_IMAGES = [
   'https://images.pexels.com/photos/190317/pexels-photo-190317.jpeg?auto=compress&cs=tinysrgb&w=1200',
@@ -72,7 +74,7 @@ export default function ImageGallery({
   // Use actual images or fallback to placeholders
   const displayImages = (images && images.length > 0) ? images : PLACEHOLDER_IMAGES;
   const mainImage = getImageUrl(displayImages[mainIndex]) || displayImages[0];
-  const thumbnails = displayImages.slice(1, 8);
+  const thumbnails = displayImages;
 
   /* ---------- Navigation ---------- */
   const goNext = useCallback(() => {
@@ -182,8 +184,8 @@ export default function ImageGallery({
 
   return (
     <div
-      className={`property-image-gallery${dragOver ? ' gallery-drag-active' : ''}`}
       {...wrapperProps}
+      className={`property-image-gallery${dragOver ? ' gallery-drag-active' : ''}${wrapperProps?.className ? ` ${wrapperProps.className}` : ''}`}
       onDrop={canEdit ? handleDrop : undefined}
       onDragOver={canEdit ? handleDragOver : undefined}
       onDragLeave={canEdit ? handleDragLeave : undefined}
@@ -213,9 +215,10 @@ export default function ImageGallery({
               transition={{ duration: 0.35 }}
             />
           ) : mainImage ? (
-            <motion.img
+            <AnimatedPrivateImage
               key={mainImage || mainIndex}
               src={mainImage}
+              fallbackSources={displayImages.filter((_, index) => index !== mainIndex).map(getImageUrl)}
               alt="Property"
               className="gallery-main-img"
               initial={{ opacity: 0.7 }}
@@ -304,23 +307,28 @@ export default function ImageGallery({
       </div>
 
       {/* ── Thumbnails ── */}
-      {thumbnails.length > 0 && (
+      {thumbnails.length > 1 && (
         <div className="gallery-thumbnails">
           {thumbnails.map((img, idx) => {
             const thumbUrl = getThumbUrl(img);
             const video = isVideo(img);
-            const isActive = idx === mainIndex - 1;
+            const isActive = idx === mainIndex;
             const realId = getImageId(img);
             return (
               <div
                 key={idx}
                 className={`gallery-thumb${isActive ? ' gallery-thumb-active' : ''}`}
-                onClick={() => setMainIndex(idx + 1)}
+                role="button"
+                tabIndex={0}
+                aria-label={`View image ${idx + 1}`}
+                aria-pressed={isActive}
+                onClick={() => setMainIndex(idx)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMainIndex(idx); } }}
               >
                 {thumbUrl ? (
-                  <motion.img
+                  <AnimatedPrivateImage
                     src={thumbUrl}
-                    alt={`View ${idx + 2}`}
+                    alt={`View ${idx + 1}`}
                     className="gallery-thumb-img"
                     whileHover={{ scale: 1.04 }}
                     transition={{ duration: 0.2 }}
@@ -339,7 +347,7 @@ export default function ImageGallery({
                       e.stopPropagation();
                       handleDelete(img);
                     }}
-                    aria-label={`Delete image ${idx + 2}`}
+                    aria-label={`Delete image ${idx + 1}`}
                   >
                     <X size={13} />
                   </button>

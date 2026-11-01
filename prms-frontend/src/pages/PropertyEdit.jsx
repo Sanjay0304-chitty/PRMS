@@ -1,5 +1,7 @@
+import PrivateImage from '../components/PrivateImage';
+import PrivateVideo from '../components/PrivateVideo';
 import { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
@@ -22,8 +24,6 @@ import {
   Info,
 } from 'lucide-react';
 import { propertyApi } from '../api';
-import { useAuth } from '../contexts/AuthContext';
-import ImageGallery from '../components/ImageGallery';
 import { PROPERTY_TYPES } from '../config/propertyTypes';
 import './PropertyEdit.css';
 
@@ -222,9 +222,9 @@ function MediaItem({ item, type = 'image', onUpdate, onRemove }) {
     >
       <div className="pe-media-preview">
         {isImg ? (
-          <img src={previewSrc} alt={item.alt || 'Property image'} className="pe-media-img" loading="lazy" />
+          <PrivateImage src={previewSrc} alt={item.alt || 'Property image'} className="pe-media-img" loading="lazy" />
         ) : (
-          <video src={previewSrc} className="pe-media-video" muted loop preload="metadata" />
+          <PrivateVideo url={previewSrc} className="pe-media-video" muted loop preload="metadata" />
         )}
         <button
           className="pe-media-play-btn"
@@ -460,8 +460,6 @@ function AmenityItem({ amenity, onEdit, onRemove }) {
 function PropertyEdit() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
-  const { user } = useAuth();
 
   /* ---- State ---- */
   const [property, setProperty] = useState(null);
@@ -528,11 +526,11 @@ function PropertyEdit() {
           setCity(prop.city || '');
           setState(prop.state || '');
           setDescription(prop.description || '');
-          setImages(prop.images || []);
+          setImages((prop.images || []).filter(image => !image.type || image.type === 'image'));
           // Videos may be stored as PropertyImage with url ending in video types
-          setVideos(prop.videos || []);
+          setVideos(prop.videos || (prop.images || []).filter(image => image.type === 'video'));
           // Documents are also PropertyImage records with type='document'
-          setDocuments(prop.documents || []);
+          setDocuments(prop.documents || (prop.images || []).filter(image => image.type === 'document'));
           setAmenities(prop.amenities || []);
         }
         setLoading(false);
@@ -621,13 +619,6 @@ function PropertyEdit() {
     setImages((prev) => prev.filter((img) => img.id !== imgId));
   };
 
-  const reorderImages = (imgIds) => {
-    const sorted = imgIds.map((id) => {
-      const idx = images.findIndex((img) => img.id === id);
-      return idx !== -1 ? images[idx] : null;
-    }).filter(Boolean);
-    setImages(sorted);
-  };
 
   /* ---- Video handlers ---- */
   const addVideo = (newVideos) => {

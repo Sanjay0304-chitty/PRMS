@@ -144,7 +144,7 @@ export async function deleteFile(fileId: string) {
 }
 
 // Delete a property image by its image ID with strict authorization check
-export async function deletePropertyImage(imageId: string, userId?: string, role?: string) {
+export async function deletePropertyImage(imageId: string, userId: string, role: string) {
   const image = await prisma.propertyImage.findUnique({
     where: { id: imageId },
     include: { property: { select: { id: true, ownerId: true } } },
@@ -152,7 +152,8 @@ export async function deletePropertyImage(imageId: string, userId?: string, role
 
   if (!image) throw new Error('Property image not found');
 
-  if (userId && role) {
+  if (!userId || !role) throw new Error('Authentication required');
+  {
     const normalizedRole = role.toLowerCase();
     const isAllowed = await hasPropertyAuthority(userId, normalizedRole, image.property.ownerId, image.property.id);
     if (!isAllowed) {

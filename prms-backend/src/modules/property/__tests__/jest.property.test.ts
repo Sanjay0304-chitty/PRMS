@@ -20,6 +20,7 @@ jest.mock('../../../db', () => ({
       count: (...args: any[]) => mockCount(...args),
     },
     propertyImage: {
+      update: (...args: any[]) => mockUpdate(...args),
       findMany: (...args: any[]) => mockFindMany(...args),
       findUnique: (...args: any[]) => mockFindUnique(...args),
       create: (...args: any[]) => mockCreate(...args),
@@ -301,6 +302,14 @@ describe('updateProperty - combined', () => {
    updateProperty  -  media (images)
    ============================================================ */
 describe('updateProperty - media images', () => {
+  test('reordering existing photos persists the new order without selecting videos or documents', async () => {
+    mockFindMany.mockResolvedValueOnce([{ id: 'img1' }, { id: 'img2' }]);
+    await service.updateProperty(PROP_ID, { images: [{ id: 'img2' }, { id: 'img1' }] });
+    expect(mockFindMany).toHaveBeenCalledWith({ where: { propertyId: PROP_ID, type: 'image' } });
+    expect(mockUpdate).toHaveBeenCalledWith({ where: { id: 'img2' }, data: { sortOrder: 0 } });
+    expect(mockUpdate).toHaveBeenCalledWith({ where: { id: 'img1' }, data: { sortOrder: 1 } });
+    expect(mockDeleteMany).not.toHaveBeenCalled();
+  });
   test('adds new image', async () => {
     const img = { id: 'img1', url: '/photo.jpg' };
     mockUpdate.mockResolvedValueOnce({});
@@ -309,7 +318,7 @@ describe('updateProperty - media images', () => {
     mockFindUnique.mockResolvedValueOnce({});
     await service.updateProperty(PROP_ID, { images: [img] });
     expect(mockCreateMany).toHaveBeenCalledWith({
-      data: expect.arrayContaining([{ ...img, propertyId: PROP_ID }]),
+      data: expect.arrayContaining([{ ...img, propertyId: PROP_ID, sortOrder: 0 }]),
     });
   });
 

@@ -1,3 +1,4 @@
+import PrivateImage from '../components/PrivateImage';
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '../config/routes'
@@ -308,7 +309,7 @@ function TenantDashboard() {
         <div className="saved-grid">
           {savedProperties.length ? savedProperties.map((property, i) => (
             <article className="saved-card" key={`${property.name}-${i}`}>
-              {property.image && <img src={property.image} alt={property.name} />}
+              {property.image && <PrivateImage src={property.image} alt={property.name} />}
 
               <button type="button" className="heart-btn">
                 <Heart size={24} fill="currentColor" />

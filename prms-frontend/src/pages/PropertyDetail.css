@@ -237,57 +237,6 @@
   transform: translateY(-1px);
 }
 
-/* ── Image Gallery (Airbnb-style) ── */
-.property-image-gallery {
-  display: flex;
-  border-radius: 12px;
-  overflow: hidden;
-  margin-bottom: 32px;
-  background: var(--surface-container, #f3f4f6);
-  height: 400px;
-}
-
-.gallery-main {
-  flex: 2;
-  min-width: 0;
-  position: relative;
-}
-
-.gallery-main-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.gallery-thumbnails {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-  gap: 4px;
-  padding: 4px;
-}
-
-.gallery-thumb {
-  overflow: hidden;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-
-.gallery-thumb:hover {
-  opacity: 0.85;
-}
-
-.gallery-thumb-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  border-radius: 4px;
-}
-
 /* ── Review Form ── */
 .pd-review-form {
   background: var(--surface-container-lowest, var(--card-bg));
@@ -1200,28 +1149,6 @@
 
   .booking-card {
     position: static;
-  }
-
-  .property-image-gallery {
-    flex-direction: column;
-    height: auto;
-  }
-
-  .gallery-main {
-    aspect-ratio: 16 / 9;
-    height: auto;
-  }
-
-  .gallery-thumbnails {
-    display: flex;
-    flex-wrap: wrap;
-    padding: 0;
-  }
-
-  .gallery-thumb {
-    flex: none;
-    flex-basis: calc(50% - 2px);
-    aspect-ratio: 4 / 3;
   }
 
   .pd-footer-inner {

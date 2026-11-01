@@ -514,7 +514,7 @@ function PropertyDetail() {
         if (!cancelled && res?.data) {
           const propData = res.data.data;
           setProperty(propData);
-          setImages(propData.images || []);
+          setImages((propData.images || []).filter(image => typeof image === 'string' || !image.type || image.type === 'image'));
           if ((user?.role || '').toLowerCase() === 'agent') {
             const assignedRes = await agentApi.myProperties({ limit: 100 });
             if (!cancelled) setAgentAssigned((assignedRes.data?.data || []).some((item) => item.id === id));
@@ -540,26 +540,10 @@ function PropertyDetail() {
   const description = property?.description || '';
   const shortDesc = description.length > 350 ? description.slice(0, 350) + '...' : description;
 
-  /* Reviews placeholder */
-  const sampleReviews = [
-    {
-      name: 'Sarah J.',
-      date: 'October 2024',
-      text: 'The views from this property were even better than the photos. Great location and friendly host!',
-      rating: 5,
-    },
-    {
-      name: 'Michael R.',
-      date: 'September 2024',
-      text: 'Absolutely loved every moment. Clean, well-maintained, and perfectly described. Highly recommend!',
-      rating: 5,
-    },
-  ];
-
   /* Star rating and reviews */
-  const reviewsList = property?.reviews?.length ? property.reviews : sampleReviews;
+  const reviewsList = property?.reviews || [];
   const totalReviewsCount = property?.reviewsCount ?? reviewsList.length;
-  const rating = property?.rating ? Number(property.rating).toFixed(1) : '4.8';
+  const rating = reviewsList.length ? Number(property?.rating || 0).toFixed(1) : '—';
 
   /* Status badge */
   const statusConfig = propertyStatusInfo(property?.status);
@@ -670,10 +654,10 @@ function PropertyDetail() {
 
         {/* ── Image Gallery ── */}
         <ImageGallery
-          images={images.length > 0 ? images : property?.images}
+          images={images}
           propertyId={id}
           userRole={user?.role}
-          canManage={canManageProperty}
+          canManage={false}
           onImagesChange={(updatedImages) => {
             setImages(updatedImages);
             setProperty((prev) => (prev ? { ...prev, images: updatedImages } : prev));
@@ -856,7 +840,7 @@ function PropertyDetail() {
                 <div className="pd-section">
                   <VideoUploader
                     propertyId={id}
-                    videos={property?.videoUrls || []}
+                    videos={property?.videoUrls || property?.images?.filter(image => image.type === 'video').map(image => image.url) || []}
                     onChange={(updated) => {
                       setProperty((prev) => prev ? { ...prev, videoUrls: updated } : prev);
                     }}
@@ -866,7 +850,7 @@ function PropertyDetail() {
                 <div className="pd-section">
                   <DocumentUploader
                     propertyId={id}
-                    documents={property?.documentUrls || []}
+                    documents={property?.documentUrls || property?.images?.filter(image => image.type === 'document').map(image => image.url) || []}
                     onChange={(updated) => {
                       setProperty((prev) => prev ? { ...prev, documentUrls: updated } : prev);
                     }}
@@ -960,6 +944,7 @@ function PropertyDetail() {
               )}
 
               <div className="pd-reviews">
+                {!reviewsList.length && <p>No reviews yet.</p>}
                 {reviewsList.map((r, i) => (
                   <div className="pd-review" key={r.id || i}>
                     <div className="pd-review-avatar">

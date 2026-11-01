@@ -1,3 +1,4 @@
+import { catalogueOrder, photoOrder } from '../../utils/catalogueOrder';
 import { prisma } from '../../db';
 
 export async function searchProperties(query: { location?: string; property_type?: string; min_price?: string; max_price?: string; amenity?: string; page?: string; limit?: string; }) {
@@ -15,7 +16,7 @@ export async function searchProperties(query: { location?: string; property_type
   const limit = parseInt(query.limit || '10');
 
   const [properties, total] = await Promise.all([
-    prisma.property.findMany({ where, include: { owner: { select: { id: true, full_name: true, email: true } }, amenities: true, images: { take: 3 }, category: true }, skip: (page - 1) * limit, take: limit, orderBy: { id: 'desc' } }),
+    prisma.property.findMany({ where, include: { owner: { select: { id: true, full_name: true, email: true } }, amenities: true, images: { take: 3, orderBy: photoOrder }, category: true }, skip: (page - 1) * limit, take: limit, orderBy: catalogueOrder }),
     prisma.property.count({ where }),
   ]);
   return { properties, total, page, limit, totalPages: Math.ceil(total / limit) };
@@ -36,6 +37,6 @@ export async function toggleFavorite(userId: string, propertyId: string) {
 export async function getFavorites(userId: string) {
   return prisma.favorite.findMany({
     where: { userId },
-    include: { property: { include: { images: { take: 1 } } } },
+    include: { property: { include: { images: { take: 1, orderBy: photoOrder } } } },
   });
 }
