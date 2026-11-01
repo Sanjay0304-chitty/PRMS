@@ -300,21 +300,6 @@
     "sourceId": 20
   },
   {
-    "id": "mrl-021",
-    "title": "Bandar Bukit Raja",
-    "address": "Persiaran bukit Raja",
-    "property_type": "house",
-    "original_type": "Terrace House",
-    "rent": 2600,
-    "status": "AVAILABLE",
-    "city": "Klang",
-    "state": "Selangor",
-    "availableFrom": "2026-09-19T15:59:35.000Z",
-    "availableTo": "2027-09-19T15:59:35.000Z",
-    "sourceFile": "068f7cfb-Property_Listing.xlsx",
-    "sourceId": 21
-  },
-  {
     "id": "mrl-022",
     "title": "Cyberjaya Lake Homes",
     "address": "Persiaran Bestari",
