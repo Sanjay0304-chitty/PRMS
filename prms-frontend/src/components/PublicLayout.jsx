@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Building2, Menu, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { roleToPath } from '../config/routes';
@@ -8,12 +8,12 @@ import ThemeSwitcher from './ThemeSwitcher';
 import { getImageUrl } from '../config/imageHelper';
 import './PublicLayout.css';
 
-export function PublicHeader() {
+export function PublicHeader({ showBuildingMark = false }) {
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
   const { settings } = useSettings();
   return <header className="public-header" data-customize-id="global.header">
-    <Link className="public-brand" to="/">{settings?.branding_logo_url && <img src={getImageUrl(settings.branding_logo_url)} alt="" />} {settings?.branding_site_name || 'PRMS'}</Link>
+    <Link className="public-brand" to="/">{showBuildingMark ? <Building2 className="public-brand-building" size={28} aria-hidden="true" /> : settings?.branding_logo_url && <img src={getImageUrl(settings.branding_logo_url)} alt="" />}<span>{settings?.branding_site_name || 'PRMS'}</span></Link>
     <button className="public-menu-button" type="button" aria-label={open ? 'Close navigation' : 'Open navigation'} aria-expanded={open} aria-controls="public-navigation" onClick={() => setOpen(!open)}>{open ? <X /> : <Menu />}</button>
     <nav id="public-navigation" aria-label="Main navigation" className={open ? 'is-open' : ''} onClick={() => setOpen(false)} onKeyDown={e => { if (e.key === 'Escape') setOpen(false); }}>
       <NavLink to="/properties">Browse Properties</NavLink>

@@ -42,7 +42,7 @@ export default function GuestHome() {
   const heroPhotos = photos(heroHome);
   const search = (text = query) => navigate(text.trim() ? `/properties?search=${encodeURIComponent(text.trim())}` : '/properties');
 
-  return <div className="guest-page home-redesign"><PublicHeader /><main>
+  return <div className="guest-page home-redesign"><PublicHeader showBuildingMark /><main>
     {settings?.homepage_show_hero !== false && <section className="home-hero" id="find-home" data-customize-id="home.hero" aria-labelledby="home-title">
       {heroPhotos.length > 0 && <PrivateImage className="home-hero-photo" src={heroPhotos[0]} fallbackSources={heroPhotos.slice(1)} alt="" fetchPriority="high" />}
       <div className="home-hero-shade" />

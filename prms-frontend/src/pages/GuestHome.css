@@ -4,7 +4,8 @@
 .home-redesign * { box-sizing:border-box; }
 .home-redesign main h1,.home-redesign main h2,.home-redesign main h3,.home-redesign main p { margin:0; font-family:inherit; }
 .home-redesign > .public-header { background:var(--home-bg); border-color:var(--home-border); padding:20px max(24px,calc((100vw - 1280px)/2)); }
-.home-redesign .public-brand { letter-spacing:-1px; font-size:26px; }
+.home-redesign .public-brand { display:inline-flex; align-items:center; gap:12px; letter-spacing:-.5px; font-size:28px; font-weight:800; }
+.home-redesign .public-brand-building { color:#9333ea; flex-shrink:0; }
 .home-redesign .public-header nav a { font-size:13px; }
 .home-redesign .public-header nav .public-primary { background:#7c3aed; border-radius:999px; padding:12px 20px; }
 .home-redesign .public-footer { background:var(--home-surface); border-color:var(--home-border); padding:34px max(24px,calc((100vw - 1280px)/2)); }

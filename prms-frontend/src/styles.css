@@ -529,6 +529,16 @@ form label {
   gap: 24px;
 }
 
+.social-row.login-google-row {
+  display: flex;
+  justify-content: center;
+}
+
+.social-row.login-google-row button {
+  flex: 0 1 320px;
+  max-width: 100%;
+}
+
 .social-row button {
   height: 70px;
   border: 2px solid var(--border-color);
