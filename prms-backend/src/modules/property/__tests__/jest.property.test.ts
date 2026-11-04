@@ -373,3 +373,18 @@ describe('getLandlordProperties', () => {
     expect(result[0].agentProperties).toEqual([{ id: 'ag1', name: 'Zain' }]);
   });
 });
+
+describe('property delete-button behavior', () => {
+  test('deactivation keeps the property record and sets INACTIVE', async () => {
+    mockUpdate.mockResolvedValueOnce({ id: 'delete-check', status: 'INACTIVE' });
+    await expect(service.deactivateProperty('delete-check')).resolves.toEqual({ id: 'delete-check', status: 'INACTIVE' });
+    expect(mockUpdate).toHaveBeenCalledWith({ where: { id: 'delete-check' }, data: { status: 'INACTIVE' } });
+    expect(mockDelete).not.toHaveBeenCalled();
+  });
+  test('reloading the Landlord portfolio includes inactive listings', async () => {
+    mockFindMany.mockResolvedValueOnce([{ id: 'delete-check', status: 'INACTIVE', agentProperties: [] }]);
+    const result = await service.getLandlordProperties('landlord-1');
+    expect(result[0].status).toBe('INACTIVE');
+    expect(mockFindMany.mock.calls[mockFindMany.mock.calls.length - 1][0].where).toEqual({ ownerId: 'landlord-1' });
+  });
+});
