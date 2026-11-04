@@ -1,0 +1,25 @@
+.public-header { display:flex; align-items:center; gap:24px; padding:18px max(20px,4vw); background:var(--surface,#fff); color:var(--text-primary,#111827); border-bottom:1px solid var(--border-color,#d1d5db); position:relative; z-index:50; font-family:inherit; }
+.public-brand { font-size:24px; font-weight:800; color:var(--text-primary,#111827); text-decoration:none; }
+.public-brand img { width:32px; height:32px; object-fit:contain; vertical-align:middle; }
+.public-header nav { display:flex; align-items:center; justify-content:flex-end; flex:1; gap:24px; }
+.public-header nav a { color:var(--text-primary,#111827); text-decoration:none; font-weight:600; }
+.public-header nav a.active { color:#9333ea; text-decoration:underline; text-underline-offset:6px; }
+.public-header nav .public-primary,.public-primary { display:inline-flex; align-items:center; justify-content:center; background:#7e22ce; color:#fff; padding:11px 18px; border:0; border-radius:8px; text-decoration:none; font-weight:700; cursor:pointer; }
+.public-menu-button { display:none; }
+.public-footer { padding:36px max(20px,4vw); display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap; background:var(--surface,#fff); color:var(--text-primary,#111827); border-top:1px solid var(--border-color,#d1d5db); }
+.public-footer p { margin:8px 0; color:var(--text-secondary,#6b7280); }
+.public-footer nav { display:flex; flex-wrap:wrap; gap:18px; }
+.public-footer a { color:var(--text-primary,#111827); }
+.public-header a:focus-visible,.public-header button:focus-visible,.public-footer a:focus-visible,.guest-page a:focus-visible,.guest-properties-page a:focus-visible,.guest-properties-page button:focus-visible { outline:3px solid #a855f7; outline-offset:4px; }
+.public-help { max-width:900px; margin:40px auto; padding:24px; color:var(--text-primary); }
+.public-help section { margin:24px 0; padding:24px; border:1px solid var(--border-color); border-radius:12px; background:var(--surface); }
+.public-help a { color:var(--text-primary); text-decoration:underline; }
+@media(max-width:1050px) {
+ .public-header { gap:16px; flex-wrap:wrap; padding:14px 20px; }
+ .public-brand { margin-right:auto; }
+ .public-menu-button { display:inline-flex; background:transparent; color:inherit; border:1px solid var(--border-color); border-radius:8px; padding:8px; }
+ .public-header nav { display:none; order:4; flex-basis:100%; align-items:stretch; gap:8px; }
+ .public-header nav.is-open { display:flex; flex-direction:column; }
+ .public-header nav a { padding:12px; }
+ .public-footer { align-items:flex-start; flex-direction:column; }
+}

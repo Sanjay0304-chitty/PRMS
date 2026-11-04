@@ -414,13 +414,15 @@ function Register() {
             >
               Already have an account?{' '}
               <a
-                href="#"
+                href="/login"
                 role="link"
                 tabIndex={0}
                 onClick={(e) => {
                   e.preventDefault();
                   clearRegistration();
-                  navigate('/login', { replace: true });
+                  // Match the successful-registration handoff: clearing the
+                  // role must not race the still-mounted registration guard.
+                  window.location.assign('/login');
                 }}
               >
                 Sign in

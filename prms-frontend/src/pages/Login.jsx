@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { rememberPropertyReturn } from '../utils/publicJourney';
 import { motion } from 'framer-motion';
 import { Building2, Eye, EyeOff, LockKeyhole, LogIn, Mail, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -10,6 +11,8 @@ import { isValidEmail } from '../utils/validators';
 
 function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  useEffect(() => { rememberPropertyReturn(location.state?.returnUrl); }, [location.state]);
   const { login, googleLogin, error, clearError, loading } = useAuth();
 
   const [email, setEmail] = useState('');

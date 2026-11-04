@@ -1,4 +1,4 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useRegistration } from '../contexts/RegistrationContext';
 
@@ -10,6 +10,7 @@ import { useRegistration } from '../contexts/RegistrationContext';
  * - If a role exists in sessionStorage (pending registration) OR user is authenticated, render children.
  */
 export default function RoleSelectionGuard({ children }) {
+  const location = useLocation();
   const { loading, isAuthenticated } = useAuth();
   const { selectedRole } = useRegistration();
 
@@ -20,5 +21,5 @@ export default function RoleSelectionGuard({ children }) {
     return children;
   }
 
-  return <Navigate to="/role-selection" replace />;
+  return <Navigate to={`/role-selection${location.search}`} replace />;
 }

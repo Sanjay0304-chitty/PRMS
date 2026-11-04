@@ -1,534 +1,102 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import {
-  Building2,
-  CalendarDays,
-  Globe2,
-  Heart,
-  Home,
-  Loader2,
-  MapPin,
-  Menu,
-  Search,
-  ShieldCheck,
-  SlidersHorizontal,
-  Sparkles,
-  Star,
-  UserCircle,
-  Users,
-  X,
-  Flag,
-} from 'lucide-react';
-import { getImageUrl } from '../config/imageHelper';
+import { Heart, Flag, Search, MapPin } from 'lucide-react';
 import { propertyApi } from '../api';
 import { favoritesApi } from '../api/favorites';
 import { useAuth } from '../contexts/AuthContext';
-import { PROPERTY_STATUSES, propertyStatusInfo } from '../config/propertyStatus';
+import { PROPERTY_TYPES, propertyTypeLabel } from '../config/propertyTypes';
+import { propertyStatusInfo } from '../config/propertyStatus';
+import { getImageUrl } from '../config/imageHelper';
+import { rememberPropertyReturn } from '../utils/publicJourney';
+import PrivateImage from '../components/PrivateImage';
 import ReportListingModal from '../components/ReportListingModal';
+import { PublicHeader, PublicFooter } from '../components/PublicLayout';
 import './GuestProperties.css';
 
-const PRICE_RANGES = [
-  { label: 'Under RM 1,500', min: 0, max: 1500 },
-  { label: 'RM 1,500 - RM 2,500', min: 1500, max: 2500 },
-  { label: 'RM 2,500 - RM 3,500', min: 2500, max: 3500 },
-  { label: 'RM 3,500 - RM 5,000', min: 3500, max: 5000 },
-  { label: 'Over RM 5,000', min: 5000, max: Infinity },
-];
-
-const PROPERTY_TYPES = ['apartment', 'condo', 'serviced residence', 'studio', 'loft', 'house', 'other'];
-
-function GuestProperties() {
+export default function GuestProperties() {
+  const [params, setParams] = useSearchParams();
+  const queryString = params.toString();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [properties, setProperties] = useState([]);
+  const [pagination, setPagination] = useState({total:0,totalPages:0});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [favoriteIds, setFavoriteIds] = useState(new Set());
-  const [reportProperty, setReportProperty] = useState(null);
-
+  const [error, setError] = useState('');
+  const [retry, setRetry] = useState(0);
+  const [report, setReport] = useState(null);
+  const [favorites, setFavorites] = useState(new Set());
+  const [busy, setBusy] = useState('');
+  const page = Math.max(1, Number.parseInt(params.get('page'), 10) || 1);
+  const search = params.get('search') || params.get('q') || '';
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, [page]);
+  const status = ['AVAILABLE','RENTED','MAINTENANCE','ALL'].includes(params.get('status')) ? params.get('status') : 'AVAILABLE';
+  const update = values => {
+    const next = new URLSearchParams(params);
+    next.delete('q'); next.delete('page');
+    Object.entries(values).forEach(([key,value]) => value === '' ? next.delete(key) : next.set(key,String(value)));
+    setParams(next);
+  };
   useEffect(() => {
-    if (!user) return;
-    favoritesApi.list()
-      .then((res) => {
-        const favs = res?.data?.data || [];
-        const ids = new Set(favs.map((f) => f.propertyId || f.id || f.property?.id));
-        setFavoriteIds(ids);
-      })
-      .catch(() => {});
+    let active = true;
+    const query = new URLSearchParams(queryString);
+    Promise.resolve().then(async () => {
+      if (!active) return;
+      setLoading(true); setError('');
+      try {
+        const selected = query.get('status') || 'AVAILABLE';
+        const res = await propertyApi.list({page:Math.max(1,Number.parseInt(query.get('page'),10)||1),limit:12,publicOnly:true,
+          search:query.get('search') || query.get('q') || undefined, type:query.get('type') || undefined,
+          status:selected === 'ALL' ? undefined : selected,
+          minRent:query.get('minRent') || undefined,maxRent:query.get('maxRent') || undefined});
+        if (active) { setProperties(res.data.data || []); setPagination(res.data.pagination); }
+      } catch (e) { if (active) { setProperties([]); setError(e.response?.data?.error?.message || 'Unable to load properties. Please try again.'); } }
+      finally { if (active) setLoading(false); }
+    });
+    return () => { active = false; };
+  }, [queryString, retry]);
+  useEffect(() => {
+    let active = true;
+    if (!user) { setFavorites(new Set()); return; }
+    if (user) favoritesApi.list().then(res => { if (active) setFavorites(new Set((res.data?.data || []).map(f => f.propertyId || f.property?.id || f.id))); }).catch(() => {});
+    return () => { active = false; };
   }, [user]);
-
-  const handleToggleFavorite = async (e, propertyId) => {
-    e.stopPropagation();
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-    const isFav = favoriteIds.has(propertyId);
-    setFavoriteIds((prev) => {
-      const next = new Set(prev);
-      if (isFav) next.delete(propertyId);
-      else next.add(propertyId);
-      return next;
-    });
+  async function favorite(property) {
+    if (!user) { rememberPropertyReturn(`/properties/${property.id}`); navigate('/login'); return; }
+    setBusy(property.id);
     try {
-      if (isFav) {
-        await favoritesApi.removeFavorite(propertyId);
-      } else {
-        await favoritesApi.addFavorite(propertyId);
-      }
-    } catch {
-      setFavoriteIds((prev) => {
-        const next = new Set(prev);
-        if (isFav) next.add(propertyId);
-        else next.delete(propertyId);
-        return next;
-      });
-    }
-  };
-
-  /* Issue #14: Filter state */
-  const [searchParams] = useSearchParams();
-  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || searchParams.get('q') || '');
-  const [priceFilter, setPriceFilter] = useState(null);
-  const [typeFilter, setTypeFilter] = useState(null);
-  const [statusFilter, setStatusFilter] = useState(null);
-  const [showFilters, setShowFilters] = useState(false);
-
-  /* Issue #13: Fetch real data */
-  const fetchProperties = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await propertyApi.list({
-        limit: 50,
-        status: statusFilter || undefined,
-      });
-      if (res?.data?.data) {
-        setProperties(res.data.data);
-      }
-    } catch (err) {
-      setError(err.response?.data?.error?.message || 'Failed to load properties');
-    } finally {
-      setLoading(false);
-    }
-  }, [statusFilter]);
-
-  useEffect(() => {
-    Promise.resolve().then(fetchProperties);
-  }, [fetchProperties]);
-
-  /* Issue #14: Apply filters */
-  const filteredProperties = useMemo(() => {
-    return properties.filter((p) => {
-      /* Search by title, city, state, address */
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        const searchable = [p.title, p.city, p.state, p.address]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase();
-        if (!searchable.includes(q)) return false;
-      }
-
-      /* Price range filter */
-      if (priceFilter !== null) {
-        const range = PRICE_RANGES[priceFilter];
-        if (range && (p.rent < range.min || p.rent > range.max)) return false;
-      }
-
-      /* Property type filter */
-      if (typeFilter) {
-        const pType = (p.property_type || '').toLowerCase();
-        if (!pType.includes(typeFilter.toLowerCase())) return false;
-      }
-
-      /* Status filter */
-      if (statusFilter) {
-        if (p.status.toLowerCase() !== statusFilter.toLowerCase()) return false;
-      }
-
-      return true;
-    });
-  }, [properties, searchQuery, priceFilter, typeFilter, statusFilter]);
-
-  /* Collect unique cities for area tabs */
-  const cities = useMemo(() => {
-    const citySet = new Set();
-    properties.forEach((p) => {
-      if (p.city) citySet.add(p.city);
-    });
-    return Array.from(citySet).slice(0, 6);
-  }, [properties]);
-
-  /* Currency formatter */
-  const formatRent = (rent) => {
-    try {
-      return new Intl.NumberFormat('ms-MY', {
-        style: 'currency',
-        currency: 'MYR',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(rent);
-    } catch {
-      return `RM ${Math.round(rent)}`;
-    }
-  };
-
-  /* Status display */
-  const statusInfo = (status) => {
-    const info = propertyStatusInfo(status);
-    return { text: info.label, color: info.color };
-  };
-
-  /* Reset filters */
-  const resetFilters = () => {
-    setSearchQuery('');
-    setPriceFilter(null);
-    setTypeFilter(null);
-    setStatusFilter(null);
-  };
-
-  const hasActiveFilters = searchQuery || priceFilter !== null || typeFilter || statusFilter;
-
-  return (
-    <main className="guest-properties-page" data-customize-id="global.page">
-      <header className="guest-properties-navbar" data-customize-id="global.header">
-        <Link to="/" className="guest-properties-logo" data-customize-id="global.brand">
-          PRMS
-        </Link>
-
-        <nav className="guest-properties-tabs" data-customize-id="global.tabs">
-          <button type="button" className="active">
-            <Home size={22} />
-            Homes
-          </button>
-          <button type="button">
-            <Sparkles size={22} />
-            Experiences
-          </button>
-          <button type="button">
-            <Building2 size={22} />
-            Services
-          </button>
-        </nav>
-
-        <div className="guest-properties-actions" data-customize-id="global.top-actions">
-          <Link to="/register">Become a host</Link>
-          <button type="button" className="circle-btn">
-            <Globe2 size={21} />
-          </button>
-          <div className="guest-user-menu">
-            <button type="button" className="menu-btn">
-              <Menu size={22} />
-              <UserCircle size={28} />
-            </button>
-            <div className="guest-menu-dropdown">
-              <Link to="/register">Join now</Link>
-              <Link to="/login">Log in</Link>
-              <span></span>
-              <a href="#">Help Center</a>
-              <a href="#">Gift cards</a>
-              <a href="#">Safety guide</a>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Issue #13: Search panel connected to data */}
-      <section className="guest-search-panel" data-customize-id="home.search">
-        <div className="guest-search-pill">
-          <div>
-            <span>Where</span>
-            <input
-              type="text"
-              placeholder="Search destinations"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <motion.button
-            type="button"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.94 }}
-            onClick={() => {}}
-          >
-            <Search size={22} />
-          </motion.button>
-        </div>
-      </section>
-
-      {/* Filter bar with area tabs */}
-      <section className="guest-filter-bar" data-customize-id="search.filters">
-        <div className="guest-area-tabs">
-          {cities.map((city) => (
-            <button
-              type="button"
-              className={searchQuery === city ? 'active' : ''}
-              key={city}
-              onClick={() => setSearchQuery(searchQuery === city ? '' : city)}
-            >
-              {city}
-            </button>
-          ))}
-        </div>
-
-        <button
-          type="button"
-          className="filter-btn"
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          <SlidersHorizontal size={19} />
-          Filters
-          {hasActiveFilters && <span className="filter-badge" />}
-        </button>
-      </section>
-
-      {/* Issue #14: Expandable filter panel */}
-      {showFilters && (
-        <motion.section
-          className="filter-panel-expanded"
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: 'auto', opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-        >
-          <div className="filter-panel-inner">
-            <div className="filter-group">
-              <h3>Price range</h3>
-              <div className="filter-options">
-                <button
-                  type="button"
-                  className={priceFilter === null ? 'active' : ''}
-                  onClick={() => setPriceFilter(null)}
-                >
-                  Any price
-                </button>
-                {PRICE_RANGES.map((range, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    className={priceFilter === idx ? 'active' : ''}
-                    onClick={() => setPriceFilter(priceFilter === idx ? null : idx)}
-                  >
-                    {range.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="filter-group">
-              <h3>Property type</h3>
-              <div className="filter-options">
-                <button
-                  type="button"
-                  className={!typeFilter ? 'active' : ''}
-                  onClick={() => setTypeFilter(null)}
-                >
-                  Any type
-                </button>
-                {PROPERTY_TYPES.map((type) => (
-                  <button
-                    key={type}
-                    type="button"
-                    className={typeFilter === type ? 'active' : ''}
-                    onClick={() => setTypeFilter(typeFilter === type ? null : type)}
-                  >
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="filter-group">
-              <h3>Availability</h3>
-              <div className="filter-options">
-                <button
-                  type="button"
-                  className={!statusFilter ? 'active' : ''}
-                  onClick={() => setStatusFilter(null)}
-                >
-                  Any status
-                </button>
-                {PROPERTY_STATUSES.map((status) => (
-                  <button
-                    type="button"
-                    key={status.value}
-                    className={statusFilter === status.value ? 'active' : ''}
-                    onClick={() => setStatusFilter(statusFilter === status.value ? null : status.value)}
-                  >
-                    {status.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {hasActiveFilters && (
-              <button type="button" className="reset-filters-btn" onClick={resetFilters}>
-                <X size={14} />
-                Clear all filters
-              </button>
-            )}
-
-            <p className="filter-count">
-              Showing {filteredProperties.length} of {properties.length} properties
-            </p>
-          </div>
-        </motion.section>
-      )}
-
-      {/* Loading state */}
-      {loading && (
-        <div className="guest-properties-loading">
-          <Loader2 size={32} className="spin" />
-          <p>Loading properties...</p>
-        </div>
-      )}
-
-      {/* Error state */}
-      {error && !loading && (
-        <div className="guest-properties-error">
-          <p>{error}</p>
-          <button onClick={fetchProperties}>Try again</button>
-        </div>
-      )}
-
-      {/* Issue #13: Property listing with real data */}
-      {!loading && !error && (
-        <section className="guest-listing-section" data-customize-id="home.listings">
-          <div className="guest-listing-title">
-            <div>
-              <h1>
-                {filteredProperties.length === properties.length
-                  ? 'Popular homes in Malaysia'
-                  : `${filteredProperties.length} properties found`}
-              </h1>
-              <p>Verified rental homes managed under PRMS Malaysia.</p>
-            </div>
-            <div className="guest-safe-badge">
-              <ShieldCheck size={19} />
-              Verified listings
-            </div>
-          </div>
-
-          {filteredProperties.length === 0 ? (
-            <div className="no-properties">
-              <p>No properties match your filters.</p>
-              <button onClick={resetFilters}>Reset filters</button>
-            </div>
-          ) : (
-            <div className="guest-property-grid">
-              {filteredProperties.map((property, index) => {
-                const status = statusInfo(property.status);
-                const firstImg = getImageUrl(property.images?.[0]?.url);
-                return (
-                  <motion.article
-                    key={property.id}
-                    className="guest-property-card"
-                    initial={{ opacity: 0, y: 28 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.03, duration: 0.35 }}
-                    whileHover={{ y: -7 }}
-                    onClick={() => navigate(`/properties/${property.id}`)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <div className="guest-property-image">
-                      {firstImg ? (
-                        <img src={firstImg} alt={property.title} />
-                      ) : (
-                        <div className="image-placeholder">
-                          <Building2 size={48} />
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        className="guest-card-flag-btn"
-                        title="Report this listing"
-                        aria-label="Report this listing"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setReportProperty(property);
-                        }}
-                      >
-                        <Flag size={15} />
-                      </button>
-                      <button
-                        type="button"
-                        className={`heart-btn ${favoriteIds.has(property.id) ? 'favorited' : ''}`}
-                        onClick={(e) => handleToggleFavorite(e, property.id)}
-                        aria-label="Save to favorites"
-                      >
-                        <Heart
-                          size={20}
-                          fill={favoriteIds.has(property.id) ? '#ef4444' : 'none'}
-                          stroke={favoriteIds.has(property.id) ? '#ef4444' : 'currentColor'}
-                        />
-                      </button>
-                    </div>
-
-                    <div className="guest-property-body">
-                      <div className="guest-property-main">
-                        <h3>{property.title}</h3>
-                        <div className="guest-property-rating">
-                          <Star size={14} fill="#F59E0B" color="#F59E0B" />
-                          <span>{Number(property.rating || 4.8).toFixed(1)}</span>
-                          <span className="guest-review-count">({property.reviewsCount ?? property.reviews?.length ?? 0})</span>
-                        </div>
-                      </div>
-
-                      <p>
-                        <MapPin size={15} />
-                        {property.city
-                          ? `${property.city}${property.state ? `, ${property.state}` : ''}`
-                          : property.address}
-                      </p>
-
-                      <p>
-                        <CalendarDays size={15} />
-                        <span style={{ color: status.color }}>{status.text}</span>
-                      </p>
-
-                      <p>
-                        <Users size={15} />
-                        {(property.property_type || 'Apartment').charAt(0).toUpperCase() +
-                          (property.property_type || 'Apartment').slice(1)}
-                      </p>
-
-                      <div className="guest-property-footer">
-                        <strong>{formatRent(property.rent)} / month</strong>
-                        <div className="guest-property-footer-actions">
-                          <span className="tenant-book-tag">Tenant Account to Book</span>
-                          <button
-                            type="button"
-                            className="guest-card-report-link"
-                            title="Report this listing"
-                            aria-label="Report this listing"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setReportProperty(property);
-                            }}
-                          >
-                            <Flag size={12} />
-                            <span>Report</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.article>
-                );
-              })}
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* Report Listing Modal */}
-      <ReportListingModal
-        isOpen={!!reportProperty}
-        onClose={() => setReportProperty(null)}
-        property={reportProperty}
-      />
-    </main>
-  );
+      if (favorites.has(property.id)) await favoritesApi.removeFavorite(property.id);
+      else await favoritesApi.addFavorite(property.id);
+      setFavorites(previous => { const next = new Set(previous); if(next.has(property.id)) next.delete(property.id); else next.add(property.id); return next; });
+    } catch { setError('Unable to update favorites. Please try again.'); }
+    finally { setBusy(''); }
+  }
+  return <div className="guest-properties-page"><PublicHeader /><main className="public-catalogue">
+    <h1>Rental properties</h1><p>Browse available homes or explore other published listings.</p>
+    <form className="public-search-form" key={search} onSubmit={e => { e.preventDefault(); update({search:new FormData(e.currentTarget).get('search').trim()}); }}>
+      <label htmlFor="catalogue-search">Location, property name or type</label><div><input id="catalogue-search" type="search" name="search" defaultValue={search} placeholder="Search properties" /><button className="public-primary" type="submit"><Search size={18} /> Search</button></div>
+    </form>
+    <details className="public-filter-panel" open><summary>Filter properties</summary><div className="public-filter-fields">
+      <label>Availability<select value={status} onChange={e => update({status:e.target.value})}><option value="AVAILABLE">Available</option><option value="ALL">All published listings</option><option value="RENTED">Rented</option><option value="MAINTENANCE">Maintenance</option></select></label>
+      <label>Property type<select value={params.get('type') || ''} onChange={e => update({type:e.target.value})}><option value="">All types</option>{PROPERTY_TYPES.map(type => <option key={type.value} value={type.value}>{type.label}</option>)}</select></label>
+      <label>Minimum monthly rent (RM)<input type="number" min="0" step="100" value={params.get('minRent') || ''} onChange={e => update({minRent:e.target.value})} /></label>
+      <label>Maximum monthly rent (RM)<input type="number" min="0" step="100" value={params.get('maxRent') || ''} onChange={e => update({maxRent:e.target.value})} /></label>
+    </div><button type="button" className="btn btn-outline" onClick={() => setParams({})}>Reset filters</button></details>
+    {error && <div role="alert"><p>{error}</p><button type="button" className="public-primary" onClick={() => setRetry(retry+1)}>Try Again</button></div>}
+    {loading ? <p role="status">Loading properties…</p> : <><p role="status">{pagination.total} properties found{pagination.total ? ` · Page ${page} of ${pagination.totalPages}` : ''}</p>
+      {!properties.length && !error && <p>No properties match your filters. Try another location or reset the filters.</p>}
+      <div className="guest-property-grid">{properties.map(property => {
+        const info = propertyStatusInfo(property.status);
+        return <article className="guest-property-card" key={property.id}><div className="guest-property-image">
+          <Link to={`/properties/${property.id}`} aria-label={`View ${property.title}`}><PrivateImage src={getImageUrl(property.images?.[0]?.url)} fallbackSources={(property.images||[]).slice(1).map(image => getImageUrl(image.url))} alt={property.title} loading="lazy" /></Link>
+          <button type="button" className="heart-btn" aria-label={`${favorites.has(property.id) ? 'Remove from' : 'Save to'} favorites: ${property.title}`} aria-pressed={favorites.has(property.id)} disabled={busy===property.id} onClick={() => favorite(property)}><Heart size={20} fill={favorites.has(property.id) ? 'currentColor' : 'none'} /></button>
+        </div><div className="guest-property-body"><h2><Link to={`/properties/${property.id}`}>{property.title}</Link></h2>
+          <p>{property.reviewsCount ? `★ ${Number(property.rating).toFixed(1)} (${property.reviewsCount} reviews)` : 'No reviews yet'}</p>
+          <p><MapPin size={15} /> {[property.city,property.state].filter(Boolean).join(', ') || property.address}</p><p>{propertyTypeLabel(property.property_type)}</p><p className="public-listing-status">{info.label}</p>
+          <div className="guest-property-footer"><strong>RM {Number(property.rent).toLocaleString()} / month</strong><button type="button" className="guest-card-report-link" onClick={() => setReport(property)}><Flag size={14} /> Report</button></div>
+        </div></article>;
+      })}</div>
+      <nav className="public-pagination" aria-label="Property pages"><button type="button" className="btn btn-outline" disabled={page<=1} onClick={() => update({page:page-1})}>Previous</button><span>Page {page} of {Math.max(1,pagination.totalPages)}</span><button type="button" className="btn btn-outline" disabled={page>=pagination.totalPages} onClick={() => update({page:page+1})}>Next</button></nav>
+    </>}
+    <ReportListingModal isOpen={!!report} onClose={() => setReport(null)} property={report} />
+  </main><PublicFooter /></div>;
 }
-
-export default GuestProperties;

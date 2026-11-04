@@ -244,7 +244,8 @@ export function SettingsProvider({ children }) {
       // actually applies is resolved reactively based on the current
       // data-theme attribute, see the `resolvedTheme` memo above)
       try {
-        const themeResp = await adminApi.getTheme();
+        const hasSession = sessionStorage.getItem('accessToken') || localStorage.getItem('accessToken');
+        const themeResp = hasSession ? await adminApi.getTheme() : null;
         if (themeResp?.data?.data) {
           setCurrentThemeId(themeResp.data.data.id);
           const latestVersion = themeResp.data.data.versions?.[0];

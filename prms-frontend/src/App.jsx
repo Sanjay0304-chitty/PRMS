@@ -15,6 +15,8 @@ import PublicPageTransition from './components/PublicPageTransition';
 /*  Public pages  */
 import GuestHome from './pages/GuestHome';
 import GuestProperties from './pages/GuestProperties';
+import PublicHelp from './pages/PublicHelp';
+import { PublicHeader, PublicFooter } from './components/PublicLayout';
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
 import LandlordCategories from './pages/LandlordCategories';
@@ -119,6 +121,7 @@ function AppRoutes() {
 
       {/*  Issue #5: Public guest-properties route  */}
       <Route path="/properties" element={<GuestProperties />} />
+      <Route path="/help" element={<PublicHelp />} />
 
       {/*  Issue #12: PropertyDetail page (lazy-loaded)  */}
       <Route
@@ -139,8 +142,8 @@ function AppRoutes() {
       />
 
       {/*  PDPA: Privacy Notice + Terms, viewable whether logged in or not  */}
-      <Route path="/privacy-notice" element={<PrivacyNotice />} />
-      <Route path="/terms" element={<TermsAndConditions />} />
+      <Route path="/privacy-notice" element={<><PublicHeader /><SuspenseWrapper><PrivacyNotice /></SuspenseWrapper><PublicFooter /></>} />
+      <Route path="/terms" element={<><PublicHeader /><SuspenseWrapper><TermsAndConditions /></SuspenseWrapper><PublicFooter /></>} />
 
       {/*  Public routes (auth-001: RoleSelection -> Register -> Login)  */}
       <Route

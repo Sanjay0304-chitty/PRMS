@@ -12,7 +12,10 @@ const PrivateImage = forwardRef(function PrivateImage({ src, alt = '', fallbackS
     if (index + 1 < candidates.length) setAttempt({ src, index: index + 1 });
     else onError?.(event);
   }
-  return <img {...props} ref={ref} alt={alt} src={failed ? unavailable : source || undefined} onError={handleError} />;
+  return <img {...props} ref={ref} alt={alt} src={failed || !candidates.length ? unavailable : source || undefined} onError={event => {
+    if (index + 1 >= candidates.length) event.currentTarget.src = unavailable;
+    handleError(event);
+  }} />;
 });
 
 export default PrivateImage;

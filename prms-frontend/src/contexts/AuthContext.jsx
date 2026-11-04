@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useReducer, useCallback } from 'react';
 import { authApi, getApiError } from '../api';
 import { roleToPath } from '../config/routes';
+import { consumePropertyReturn } from '../utils/publicJourney';
 
 /* ------ Actions ------ */
 
@@ -124,7 +125,7 @@ function AuthProvider({ children }) {
 
         // Redirect based on role — NO localStorage dashboard path
         if (navigate && user) {
-          const path = roleToPath(user.role);
+          const path = consumePropertyReturn(user.role) || roleToPath(user.role);
           navigate(path);
         }
 
@@ -169,7 +170,7 @@ function AuthProvider({ children }) {
             localStorage.setItem('prmsOnboarding', 'true');
             navigate('/role-selection');
           } else {
-            const path = roleToPath(user.role);
+            const path = consumePropertyReturn(user.role) || roleToPath(user.role);
             navigate(path);
           }
         }

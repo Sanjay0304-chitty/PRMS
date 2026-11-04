@@ -18,11 +18,7 @@ import PrivateImage from './PrivateImage';
 
 const AnimatedPrivateImage = motion.create(PrivateImage);
 
-const PLACEHOLDER_IMAGES = [
-  'https://images.pexels.com/photos/190317/pexels-photo-190317.jpeg?auto=compress&cs=tinysrgb&w=1200',
-  'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=600',
-  'https://images.pexels.com/photos/3762750/pexels-photo-3762750.jpeg?auto=compress&cs=tinysrgb&w=600',
-];
+const PLACEHOLDER_IMAGES = [];
 
 function getImageUrl(img) {
   if (typeof img === 'string') return getFullUrl(img);

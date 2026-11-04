@@ -38,6 +38,8 @@ import { VideoUploader, DocumentUploader } from '../components/MediaUploader';
 import { getPropertyRoute, getMessagesRoute } from '../config/routes';
 import { isPropertyAvailable, propertyStatusInfo } from '../config/propertyStatus';
 import './PropertyDetail.css';
+import { PublicHeader, PublicFooter } from '../components/PublicLayout';
+import { rememberPropertyReturn } from '../utils/publicJourney';
 
 /* ================= AMENITY ICON MAP ================= */
 function amenityIcon(name) {
@@ -141,9 +143,9 @@ function BookingCard({ property, onBookClick, onReportClick }) {
             <div className="booking-price-line">
               <span className="booking-price-amount">{formatRM(monthlyRent)} / month</span>
               <span className="booking-rating">
-                <Star size={13} fill="#F59E0B" color="#F59E0B" />
-                {property.rating || '4.9'}{' '}
-                <span className="booking-rating-loc">{property.city || 'Bukit Bintang'}, {property.state || 'KL'}</span>
+                {!!property.reviewsCount && <Star size={13} fill="#F59E0B" color="#F59E0B" />}
+                {(property.reviewsCount ? Number(property.rating).toFixed(1) : 'No reviews yet')}{' '}
+                <span className="booking-rating-loc">{[property.city, property.state].filter(Boolean).join(', ')}</span>
               </span>
             </div>
           </div>
@@ -266,7 +268,7 @@ function BookingCard({ property, onBookClick, onReportClick }) {
                   type="button"
                   className="btn btn-outline"
                   onClick={() => {
-                    navigate('/login', { state: { returnUrl: `/properties/${property.id}`, role: 'tenant' } });
+                    rememberPropertyReturn(`/properties/${property.id}`); navigate('/login', { state: { returnUrl: `/properties/${property.id}`, role: 'tenant' } });
                   }}
                 >
                   Sign In
@@ -275,7 +277,7 @@ function BookingCard({ property, onBookClick, onReportClick }) {
                   type="button"
                   className="btn btn-primary"
                   onClick={() => {
-                    navigate('/register?role=Tenant', { state: { returnUrl: `/properties/${property.id}` } });
+                    rememberPropertyReturn(`/properties/${property.id}`); navigate('/role-selection?role=Tenant', { state: { returnUrl: `/properties/${property.id}` } });
                   }}
                 >
                   Register as Tenant
@@ -294,7 +296,7 @@ function BookingCard({ property, onBookClick, onReportClick }) {
                   type="button"
                   className="btn btn-primary"
                   onClick={() => {
-                    navigate('/login', { state: { returnUrl: `/properties/${property.id}` } });
+                    rememberPropertyReturn(`/properties/${property.id}`); navigate('/login', { state: { returnUrl: `/properties/${property.id}` } });
                   }}
                 >
                   Switch to Tenant Account
@@ -361,8 +363,6 @@ function PropertyDetail() {
   const [liked, setLiked] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
-  const [newsletterEmail, setNewsletterEmail] = useState('');
-  const [newsletterStatus, setNewsletterStatus] = useState(null); // null | 'success' | 'error'
   const [agentAssigned, setAgentAssigned] = useState(false);
   const [newReviewRating, setNewReviewRating] = useState(5);
   const [newReviewComment, setNewReviewComment] = useState('');
@@ -402,7 +402,7 @@ function PropertyDetail() {
 
   const handleToggleFavorite = async () => {
     if (!user) {
-      navigate('/login');
+      rememberPropertyReturn(`/properties/${property.id}`); navigate('/login');
       return;
     }
     const nextState = !liked;
@@ -470,19 +470,9 @@ function PropertyDetail() {
     }
   }
 
-  function handleNewsletterSubmit(e) {
-    e.preventDefault();
-    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newsletterEmail.trim());
-    if (!isValidEmail) {
-      setNewsletterStatus('error');
-      return;
-    }
-    setNewsletterStatus('success');
-    setNewsletterEmail('');
-  }
 
   /* Detect if rendered inside a role-protected PRMS layout.
-     When true, hide the EstateSync topbar/footer so the PRMS
+     When true, hide the public topbar/footer so the PRMS
      layout navbar/sidebar are the only navigation surfaces. */
   const isInRoleLayout = ['/admin/', '/landlord/', '/tenant/', '/agent/'].some(
     (prefix) => location.pathname.startsWith(prefix)
@@ -537,7 +527,7 @@ function PropertyDetail() {
   /* Owner info */
   const owner = property?.owner;
   /* Description */
-  const description = property?.description || '';
+  const description = property?.description?.trim() || 'No description has been provided. Contact the property manager for more details.';
   const shortDesc = description.length > 350 ? description.slice(0, 350) + '...' : description;
 
   /* Star rating and reviews */
@@ -577,22 +567,7 @@ function PropertyDetail() {
 
   return (
     <main className="property-detail-page" data-customize-id="global.page">
-      {/* ── Top Bar (EstateSync-style, only on public routes) ── */}
-      {!isInRoleLayout && (
-        <header className="pd-topbar" data-customize-id="global.header">
-          <Link to="/" className="pd-logo" data-customize-id="global.brand">EstateSync</Link>
-          <nav className="pd-topnav" data-customize-id="global.tabs">
-            <Link to="/properties" className="active">Properties</Link>
-            <Link to="/dashboard">Dashboard</Link>
-            <Link to="/bookings">Bookings</Link>
-          </nav>
-          <div className="pd-topactions" data-customize-id="global.top-actions">
-            <button type="button" className="pd-icon-btn">&lt;Search size={18} /&gt;</button>
-            <button type="button" className="pd-icon-btn">&lt;UserCircle size={20} /&gt;</button>
-            <button type="button" className="pd-switch-btn">Switch Role</button>
-          </div>
-        </header>
-      )}
+      {!isInRoleLayout && <PublicHeader />}
 
       <motion.div
         className="pd-content"
@@ -733,22 +708,22 @@ function PropertyDetail() {
                 <div className="pd-badge">
                   <ShieldCheck size={22} className="pd-badge-icon" />
                   <div>
-                    <div className="pd-badge-title">Verified Property</div>
-                    <div className="pd-badge-desc">This property has been verified and approved.</div>
+                    <div className="pd-badge-title">Rental property</div>
+                    <div className="pd-badge-desc">Review the listing details and contact the property manager.</div>
                   </div>
                 </div>
                 <div className="pd-badge">
                   <MapPin size={22} className="pd-badge-icon" />
                   <div>
-                    <div className="pd-badge-title">Great location</div>
-                    <div className="pd-badge-desc">Conveniently located with great access to amenities.</div>
+                    <div className="pd-badge-title">Location details</div>
+                    <div className="pd-badge-desc">Check the address and map below before arranging a viewing.</div>
                   </div>
                 </div>
                 <div className="pd-badge">
                   <Clock size={22} className="pd-badge-icon" />
                   <div>
-                    <div className="pd-badge-title">Free cancellation</div>
-                    <div className="pd-badge-desc">Full refund if you change your mind within 48 hours.</div>
+                    <div className="pd-badge-title">Review your tenancy terms</div>
+                    <div className="pd-badge-desc">Cancellation and refund arrangements depend on your tenancy agreement.</div>
                   </div>
                 </div>
               </div>
@@ -796,7 +771,7 @@ function PropertyDetail() {
                     ))}
                   </div>
                   {amenities.length > 6 && (
-                    <button className="pd-amenity-more">Show all amenities</button>
+                    <span>All amenities listed above</span>
                   )}
                 </div>
                 <div className="pd-divider" />
@@ -983,63 +958,7 @@ function PropertyDetail() {
         </div>
       </motion.div>
 
-      {/* Footer (EstateSync-style, only on public routes) */}
-      {!isInRoleLayout && (
-        <footer className="pd-footer">
-          <div className="pd-footer-inner">
-            <div className="pd-footer-col">
-              <h4>EstateSync</h4>
-              <p>A trusted platform for residential property management and long-term rentals.</p>
-            </div>
-            <div className="pd-footer-col">
-              <h4>Support</h4>
-              <a href="#">Help Center</a>
-              <a href="#">Cancellation options</a>
-              <a href="#">Safety information</a>
-            </div>
-            <div className="pd-footer-col">
-              <h4>Hosting</h4>
-              <a href="#">List your property</a>
-              <a href="#">Hosting resources</a>
-              <a href="#">Community forum</a>
-            </div>
-            <div className="pd-footer-col">
-              <h4>Newsletter</h4>
-              <p>Get the latest travel news and property deals.</p>
-              <form className="pd-footer-newsletter" onSubmit={handleNewsletterSubmit}>
-                <input
-                  type="email"
-                  placeholder="Email address"
-                  value={newsletterEmail}
-                  onChange={(e) => {
-                    setNewsletterEmail(e.target.value);
-                    setNewsletterStatus(null);
-                  }}
-                />
-                <button type="submit">Join</button>
-              </form>
-              {newsletterStatus === 'success' && (
-                <p className="pd-footer-newsletter-msg pd-footer-newsletter-msg--success">
-                  Thanks for subscribing!
-                </p>
-              )}
-              {newsletterStatus === 'error' && (
-                <p className="pd-footer-newsletter-msg pd-footer-newsletter-msg--error">
-                  Please enter a valid email address.
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="pd-footer-bottom">
-            <span>© 2024 EstateSync Inc. All rights reserved.</span>
-            <div className="pd-footer-links">
-              <a href="#">Privacy</a>
-              <a href="#">Terms</a>
-              <a href="#">Sitemap</a>
-            </div>
-          </div>
-        </footer>
-      )}
+      {!isInRoleLayout && <PublicFooter />}
 
       {/* Booking Modal */}
       {canApplyToRent && (

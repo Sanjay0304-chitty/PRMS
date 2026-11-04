@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { intendedPublicRole, consumePropertyReturn } from '../utils/publicJourney';
 import { motion } from 'framer-motion';
 import {
   ArrowRight,
@@ -16,7 +17,8 @@ function RoleSelection() {
   const { updateProfile } = useAuth();
   const { setSelectedRole: setContextRole } = useRegistration();
   /* Issue #4: Default to null so user must explicitly pick a role */
-  const [selectedRole, setSelectedRole] = useState(null);
+  const [params] = useSearchParams();
+  const [selectedRole, setSelectedRole] = useState(() => intendedPublicRole(params.get('role'))?.toLowerCase() || null);
 
   const roles = [
     {
@@ -60,7 +62,7 @@ function RoleSelection() {
       /* Clear onboarding flags */
       localStorage.removeItem('prmsOnboarding');
       /* Navigate to the selected role's dashboard */
-      navigate(roleToPath(title));
+      navigate(consumePropertyReturn(title) || roleToPath(title));
     } else {
       /* Regular registration flow: save role to context (syncs to sessionStorage) and go to Register */
       setContextRole(title);
