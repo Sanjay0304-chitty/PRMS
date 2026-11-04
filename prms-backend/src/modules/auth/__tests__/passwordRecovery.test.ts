@@ -13,6 +13,7 @@ beforeEach(() => {
   jest.restoreAllMocks(); jest.clearAllMocks();
   email = `recovery-${++sequence}@example.test`;
   process.env.SMTP_HOST = 'mail.example.test'; process.env.SMTP_FROM = 'PRMS <no-reply@example.test>';
+  process.env.SMTP_USER = 'sender@example.test'; process.env.SMTP_PASSWORD = 'mock-only';
   (prisma.user.findUnique as jest.Mock).mockResolvedValue({ id: 'user-1', email, is_active: true });
   (nodemailer.createTransport as jest.Mock).mockReturnValue({ sendMail });
   sendMail.mockImplementation(async (mail: { text: string }) => { code = mail.text.match(/\b\d{6}\b/)![0]; });
@@ -81,4 +82,19 @@ test('failed delivery invalidates the pending code', async () => {
   sendMail.mockRejectedValueOnce(new Error('SMTP offline'));
   await expect(generateOtpCode(email)).rejects.toThrow('Unable to deliver');
   await expect(verifyOtpCode(email, '000000')).rejects.toThrow('invalid or expired');
+});
+
+
+test('SMTP username without a password fails before attempting delivery', async () => {
+  const previousUser = process.env.SMTP_USER;
+  const previousPassword = process.env.SMTP_PASSWORD;
+  process.env.SMTP_USER = 'sender@example.test';
+  delete process.env.SMTP_PASSWORD;
+  try {
+    await expect(generateOtpCode(email)).rejects.toThrow('not configured');
+    expect(sendMail).not.toHaveBeenCalled();
+  } finally {
+    if (previousUser === undefined) delete process.env.SMTP_USER; else process.env.SMTP_USER = previousUser;
+    if (previousPassword === undefined) delete process.env.SMTP_PASSWORD; else process.env.SMTP_PASSWORD = previousPassword;
+  }
 });

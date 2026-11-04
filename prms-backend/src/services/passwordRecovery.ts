@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import nodemailer from 'nodemailer';
+import tls from 'node:tls';
 import { prisma } from '../db';
 import { isStrongPassword } from '../utils/validators';
 
@@ -10,7 +11,7 @@ const normalize = (email: string) => email.trim().toLowerCase();
 const equal = (a: string, b: string) => crypto.timingSafeEqual(Buffer.from(digest(a)), Buffer.from(digest(b)));
 
 export async function generateOtpCode(email: string) {
-  if (!process.env.SMTP_HOST || !process.env.SMTP_FROM) {
+  if (!process.env.SMTP_HOST || !process.env.SMTP_FROM || (process.env.SMTP_USER && !process.env.SMTP_PASSWORD)) {
     throw new Error('Password recovery email is not configured. Please contact the administrator.');
   }
   const key = normalize(email);
@@ -29,6 +30,10 @@ export async function generateOtpCode(email: string) {
       port: Number(process.env.SMTP_PORT || 587),
       secure: process.env.SMTP_SECURE === 'true' || process.env.SMTP_PORT === '465',
       requireTLS: process.env.NODE_ENV === 'production',
+      // Honour OS-trusted certificate authorities without disabling TLS checks.
+      tls: typeof tls.getCACertificates === 'function' ? {
+        ca: [...tls.getCACertificates('default'), ...tls.getCACertificates('system')],
+      } : undefined,
       auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD } : undefined,
       connectionTimeout: 10000,
       socketTimeout: 15000,
