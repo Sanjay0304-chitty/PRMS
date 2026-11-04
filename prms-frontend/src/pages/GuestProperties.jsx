@@ -1,3 +1,4 @@
+import { usePropertyGridPageSize } from '../hooks/usePropertyGridPageSize';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Heart, Flag, Search, MapPin } from 'lucide-react';
@@ -14,6 +15,7 @@ import { PublicHeader, PublicFooter } from '../components/PublicLayout';
 import './GuestProperties.css';
 
 export default function GuestProperties() {
+  const { gridRef, pageSize } = usePropertyGridPageSize();
   const [params, setParams] = useSearchParams();
   const queryString = params.toString();
   const navigate = useNavigate();
@@ -44,7 +46,7 @@ export default function GuestProperties() {
       setLoading(true); setError('');
       try {
         const selected = query.get('status') || 'AVAILABLE';
-        const res = await propertyApi.list({page:Math.max(1,Number.parseInt(query.get('page'),10)||1),limit:12,publicOnly:true,
+        const res = await propertyApi.list({page:Math.max(1,Number.parseInt(query.get('page'),10)||1),limit:pageSize,publicOnly:true,
           search:query.get('search') || query.get('q') || undefined, type:query.get('type') || undefined,
           status:selected === 'ALL' ? undefined : selected,
           minRent:query.get('minRent') || undefined,maxRent:query.get('maxRent') || undefined});
@@ -53,7 +55,7 @@ export default function GuestProperties() {
       finally { if (active) setLoading(false); }
     });
     return () => { active = false; };
-  }, [queryString, retry]);
+  }, [queryString, retry, pageSize]);
   useEffect(() => {
     let active = true;
     if (!user) { setFavorites(new Set()); return; }
@@ -84,7 +86,7 @@ export default function GuestProperties() {
     {error && <div role="alert"><p>{error}</p><button type="button" className="public-primary" onClick={() => setRetry(retry+1)}>Try Again</button></div>}
     {loading ? <p role="status">Loading properties…</p> : <><p role="status">{pagination.total} properties found{pagination.total ? ` · Page ${page} of ${pagination.totalPages}` : ''}</p>
       {!properties.length && !error && <p>No properties match your filters. Try another location or reset the filters.</p>}
-      <div className="guest-property-grid">{properties.map(property => {
+      <div ref={gridRef} className="guest-property-grid">{properties.map(property => {
         const info = propertyStatusInfo(property.status);
         return <article className="guest-property-card" key={property.id}><div className="guest-property-image">
           <Link to={`/properties/${property.id}`} aria-label={`View ${property.title}`}><PrivateImage src={getImageUrl(property.images?.[0]?.url)} fallbackSources={(property.images||[]).slice(1).map(image => getImageUrl(image.url))} alt={property.title} loading="lazy" /></Link>

@@ -1,3 +1,4 @@
+import { usePropertyGridPageSize } from '../hooks/usePropertyGridPageSize';
 import PrivateImage from '../components/PrivateImage';
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -55,7 +56,7 @@ function Properties() {
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
-  const perPage = 12
+  const { gridRef, pageSize: perPage } = usePropertyGridPageSize()
   const role = (user?.role || '').toLowerCase()
   const isAdmin = role.includes('admin')
   const isLandlord = role.includes('landlord')
@@ -152,7 +153,7 @@ function Properties() {
     } finally {
       setLoading(false)
     }
-  }, [activeStatus, activeType, currentPage, debouncedSearch, isLandlord])
+  }, [activeStatus, activeType, currentPage, debouncedSearch, isLandlord, perPage])
 
   // Debounce the raw search input into `debouncedSearch`
   useEffect(() => {
@@ -354,7 +355,7 @@ function Properties() {
               )}
 
               {/* ── Grid / List ── */}
-              <div className={`properties-${viewMode}`} role="list">
+              <div ref={viewMode === 'grid' ? gridRef : undefined} className={`properties-${viewMode}`} role="list">
                 {displayedProperties.map((p, i) => {
                   const pid = p._id || p.id || i
                   const stype = statusColor(p.status || 'available')

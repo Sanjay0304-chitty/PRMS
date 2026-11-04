@@ -319,3 +319,6 @@
 .mt-2 { margin-top: 8px; }
 .mt-4 { margin-top: 16px; }
 .ml-1 { margin-left: 4px; }
+
+/* Fill the assigned-property area without reserving empty card columns. */
+.agent-properties-page .booking-property-grid { grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); }

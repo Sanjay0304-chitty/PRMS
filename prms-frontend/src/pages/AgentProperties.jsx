@@ -43,7 +43,7 @@ export default function AgentProperties() {
     : properties;
 
   return (
-    <div className="page-shell">
+    <div className="page-shell agent-properties-page">
       <div className="page-header">
         <h1 className="page-title">Assigned Properties</h1>
         <p>Properties you manage on behalf of their landlords.</p>
