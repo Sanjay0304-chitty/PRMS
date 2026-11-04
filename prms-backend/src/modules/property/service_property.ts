@@ -9,8 +9,13 @@ export function normalizeDate(val: any): Date | undefined {
   return isNaN(d.getTime()) ? undefined : d;
 }
 
-export async function getAllProperties(page = 1, limit = 10, filters: { type?: string; search?: string; status?: string } = {}) {
+export async function getAllProperties(page = 1, limit = 10, filters: { type?: string; search?: string; status?: string; minRent?: number; maxRent?: number; publicOnly?: boolean } = {}) {
   const where: any = {};
+  if (filters.publicOnly) where.AND = [{ status: { not: 'INACTIVE' } }];
+  if (filters.minRent !== undefined || filters.maxRent !== undefined) where.rent = {
+    ...(filters.minRent !== undefined ? { gte: filters.minRent } : {}),
+    ...(filters.maxRent !== undefined ? { lte: filters.maxRent } : {}),
+  };
 
   // SQLite has no case-insensitive `mode` option, and stored property_type
   // values have inconsistent casing from older data — match common variants.
@@ -26,6 +31,8 @@ export async function getAllProperties(page = 1, limit = 10, filters: { type?: s
       { title: { contains: s } },
       { address: { contains: s } },
       { city: { contains: s } },
+      { state: { contains: s } },
+      { property_type: { contains: s } },
     ];
   }
 

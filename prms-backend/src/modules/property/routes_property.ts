@@ -9,9 +9,9 @@ import uploadProperty from '../../middleware/uploadProperty';
 const router = express.Router();
 const ctrl = new PropertyController();
 
-router.get('/', ctrl.list);
+router.get('/', optionalAuth, ctrl.list);
 router.get('/my-properties', authenticate, adminOrLandlord, ctrl.myProperties);
-router.get('/:id', ctrl.getById);
+router.get('/:id', optionalAuth, ctrl.getById);
 router.post('/:id/report', optionalAuth, ctrl.reportListing);
 router.post('/', authenticate, adminOrLandlord, createPropertyBody, ctrl.create);
 router.put('/:id', authenticate, adminOrLandlord, propertyIdParam, updatePropertyBody, ctrl.update);

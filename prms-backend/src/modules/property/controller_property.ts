@@ -42,8 +42,8 @@ export class PropertyController {
 
   list = async (req: Request, res: Response) => {
     try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 10));
       const type = typeof req.query.type === 'string' ? req.query.type : undefined;
       const search = typeof req.query.search === 'string' ? req.query.search : undefined;
       const requestedStatus = typeof req.query.status === 'string' ? req.query.status.toUpperCase() : undefined;
@@ -51,7 +51,13 @@ export class PropertyController {
       if (requestedStatus && !validStatuses.includes(requestedStatus)) {
         return res.status(400).json({ success: false, error: { message: 'Invalid property status' } });
       }
-      const { properties, total } = await propertyService.getAllProperties(page, limit, { type, search, status: requestedStatus });
+      const minRent = req.query.minRent === undefined ? undefined : Number(req.query.minRent);
+      const maxRent = req.query.maxRent === undefined ? undefined : Number(req.query.maxRent);
+      if ([minRent, maxRent].some(value => value !== undefined && (!Number.isFinite(value) || value < 0)) || (minRent !== undefined && maxRent !== undefined && minRent > maxRent)) {
+        return res.status(400).json({ success: false, error: { message: 'Enter a valid price range' } });
+      }
+      const publicOnly = !(req as AuthRequest).user || req.query.publicOnly === 'true';
+      const { properties, total } = await propertyService.getAllProperties(page, limit, { type, search, status: requestedStatus, minRent, maxRent, publicOnly });
       HELPERS(req).log({ action: 'VIEW_PROPERTIES', entity: 'Property', description: `Listed properties (page ${page})` });
       res.json(paginatedResponse(properties, page, limit, total));
     } catch (error: any) { HELPERS(req).log({ action: 'VIEW_PROPERTIES', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(500).json({ success: false, error: { message: error.message } }); }
@@ -60,7 +66,7 @@ export class PropertyController {
   getById = async (req: Request, res: Response) => {
     try {
       const property = await propertyService.getPropertyById(String(req.params.id));
-      if (!property) return res.status(404).json({ success: false, error: { message: 'Property not found' } });
+      if (!property || (property.status === 'INACTIVE' && !(req as AuthRequest).user)) return res.status(404).json({ success: false, error: { message: 'Property not found' } });
       HELPERS(req).log({ action: 'VIEW_PROPERTY', entity: 'Property', entityId: property?.id, description: `Viewed property ${property?.title || req.params.id}` });
       res.json(successResponse(property));
     } catch (error: any) { HELPERS(req).log({ action: 'VIEW_PROPERTY', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(500).json({ success: false, error: { message: error.message } }); }

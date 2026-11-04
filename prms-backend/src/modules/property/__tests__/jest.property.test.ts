@@ -73,6 +73,16 @@ function stubPropertyData(overrides = {}) {
 beforeEach(clearAll);
 
 describe('getAllProperties - status filtering', () => {
+  test('public filtering and rent bounds apply before pagination and counting', async () => {
+    await service.getAllProperties(3, 12, { publicOnly: true, minRent: 1000, maxRent: 2000, search: 'studio' });
+    const query = mockFindMany.mock.calls[0][0];
+    expect(query.skip).toBe(24);
+    expect(query.where.AND).toEqual([{ status: { not: 'INACTIVE' } }]);
+    expect(query.where.rent).toEqual({ gte: 1000, lte: 2000 });
+    expect(query.where.OR).toContainEqual({ property_type: { contains: 'studio' } });
+    expect(query.where.OR).toContainEqual({ state: { contains: 'studio' } });
+    expect(mockCount).toHaveBeenCalledWith({ where: query.where });
+  });
   test('applies the canonical status to both the property query and total count', async () => {
     await service.getAllProperties(2, 12, { status: 'MAINTENANCE' });
 

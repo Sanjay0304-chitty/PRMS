@@ -32,6 +32,10 @@ function getCacheKey(req: Request): string {
 
 export function responseCache(req: Request, res: Response, next: NextFunction) {
   // Only cache GET requests on public routes
+  if (req.headers.authorization) {
+    res.set('Cache-Control', 'private, no-store');
+    return next();
+  }
   if (!isGetRequest(req) || !isPublicRoute(req.originalUrl)) {
     return next();
   }
