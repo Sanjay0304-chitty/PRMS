@@ -1,3 +1,4 @@
+import { notifyPropertyManagers } from '../notification/property_notifications';
 import { Request, Response } from 'express';
 import { AuthRequest } from '../../middleware/auth';
 import * as bookingService from './service_booking';
@@ -53,8 +54,7 @@ export class BookingController {
       const booking = await bookingService.createBooking(req.body, req.user!.id);
       HELPERS(req).log({ action: 'CREATE_BOOKING', entity: 'Booking', entityId: booking.id, description: `Created booking for property ${booking.propertyId}` });
       if ((booking as any).property?.ownerId) {
-        await createNotification({
-          userId: (booking as any).property.ownerId,
+        await notifyPropertyManagers(booking.propertyId, {
           type: 'application_submitted',
           title: 'New rental application',
           message: `${(booking as any).user?.full_name || 'A tenant'} applied to rent "${(booking as any).property?.title}".`,
@@ -86,6 +86,7 @@ export class BookingController {
       if (!allowed) return res.status(403).json({ success: false, error: { message: 'Only the property owner or an administrator can confirm this booking' } });
       const booking = await bookingService.updateBooking(String(req.params.id), { status: 'CONFIRMED' });
       await createNotification({ userId: existing.userId, type: 'booking_confirmed', title: 'Booking confirmed', message: `Your booking for "${(existing as any).property.title}" was confirmed.` }).catch(() => {});
+      await notifyPropertyManagers(existing.propertyId, { type: 'booking_confirmed', title: 'Booking confirmed', message: `The booking for "${(existing as any).property.title}" was confirmed.` }).catch(() => {});
       HELPERS(req).log({ action: 'CONFIRM_BOOKING', entity: 'Booking', entityId: String(req.params.id), description: `Confirmed booking ${req.params.id}` });
       res.json(successResponse(booking, 'Booking confirmed'));
     } catch (error: any) { HELPERS(req).log({ action: 'CONFIRM_BOOKING', entity: 'Booking', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
@@ -100,6 +101,7 @@ export class BookingController {
       if (!allowed) return res.status(403).json({ success: false, error: { message: 'Only the property owner or an administrator can reject this booking' } });
       const booking = await bookingService.updateBooking(String(req.params.id), { status: 'CANCELLED' });
       await createNotification({ userId: existing.userId, type: 'booking_rejected', title: 'Booking not approved', message: `Your booking for "${(existing as any).property.title}" was not approved.` }).catch(() => {});
+      await notifyPropertyManagers(existing.propertyId, { type: 'booking_rejected', title: 'Booking not approved', message: `The booking for "${(existing as any).property.title}" was not approved.` }).catch(() => {});
       HELPERS(req).log({ action: 'REJECT_BOOKING', entity: 'Booking', entityId: String(req.params.id), description: `Rejected booking ${req.params.id}` });
       res.json(successResponse(booking, 'Booking rejected'));
     } catch (error: any) { HELPERS(req).log({ action: 'REJECT_BOOKING', entity: 'Booking', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
@@ -212,6 +214,7 @@ export class BookingController {
       if (!allowed) return res.status(403).json({ success: false, error: { message: 'You do not have authority over this property' } });
       const updated = await bookingService.requestInformation(String(req.params.id), req.body?.reviewer_notes);
       await createNotification({ userId: booking.userId, type: 'application_needs_info', title: 'More information needed', message: `The property manager needs more information for your application on "${(booking as any).property.title}": ${req.body?.reviewer_notes || ''}` }).catch(() => {});
+      await notifyPropertyManagers(booking.propertyId, { type: 'application_needs_info', title: 'More information needed', message: `Additional information was requested for the application on "${(booking as any).property.title}": ${req.body?.reviewer_notes || ''}` }).catch(() => {});
       HELPERS(req).log({ action: 'REQUEST_APPLICATION_INFO', entity: 'Booking', entityId: String(req.params.id), description: 'Requested more information from applicant' });
       res.json(successResponse(updated, 'Requested more information'));
     } catch (error: any) { HELPERS(req).log({ action: 'REQUEST_APPLICATION_INFO', entity: 'Booking', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
@@ -247,6 +250,7 @@ export class BookingController {
       if (!allowed) return res.status(403).json({ success: false, error: { message: 'Only the property owner, an assigned agent, or an administrator can approve this application' } });
       const updated = await bookingService.approveApplication(String(req.params.id), req.body);
       await createNotification({ userId: booking.userId, type: 'application_approved', title: 'Application approved', message: `Your application for "${(booking as any).property.title}" was approved. Review the offer terms and sign the tenancy agreement.` }).catch(() => {});
+      await notifyPropertyManagers(booking.propertyId, { type: 'application_approved', title: 'Application approved', message: `The application for "${(booking as any).property.title}" was approved. The Tenant can review the offer terms and tenancy agreement.` }).catch(() => {});
       HELPERS(req).log({ action: 'APPROVE_APPLICATION', entity: 'Booking', entityId: String(req.params.id), description: 'Approved application and issued rental offer' });
       res.json(successResponse(updated, 'Application approved'));
     } catch (error: any) { HELPERS(req).log({ action: 'APPROVE_APPLICATION', entity: 'Booking', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
@@ -261,6 +265,7 @@ export class BookingController {
       if (!allowed) return res.status(403).json({ success: false, error: { message: 'Only the property owner, an assigned agent, or an administrator can reject this application' } });
       const updated = await bookingService.rejectApplication(String(req.params.id), req.body?.reason);
       await createNotification({ userId: booking.userId, type: 'application_rejected', title: 'Application not approved', message: `Your application for "${(booking as any).property.title}" was not approved: ${req.body?.reason}` }).catch(() => {});
+      await notifyPropertyManagers(booking.propertyId, { type: 'application_rejected', title: 'Application not approved', message: `The application for "${(booking as any).property.title}" was not approved: ${req.body?.reason}` }).catch(() => {});
       HELPERS(req).log({ action: 'REJECT_APPLICATION', entity: 'Booking', entityId: String(req.params.id), description: `Rejected application: ${req.body?.reason}` });
       res.json(successResponse(updated, 'Application rejected'));
     } catch (error: any) { HELPERS(req).log({ action: 'REJECT_APPLICATION', entity: 'Booking', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
@@ -285,6 +290,7 @@ export class BookingController {
       if (!allowed) return res.status(403).json({ success: false, error: { message: 'Only the property owner, an assigned agent, or an administrator can confirm move-in' } });
       const updated = await bookingService.confirmMoveIn(String(req.params.id), req.body || {});
       await createNotification({ userId: booking.userId, type: 'move_in_confirmed', title: 'Move-in confirmed', message: `Move-in for "${(booking as any).property.title}" has been confirmed. Your tenancy is now active.` }).catch(() => {});
+      await notifyPropertyManagers(booking.propertyId, { type: 'move_in_confirmed', title: 'Move-in confirmed', message: `Move-in for "${(booking as any).property.title}" has been confirmed. The tenancy is now active.` }).catch(() => {});
       HELPERS(req).log({ action: 'CONFIRM_MOVE_IN', entity: 'Booking', entityId: String(req.params.id), description: 'Confirmed move-in; tenancy is now active' });
       res.json(successResponse(updated, 'Move-in confirmed'));
     } catch (error: any) { HELPERS(req).log({ action: 'CONFIRM_MOVE_IN', entity: 'Booking', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
@@ -299,7 +305,8 @@ export class BookingController {
       if (!allowed) return res.status(403).json({ success: false, error: { message: 'You do not have permission to submit notice for this tenancy' } });
       const updated = await bookingService.submitNotice(String(req.params.id), req.user!.id);
       const notifyUserId = req.user!.id === booking.userId ? (booking as any).property.ownerId : booking.userId;
-      await createNotification({ userId: notifyUserId, type: 'move_out_notice', title: 'Move-out notice submitted', message: `A move-out notice was submitted for "${(booking as any).property.title}".` }).catch(() => {});
+      if (notifyUserId === booking.userId) await createNotification({ userId: notifyUserId, type: 'move_out_notice', title: 'Move-out notice submitted', message: `A move-out notice was submitted for "${(booking as any).property.title}".` }).catch(() => {});
+      await notifyPropertyManagers(booking.propertyId, { type: 'move_out_notice', title: 'Move-out notice submitted', message: `A move-out notice was submitted for "${(booking as any).property.title}".` }).catch(() => {});
       HELPERS(req).log({ action: 'SUBMIT_NOTICE', entity: 'Booking', entityId: String(req.params.id), description: 'Submitted move-out notice' });
       res.json(successResponse(updated, 'Notice submitted'));
     } catch (error: any) { HELPERS(req).log({ action: 'SUBMIT_NOTICE', entity: 'Booking', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
@@ -314,6 +321,7 @@ export class BookingController {
       if (!allowed) return res.status(403).json({ success: false, error: { message: 'Only the property owner, an assigned agent, or an administrator can confirm move-out' } });
       const updated = await bookingService.confirmMoveOut(String(req.params.id), req.body || {});
       await createNotification({ userId: booking.userId, type: 'tenancy_closed', title: 'Tenancy closed', message: `Move-out for "${(booking as any).property.title}" has been confirmed and the tenancy is now closed.` }).catch(() => {});
+      await notifyPropertyManagers(booking.propertyId, { type: 'tenancy_closed', title: 'Tenancy closed', message: `Move-out for "${(booking as any).property.title}" has been confirmed and the tenancy is now closed.` }).catch(() => {});
       HELPERS(req).log({ action: 'CONFIRM_MOVE_OUT', entity: 'Booking', entityId: String(req.params.id), description: 'Confirmed move-out; tenancy closed' });
       res.json(successResponse(updated, 'Move-out confirmed and tenancy closed'));
     } catch (error: any) { HELPERS(req).log({ action: 'CONFIRM_MOVE_OUT', entity: 'Booking', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }

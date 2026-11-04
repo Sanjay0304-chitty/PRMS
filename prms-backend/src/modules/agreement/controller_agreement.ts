@@ -1,3 +1,4 @@
+import { notifyPropertyManagers } from '../notification/property_notifications';
 import { Response } from 'express';
 import { AuthRequest } from '../../middleware/auth';
 import * as agreementService from './service_agreement';
@@ -38,6 +39,7 @@ export class AgreementController {
       if (!allowed) return res.status(403).json({ success: false, error: { message: 'Only the property owner, an assigned agent, or an administrator can generate an agreement' } });
       const agreement = await agreementService.generateAgreement(bookingId, req.body?.terms);
       await createNotification({ userId: booking.userId, type: 'agreement_ready', title: 'Tenancy agreement ready', message: `A tenancy agreement (${agreement.reference}) is ready for your review and signature.` }).catch(() => {});
+      await notifyPropertyManagers(booking.propertyId, { type: 'agreement_ready', title: 'Tenancy agreement ready', message: `A tenancy agreement (${agreement.reference}) is ready for your review and signature.` }).catch(() => {});
       await log(req, 'GENERATE_AGREEMENT', agreement.id, `Generated agreement ${agreement.reference} v${agreement.version}`);
       res.status(201).json(successResponse(agreement, 'Agreement generated'));
     } catch (error: any) { await log(req, 'GENERATE_AGREEMENT', undefined, undefined, 'Failed', 'error', error.message); res.status(400).json({ success: false, error: { message: error.message } }); }
@@ -94,8 +96,7 @@ export class AgreementController {
     try {
       const updated = await agreementService.verifyTenantOtp(String(req.params.id), req.user!.id, req.body?.otp);
       await log(req, 'AGREEMENT_OTP_VERIFIED', String(req.params.id), 'Tenant signature completed via OTP verification');
-      const ownerId = (updated as any).booking.property.ownerId;
-      await createNotification({ userId: ownerId, type: 'agreement_tenant_signed', title: 'Tenant signed the agreement', message: `The tenant has signed agreement ${updated.reference}. Your signature is needed to complete it.` }).catch(() => {});
+      await notifyPropertyManagers((updated as any).booking.propertyId, { type: 'agreement_tenant_signed', title: 'Tenant signed the agreement', message: `The tenant has signed agreement ${updated.reference}. The agreement is awaiting the remaining signature.` }).catch(() => {});
       res.json(successResponse(updated, 'Signature verified'));
     } catch (error: any) { await log(req, 'AGREEMENT_OTP_VERIFIED', String(req.params.id), undefined, 'Failed', 'error', error.message); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
@@ -105,6 +106,7 @@ export class AgreementController {
       const updated = await agreementService.landlordSign(String(req.params.id), req.user!.id, req.body?.legalName);
       await log(req, 'AGREEMENT_LANDLORD_SIGNED', String(req.params.id), 'Landlord signature completed — agreement fully signed');
       await createNotification({ userId: (updated as any).booking.userId, type: 'agreement_fully_signed', title: 'Agreement fully signed', message: `Agreement ${updated.reference} has been fully signed by both parties.` }).catch(() => {});
+      await notifyPropertyManagers((updated as any).booking.propertyId, { type: 'agreement_fully_signed', title: 'Agreement fully signed', message: `Agreement ${updated.reference} has been fully signed by both parties.` }).catch(() => {});
       res.json(successResponse(updated, 'Agreement fully signed'));
     } catch (error: any) { await log(req, 'AGREEMENT_LANDLORD_SIGNED', String(req.params.id), undefined, 'Failed', 'error', error.message); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
@@ -115,6 +117,7 @@ export class AgreementController {
       if (!file) return res.status(400).json({ success: false, error: { message: 'No file provided' } });
       const url = `/uploads/agreements/${file.filename}`;
       const updated = await agreementService.uploadPhysicalCopy(String(req.params.id), req.user!.id, url);
+      await notifyPropertyManagers((updated as any).booking.propertyId, { type: 'agreement_physical_uploaded', title: 'Agreement copy awaiting verification', message: `A physical copy of agreement ${updated.reference} was uploaded for verification.` }, req.user!.id);
       await log(req, 'AGREEMENT_PHYSICAL_UPLOAD', String(req.params.id), 'Uploaded physically signed copy');
       res.json(successResponse(updated, 'Physical copy uploaded — awaiting verification'));
     } catch (error: any) { await log(req, 'AGREEMENT_PHYSICAL_UPLOAD', String(req.params.id), undefined, 'Failed', 'error', error.message); res.status(400).json({ success: false, error: { message: error.message } }); }
@@ -130,6 +133,7 @@ export class AgreementController {
       const updated = await agreementService.verifyPhysicalCopy(String(req.params.id), req.user!.id);
       await log(req, 'AGREEMENT_PHYSICAL_VERIFIED', String(req.params.id), 'Verified physically signed copy');
       await createNotification({ userId: (updated as any).booking.userId, type: 'agreement_fully_signed', title: 'Agreement verified', message: `Your physically signed agreement ${updated.reference} has been verified.` }).catch(() => {});
+      await notifyPropertyManagers((updated as any).booking.propertyId, { type: 'agreement_fully_signed', title: 'Agreement verified', message: `Your physically signed agreement ${updated.reference} has been verified.` }).catch(() => {});
       res.json(successResponse(updated, 'Physical copy verified'));
     } catch (error: any) { await log(req, 'AGREEMENT_PHYSICAL_VERIFIED', String(req.params.id), undefined, 'Failed', 'error', error.message); res.status(400).json({ success: false, error: { message: error.message } }); }
   };
@@ -142,6 +146,7 @@ export class AgreementController {
       const allowed = role === 'admin' || (agreement as any).booking.property.ownerId === req.user!.id;
       if (!allowed) return res.status(403).json({ success: false, error: { message: 'Only the property owner or an administrator can cancel this agreement' } });
       const updated = await agreementService.cancelAgreement(String(req.params.id));
+      await notifyPropertyManagers((updated as any).booking.propertyId, { type: 'agreement_cancelled', title: 'Agreement cancelled', message: `Agreement ${updated.reference} was cancelled.` }, req.user!.id);
       await log(req, 'CANCEL_AGREEMENT', String(req.params.id), 'Cancelled agreement');
       res.json(successResponse(updated, 'Agreement cancelled'));
     } catch (error: any) { await log(req, 'CANCEL_AGREEMENT', String(req.params.id), undefined, 'Failed', 'error', error.message); res.status(400).json({ success: false, error: { message: error.message } }); }

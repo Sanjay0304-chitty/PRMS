@@ -1,3 +1,4 @@
+import { notifyPaymentReceived } from '../notification/property_notifications';
 import { Request, Response } from 'express';
 import { AuthRequest } from '../../middleware/auth';
 import * as paymentService from './service_payment';
@@ -75,6 +76,7 @@ export class PaymentController {
         return res.status(403).json({ success: false, error: { message: 'You can only confirm payments for your own properties' } });
       }
       const payment = await paymentService.markAsPaid(existing.id);
+      await notifyPaymentReceived(existing.id);
       HELPERS(req).log({ action: 'MARK_PAYMENT_PAID', entity: 'Payment', entityId: String(req.params.id), description: `Payment marked as paid` });
       res.json(successResponse(payment, 'Payment marked as paid'));
     } catch (error: any) { HELPERS(req).log({ action: 'MARK_PAYMENT_PAID', entity: 'Payment', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(400).json({ success: false, error: { message: error.message } }); }
@@ -158,6 +160,7 @@ export class PaymentController {
         return res.status(400).json({ success: false, error: { message: 'Invalid outcome. Use SUCCESS, FAILED, or CANCELLED.' } });
       }
       const result = await paymentService.completeMockTransaction(transactionId, req.user!.id, outcome, req.body.failureMessage);
+      if (outcome === 'SUCCESS') await notifyPaymentReceived(result.payment.id);
       HELPERS(req).log({ action: outcome === 'SUCCESS' ? 'MOCK_PAYMENT_COMPLETED' : 'MOCK_PAYMENT_FAILED', entity: 'MockTransaction', entityId: transactionId, description: `Mock transaction ${outcome.toLowerCase()} (${result.payment.status})` });
       res.json(successResponse(result, outcome === 'SUCCESS' ? 'Payment successful!' : 'Transaction updated.'));
     } catch (error: any) {

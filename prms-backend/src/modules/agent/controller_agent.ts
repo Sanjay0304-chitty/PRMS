@@ -1,3 +1,4 @@
+import { notifyAgentAssignment } from '../notification/property_notifications';
 import { Request, Response } from 'express';
 import { AuthRequest } from '../../middleware/auth';
 import * as agentService from './service_agent';
@@ -92,6 +93,7 @@ export class AgentController {
       if (!propertyId) return res.status(400).json({ success: false, error: { message: 'propertyId is required' } });
       const agentId = String(req.params.id);
       await agentService.assignProperty(agentId, propertyId, req.user!.id, req.user!.role);
+      await notifyAgentAssignment(agentId, propertyId, true);
       await auditAssignment(req, 'ASSIGN_AGENT_PROPERTY', agentId, propertyId);
       res.json(successResponse(null, 'Property assigned to agent'));
     } catch (error: any) { 
@@ -104,6 +106,7 @@ export class AgentController {
       const agentId = String(req.params.id);
       const propertyId = String(req.params.propertyId);
       await agentService.unassignProperty(agentId, propertyId, req.user!.id, req.user!.role);
+      await notifyAgentAssignment(agentId, propertyId, false);
       await auditAssignment(req, 'UNASSIGN_AGENT_PROPERTY', agentId, propertyId);
       res.json(successResponse(null, 'Property removed from agent'));
     } catch (error: any) {

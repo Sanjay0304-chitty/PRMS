@@ -1,3 +1,4 @@
+import { notifyPropertyManagers as notifyCurrentManagers } from '../notification/property_notifications';
 import { Response } from 'express';
 import { AuthRequest } from '../../middleware/auth';
 import * as viewingService from './service_viewing';
@@ -83,6 +84,7 @@ export class ViewingController {
         await notifyPropertyManagers(updated, { type: 'viewing_cancelled', title: 'Viewing cancelled', message: `${updated.tenant.full_name || 'The tenant'} cancelled the viewing of "${updated.property.title}".` });
       } else {
         await notifyUsers([viewing.tenantId], { type: 'viewing_cancelled', title: 'Viewing cancelled', message: `Your viewing of "${viewing.property.title}" was cancelled.` });
+      await notifyCurrentManagers(viewing.propertyId, { type: 'viewing_cancelled', title: 'Viewing cancelled', message: `The viewing of "${viewing.property.title}" was cancelled.` }, req.user!.id);
       }
       await log(req, 'CANCEL_VIEWING', String(req.params.id), 'Cancelled viewing');
       res.json(successResponse(updated, 'Viewing cancelled'));
@@ -98,6 +100,7 @@ export class ViewingController {
       if (!allowed) return res.status(403).json({ success: false, error: { message: 'You do not have authority over this property' } });
       const updated = await viewingService.accept(String(req.params.id), req.user!.id);
       await createNotification({ userId: viewing.tenantId, type: 'viewing_accepted', title: 'Viewing accepted', message: `Your requested viewing time for "${viewing.property.title}" was accepted.` }).catch(() => {});
+      await notifyCurrentManagers(viewing.propertyId, { type: 'viewing_accepted', title: 'Viewing accepted', message: `The requested viewing time for "${viewing.property.title}" was accepted.` }, req.user!.id);
       await log(req, 'ACCEPT_VIEWING', String(req.params.id), 'Accepted viewing request');
       res.json(successResponse(updated, 'Viewing accepted'));
     } catch (error: any) { await log(req, 'ACCEPT_VIEWING', String(req.params.id), undefined, 'Failed', 'error', error.message); res.status(400).json({ success: false, error: { message: error.message } }); }
@@ -112,6 +115,7 @@ export class ViewingController {
       if (!allowed) return res.status(403).json({ success: false, error: { message: 'You do not have authority over this property' } });
       const updated = await viewingService.proposeAlternate(String(req.params.id), req.user!.id, req.body?.proposedTime);
       await createNotification({ userId: viewing.tenantId, type: 'viewing_alternate_proposed', title: 'Alternate viewing time proposed', message: `A different time was proposed for your viewing of "${viewing.property.title}".` }).catch(() => {});
+      await notifyCurrentManagers(viewing.propertyId, { type: 'viewing_alternate_proposed', title: 'Alternate viewing time proposed', message: `A different time was proposed for the viewing of "${viewing.property.title}".` }, req.user!.id);
       await log(req, 'PROPOSE_ALTERNATE_VIEWING', String(req.params.id), 'Proposed alternate viewing time');
       res.json(successResponse(updated, 'Alternate time proposed'));
     } catch (error: any) { await log(req, 'PROPOSE_ALTERNATE_VIEWING', String(req.params.id), undefined, 'Failed', 'error', error.message); res.status(400).json({ success: false, error: { message: error.message } }); }
@@ -135,6 +139,7 @@ export class ViewingController {
       if (!allowed) return res.status(403).json({ success: false, error: { message: 'You do not have authority over this property' } });
       const updated = await viewingService.markCompleted(String(req.params.id), req.user!.id);
       await notifyUsers([viewing.tenantId], { type: 'viewing_completed', title: 'Viewing completed', message: `Your viewing of "${viewing.property.title}" was marked completed.` });
+      await notifyCurrentManagers(viewing.propertyId, { type: 'viewing_completed', title: 'Viewing completed', message: `The viewing of "${viewing.property.title}" was marked completed.` }, req.user!.id);
       await log(req, 'COMPLETE_VIEWING', String(req.params.id), 'Marked viewing completed');
       res.json(successResponse(updated, 'Viewing marked completed'));
     } catch (error: any) { await log(req, 'COMPLETE_VIEWING', String(req.params.id), undefined, 'Failed', 'error', error.message); res.status(400).json({ success: false, error: { message: error.message } }); }
@@ -149,6 +154,7 @@ export class ViewingController {
       if (!allowed) return res.status(403).json({ success: false, error: { message: 'You do not have authority over this property' } });
       const updated = await viewingService.markNoShow(String(req.params.id), req.user!.id);
       await notifyUsers([viewing.tenantId], { type: 'viewing_no_show', title: 'Viewing marked as no-show', message: `Your viewing of "${viewing.property.title}" was marked as a no-show.` });
+      await notifyCurrentManagers(viewing.propertyId, { type: 'viewing_no_show', title: 'Viewing marked as no-show', message: `The viewing of "${viewing.property.title}" was marked as a no-show.` }, req.user!.id);
       await log(req, 'NO_SHOW_VIEWING', String(req.params.id), 'Marked viewing as no-show');
       res.json(successResponse(updated, 'Viewing marked as no-show'));
     } catch (error: any) { await log(req, 'NO_SHOW_VIEWING', String(req.params.id), undefined, 'Failed', 'error', error.message); res.status(400).json({ success: false, error: { message: error.message } }); }

@@ -40,7 +40,8 @@ function preferenceFieldForType(type: string) {
   if (normalized === 'message') return 'messageNotifications';
   if (normalized.startsWith('maintenance')) return 'maintenanceNotifications';
   if (
-    normalized.startsWith('application')
+    normalized === 'property_assignment'
+    || normalized.startsWith('application')
     || normalized.startsWith('booking')
     || normalized.startsWith('agreement')
     || normalized.startsWith('move_')
