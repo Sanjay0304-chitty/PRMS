@@ -1,9 +1,13 @@
+import { Link } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
+import { notificationLink } from '../utils/notificationLink'
 import { useEffect, useState, useMemo } from 'react'
 import { Check, X, Bell } from 'lucide-react'
 import { adminApi } from '../api/admin'
 import './NotificationDropdown.css'
 
 export default function NotificationDropdown() {
+  const { user } = useAuth()
   const [notifs, setNotifs] = useState([])
   const [loading, setLoading] = useState(true)
   const [opened, setOpened] = useState(false)
@@ -129,6 +133,7 @@ export default function NotificationDropdown() {
                     <div className="notification-item-main">
                       {n.title && <strong>{n.title}</strong>}
                       {n.message && <p>{n.message}</p>}
+                      {notificationLink(n, user?.role) && <Link to={notificationLink(n, user?.role)} onClick={() => { setOpened(false); if (!n.isRead) handleMarkAsRead(n.id) }}>Review Listing Report</Link>}
                       {n.created_at && (
                         <small>{new Date(n.created_at).toLocaleString()}</small>
                       )}

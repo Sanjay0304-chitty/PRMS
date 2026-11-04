@@ -3,7 +3,7 @@ import { validationResult } from 'express-validator';
 import { AuthRequest } from '../../middleware/auth';
 import * as propertyService from './service_property';
 import { successResponse, paginatedResponse } from '../../utils/response';
-import { recordAudit } from '../admin/service_audit';
+import { recordAudit, createAuditLog } from '../admin/service_audit';
 import { prisma } from '../../db';
 import { clearCache } from '../../middleware/responseCache';
 import { hasPropertyAuthority } from '../../utils/propertyAuthority';
@@ -325,14 +325,16 @@ export class PropertyController {
       }
 
       const { reason, details, email } = req.body || {};
-      if (!reason || typeof reason !== 'string' || !reason.trim()) {
+      if (typeof reason !== 'string' || !reason.trim() || reason.length > 200 || (details !== undefined && (typeof details !== 'string' || details.length > 4000)) || (email !== undefined && (typeof email !== 'string' || email.length > 254))) {
         return res.status(400).json({ success: false, error: { message: 'Please select a reason for reporting' } });
       }
 
       const user = (req as AuthRequest).user;
       const reporter = user?.email || email || 'Anonymous Guest';
 
-      await HELPERS(req).log({
+      const report = await createAuditLog({
+        module: 'Property', userId: user?.id, username: user?.email || email || undefined, userRole: user?.role,
+        newValue: JSON.stringify({ propertyTitle: prop.title, reporter, reason: reason.trim(), details: details?.trim() || '' }),
         action: 'REPORT_PROPERTY_LISTING',
         entity: 'Property',
         entityId: propertyId,
@@ -349,7 +351,7 @@ export class PropertyController {
           await prisma.notification.create({
             data: {
               userId: admin.id,
-              type: 'property_reported',
+              type: `property_reported:${report.id}`,
               title: 'Property Listing Reported',
               message: `Property "${prop.title}" was reported for: ${reason.trim()}${details ? ` - ${details.trim()}` : ''}`,
             },

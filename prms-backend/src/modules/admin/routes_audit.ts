@@ -7,6 +7,8 @@ const router = express.Router();
 
 router.use(authenticate, adminOnly);
 router.get('/audit-logs', auditController.list);
+router.get('/audit-logs/:id/report', auditController.reportDetails);
+router.post('/audit-logs/:id/report-review', auditController.reviewReport);
 router.get('/audit-logs/:id', auditController.getById);
 router.post('/audit-logs', auditController.create);
 

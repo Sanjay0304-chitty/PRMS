@@ -1,3 +1,6 @@
+import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { notificationLink } from '../utils/notificationLink';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -37,6 +40,7 @@ const TYPE_COLORS = {
 };
 
 function NotificationCenter() {
+  const { user } = useAuth();
   const tabs = [
     { key: 'all', label: 'All', icon: Bell },
     { key: 'unread', label: 'Unread', icon: Mail },
@@ -213,6 +217,7 @@ function NotificationCenter() {
                       <span className="notif-time">{formatTime(not.created_at)}</span>
                     </div>
                     <div className="notif-message">{not.message}</div>
+                    {notificationLink(not, user?.role) && <Link to={notificationLink(not, user?.role)}>Review Listing Report</Link>}
                     <div className="notif-meta">
                       <span className="notif-type-badge">
                         {not.type || 'system'}

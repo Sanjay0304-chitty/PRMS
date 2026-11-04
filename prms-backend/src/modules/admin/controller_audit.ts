@@ -6,8 +6,8 @@ import { paginatedResponse } from '../../utils/response';
 export class AuditController {
   list = async (req: Request, res: Response) => {
     try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 50;
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
       const { action, level, userId, username, module, entity, status, search, sort, dateFrom, dateTo } = req.query as any;
       const orderByCol = sort === 'user' ? 'username' : sort === 'module' ? 'module' : sort === 'action' ? 'action' : 'created_at';
       const orderByDir = req.query.sortDir === 'asc' ? 'asc' : 'desc';
@@ -17,6 +17,18 @@ export class AuditController {
       });
       res.json(paginatedResponse(logs, page, limit, total));
     } catch (error: any) { res.status(500).json({ success: false, error: { message: error.message } }); }
+  };
+
+  reportDetails = async (req: Request, res: Response) => {
+    try { res.json({ success: true, data: await auditService.getListingReport(String(req.params.id)) }); }
+    catch (error: any) { res.status(404).json({ success: false, error: { message: error.message } }); }
+  };
+
+  reviewReport = async (req: AuthRequest, res: Response) => {
+    try {
+      const data = await auditService.reviewListingReport(String(req.params.id), { id: req.user!.id, email: req.user!.email || undefined }, req.body || {});
+      res.json({ success: true, data });
+    } catch (error: any) { res.status(400).json({ success: false, error: { message: error.message } }); }
   };
 
   getById = async (req: Request, res: Response) => {

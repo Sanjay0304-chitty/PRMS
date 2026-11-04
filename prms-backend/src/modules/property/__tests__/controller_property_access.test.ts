@@ -7,6 +7,7 @@ const getLandlordProperties = jest.fn();
 const getAllProperties = jest.fn();
 const getPropertyById = jest.fn();
 const recordAudit = jest.fn();
+const createAuditLog = jest.fn().mockResolvedValue({ id: 'report-1' });
 
 jest.mock('../../../db', () => ({
   prisma: {
@@ -26,6 +27,7 @@ jest.mock('../service_property', () => ({
 }));
 jest.mock('../../admin/service_audit', () => ({
   recordAudit: (...args: any[]) => recordAudit(...args),
+  createAuditLog: (...args: any[]) => createAuditLog(...args),
 }));
 jest.mock('../../../middleware/responseCache', () => ({ clearCache: jest.fn() }));
 
@@ -175,7 +177,7 @@ test('reportListing succeeds with valid reason, logs audit, and notifies admins'
   await new PropertyController().reportListing(req, res);
 
   expect(getPropertyById).toHaveBeenCalledWith('property-1');
-  expect(recordAudit).toHaveBeenCalledWith(expect.objectContaining({
+  expect(createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
     action: 'REPORT_PROPERTY_LISTING',
     entity: 'Property',
     entityId: 'property-1',

@@ -1,0 +1,29 @@
+.audit-tools,.audit-pagination { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+.audit-pagination { justify-content:center; padding:20px; }
+.audit-table-scroll { overflow-x:auto; }
+.audit-organized-table { width:100%; min-width:900px; table-layout:fixed; border-collapse:collapse; color:var(--on-surface); font-family:inherit; }
+.audit-table-scroll { border-top:2px solid var(--border-color-strong); }
+.audit-organized-table th,.audit-organized-table td { text-align:left; padding:16px var(--spacing-lg); border-bottom:1px solid var(--border-color); vertical-align:middle; overflow-wrap:anywhere; line-height:1.5; }
+.audit-organized-table thead tr { height:52px; background:var(--page-bg); }
+.audit-organized-table th { border-bottom:2px solid var(--border-color-strong); color:var(--text-secondary); font-size:13px; font-weight:900; text-transform:uppercase; }
+.audit-organized-table tbody tr { height:86px; }
+.audit-organized-table td { font-size:15px; font-weight:700; }
+.audit-table-activity th { width:20%; }
+.audit-table-reports th:nth-child(1) { width:16%; }
+.audit-table-reports th:nth-child(2) { width:18%; }
+.audit-table-reports th:nth-child(3) { width:15%; }
+.audit-table-reports th:nth-child(4) { width:20%; }
+.audit-table-reports th:nth-child(5) { width:9%; }
+.audit-table-reports th:nth-child(6),.audit-table-reports th:nth-child(7) { width:11%; }
+.audit-tools { justify-content:flex-end; }
+.audit-tools > .admin-simple-search { flex-shrink:0; }
+.audit-tools select { font:inherit; font-size:15px; }
+.audit-tools input { min-width:0; }
+.audit-organized-table td button { display:block; margin-top:8px; white-space:nowrap; }
+.audit-message { padding:20px; }
+.audit-report-detail { color:var(--text-primary); line-height:1.7; }
+.audit-report-detail p { white-space:pre-wrap; overflow-wrap:anywhere; }
+.audit-report-detail a { color:var(--text-primary); text-decoration:underline; margin-left:8px; }
+.audit-report-detail fieldset { border:1px solid var(--border-color); border-radius:8px; padding:16px; }
+.audit-report-detail label { display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+.audit-report-detail select,.audit-report-detail textarea { background:var(--surface); color:var(--text-primary); border:1px solid var(--border-color); border-radius:6px; padding:10px; font:inherit; }

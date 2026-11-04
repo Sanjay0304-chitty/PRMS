@@ -81,7 +81,7 @@ function buildWhere(filters: AuditFilters): any {
   const where: any = {};
 
   if (filters.action) where.action = filters.action;
-  if (filters.level) where.level = filters.level;
+  if (filters.level) where.level = ['warn', 'warning'].includes(filters.level.toLowerCase()) ? { in: ['warn', 'warning'] } : filters.level;
   if (filters.userId) where.userId = filters.userId;
   // Note: no `mode: 'insensitive'` — the SQLite provider (this project's DB)
   // doesn't support it and throws a validation error if it's passed. SQLite's
@@ -130,13 +130,46 @@ export async function getAuditLogs(page: number, limit: number, filters: AuditFi
     }),
     prisma.auditLog.count({ where }),
   ]);
-  return { logs, total };
+  const reportIds = logs.filter(log => log.action === 'REPORT_PROPERTY_LISTING').map(log => log.id);
+  const reviews = reportIds.length ? await prisma.auditLog.findMany({
+    where: { action: 'REVIEW_LISTING_REPORT', entityId: { in: reportIds } },
+    orderBy: [{ created_at: 'desc' }, { id: 'desc' }],
+  }) : [];
+  return { logs: logs.map(log => ({ ...log, reportReview: log.action === 'REPORT_PROPERTY_LISTING' ? reviews.find(r => r.entityId === log.id) || null : undefined })), total };
 }
 
 export async function getAuditLogById(id: string) {
   return prisma.auditLog.findUnique({
     where: { id },
     include: { user: { select: { id: true, full_name: true, email: true } } },
+  });
+}
+
+// Listing report decisions are append-only events; originals are never edited.
+export async function getListingReport(id: string) {
+  const report = await getAuditLogById(id);
+  if (!report || report.action !== 'REPORT_PROPERTY_LISTING' || report.status !== 'Success') throw new Error('Listing report not found');
+  const property = report.entityId ? await prisma.property.findUnique({ where: { id: report.entityId }, select: { id: true, title: true, status: true } }) : null;
+  const history = await prisma.auditLog.findMany({ where: { action: 'REVIEW_LISTING_REPORT', entityId: id }, orderBy: [{ created_at: 'desc' }, { id: 'desc' }] });
+  return { report, property, history };
+}
+
+export async function reviewListingReport(id: string, admin: { id: string; email?: string }, data: { status: string; note: string; previousReviewId?: string | null }) {
+  if (!['UNDER_REVIEW', 'RESOLVED', 'DISMISSED'].includes(data.status)) throw new Error('Invalid report review status');
+  if (typeof data.note !== 'string' || !data.note.trim() || data.note.length > 4000) throw new Error('Enter a review note of 1 to 4000 characters');
+  return prisma.$transaction(async tx => {
+    const original = await tx.auditLog.findUnique({ where: { id } });
+    if (!original || original.action !== 'REPORT_PROPERTY_LISTING' || original.status !== 'Success') throw new Error('Listing report not found');
+    const previous = await tx.auditLog.findFirst({ where: { action: 'REVIEW_LISTING_REPORT', entityId: id }, orderBy: [{ created_at: 'desc' }, { id: 'desc' }] });
+    if ((previous?.id || null) !== (data.previousReviewId || null)) throw new Error('Report changed. Reload its details before reviewing.');
+    const current = previous?.status || 'PENDING';
+    if (['RESOLVED', 'DISMISSED'].includes(current)) throw new Error('This report has already been closed');
+    if (current === data.status) throw new Error('Choose a different review status');
+    return tx.auditLog.create({ data: {
+      userId: admin.id, username: admin.email, userRole: 'Admin', module: 'Property',
+      action: 'REVIEW_LISTING_REPORT', entity: 'ListingReport', entityId: id,
+      status: data.status, level: 'info', description: data.note.trim(),
+    } });
   });
 }
 
