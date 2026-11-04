@@ -32,7 +32,7 @@ export async function withdrawConsent(id: string, userId: string) {
 
 /* ────────────────────────────────────────────────────────────
    "My stored data" (Access principle) - a plain-language export
-   of everything personally identifiable this account holds.
+   of selected account information. Full access requests are reviewed separately.
    ──────────────────────────────────────────────────────────── */
 
 export async function getMyStoredData(userId: string) {
@@ -61,6 +61,7 @@ const VALID_TYPES = ['ACCESS', 'CORRECTION', 'DELETION', 'CONSENT_WITHDRAWAL'];
 
 export async function submitRequest(userId: string, data: { type: string; details?: string }) {
   if (!VALID_TYPES.includes(data.type)) throw new Error('Invalid request type');
+  if (data.type === 'CORRECTION' && (typeof data.details !== 'string' || !data.details.trim())) throw new Error('Describe the information that needs correcting');
   return prisma.privacyRequest.create({
     data: { userId, type: data.type, details: data.details, status: 'SUBMITTED' },
   });
@@ -79,45 +80,51 @@ export async function getAllRequests(status?: string) {
 }
 
 export async function assignRequest(id: string, adminId: string) {
-  return prisma.privacyRequest.update({ where: { id }, data: { assignedAdminId: adminId, status: 'IN_REVIEW' } });
-}
-
-export async function decideRequest(id: string, data: { decision: 'APPROVED' | 'REJECTED'; decisionReason: string }) {
-  if (!data.decisionReason || !data.decisionReason.trim()) throw new Error('A decision reason is required');
-  return prisma.privacyRequest.update({
-    where: { id },
-    data: { status: data.decision, decision: data.decision, decisionReason: data.decisionReason },
+  const changed = await prisma.privacyRequest.updateMany({
+    where: { id, status: 'SUBMITTED', assignedAdminId: null },
+    data: { assignedAdminId: adminId, status: 'IN_REVIEW' },
   });
+  if (changed.count !== 1) throw new Error('Request is no longer available for assignment');
+  return prisma.privacyRequest.findUniqueOrThrow({ where: { id } });
 }
 
-export async function completeRequest(id: string, fulfillmentNotes?: string) {
-  const request = await prisma.privacyRequest.findUnique({ where: { id } });
-  if (!request) throw new Error('Request not found');
-  if (request.status !== 'APPROVED') throw new Error('Only an approved request can be marked completed');
+export async function decideRequest(id: string, adminId: string, data: { decision: string; decisionReason: string }) {
+  if (!['APPROVED', 'REJECTED'].includes(data.decision)) throw new Error('Choose APPROVED or REJECTED');
+  if (typeof data.decisionReason !== 'string' || !data.decisionReason.trim()) throw new Error('A decision reason is required');
+  const changed = await prisma.privacyRequest.updateMany({
+    where: { id, status: 'IN_REVIEW', assignedAdminId: adminId },
+    data: { status: data.decision, decision: data.decision, decisionReason: data.decisionReason.trim() },
+  });
+  if (changed.count !== 1) throw new Error('Only the assigned Admin can decide a request in review');
+  return prisma.privacyRequest.findUniqueOrThrow({ where: { id } });
+}
 
-  // Actual fulfillment execution based on request type
-  if (request.type === 'DELETION') {
-    const user = await prisma.user.findUnique({ where: { id: request.userId } });
-    if (user) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          full_name: 'Anonymized User',
-          email: `deleted-${user.id.slice(0, 8)}@anonymized.prms`,
-          phone: null,
-          profile_img_url: null,
-          is_active: false,
-        },
-      });
+export async function completeRequest(id: string, adminId: string, fulfillmentNotes?: string) {
+  if (typeof fulfillmentNotes !== 'string' || !fulfillmentNotes.trim()) throw new Error('Describe the action performed and any data retained before completing the request');
+  return prisma.$transaction(async tx => {
+    const request = await tx.privacyRequest.findUnique({ where: { id } });
+    if (!request) throw new Error('Request not found');
+    if (request.status !== 'APPROVED' || request.assignedAdminId !== adminId) throw new Error('Only the assigned Admin can complete an approved request');
+    if (request.type === 'DELETION') {
+      if (request.userId === adminId) throw new Error('Another Admin must handle your account closure');
+      const activeBookings = await tx.booking.count({ where: {
+        status: { in: ['PENDING', 'CONFIRMED', 'CHECKED_IN'] },
+        OR: [{ userId: request.userId }, { property: { ownerId: request.userId } }],
+      } });
+      const properties = await tx.property.count({ where: { ownerId: request.userId, status: { not: 'INACTIVE' } } });
+      if (activeBookings || properties) throw new Error('Resolve active applications, tenancies and owned listings before closing this account');
+      await tx.user.update({ where: { id: request.userId }, data: {
+        full_name: 'Anonymized User', email: `deleted-${request.userId}@anonymized.prms`,
+        phone: null, profile_img_url: null, is_active: false, refreshToken: null,
+      } });
     }
-  }
-
-  const note = fulfillmentNotes || (request.type === 'DELETION' ? 'Account and personal profile records anonymized and deactivated.' : 'Request action verified and fulfilled.');
-  const detailsWithNote = request.details ? `${request.details} [Fulfillment Note: ${note}]` : `[Fulfillment Note: ${note}]`;
-
-  return prisma.privacyRequest.update({
-    where: { id },
-    data: { status: 'COMPLETED', completed_at: new Date(), details: detailsWithNote },
+    const scope = request.type === 'DELETION'
+      ? 'Basic profile anonymized and account deactivated; related records and files retained. '
+      : 'Admin-reported manual fulfillment: ';
+    return tx.privacyRequest.update({ where: { id }, data: {
+      status: 'COMPLETED', completed_at: new Date(),
+      details: `${request.details || ''} [Fulfillment Note: ${scope}${fulfillmentNotes.trim()}]`,
+    } });
   });
 }
 

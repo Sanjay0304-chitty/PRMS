@@ -101,6 +101,8 @@
 }
 
 .ppd-request-form textarea {
+  background: var(--surface, #fff);
+  color: var(--text-primary, #111827);
   padding: 10px 12px;
   border: 1px solid var(--border-color);
   border-radius: 8px;
@@ -108,6 +110,18 @@
   font-family: inherit;
   resize: vertical;
 }
+
+.ppd-contact {
+  background: var(--surface, #fff);
+  color: var(--text-primary, #111827);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.ppd-contact p { margin: 0 0 6px; }
+.ppd-contact a { color: var(--text-primary, #111827); text-decoration: underline; }
 
 @media (max-width: 700px) {
   .ppd-request-types {

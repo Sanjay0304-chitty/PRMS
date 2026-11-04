@@ -84,7 +84,7 @@ export class PrivacyController {
 
   decideRequest = async (req: AuthRequest, res: Response) => {
     try {
-      const updated = await privacyService.decideRequest(String(req.params.id), req.body);
+      const updated = await privacyService.decideRequest(String(req.params.id), req.user!.id, req.body);
       await log(req, 'DECIDE_PRIVACY_REQUEST', String(req.params.id), `Decision: ${req.body.decision} - ${req.body.decisionReason}`);
       await createNotification({
         userId: updated.userId,
@@ -98,7 +98,8 @@ export class PrivacyController {
 
   completeRequest = async (req: AuthRequest, res: Response) => {
     try {
-      const updated = await privacyService.completeRequest(String(req.params.id), req.body?.fulfillmentNotes);
+      const updated = await privacyService.completeRequest(String(req.params.id), req.user!.id, req.body?.fulfillmentNotes);
+      await createNotification({ userId: updated.userId, type: 'privacy_request_completed', title: 'Privacy request completed', message: 'Your privacy request has been completed. Open Privacy & Personal Data to review the fulfillment notes.' }).catch(() => {});
       await log(req, 'COMPLETE_PRIVACY_REQUEST', String(req.params.id), 'Marked privacy request completed and fulfilled action');
       res.json(successResponse(updated));
     } catch (error: any) { await log(req, 'COMPLETE_PRIVACY_REQUEST', String(req.params.id), '', 'Failed', 'error', error.message); res.status(400).json({ success: false, error: { message: error.message } }); }

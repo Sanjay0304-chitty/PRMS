@@ -7,7 +7,7 @@ import './PrivacyPersonalData.css';
 const REQUEST_TYPES = [
   { value: 'ACCESS', label: 'Access my data', hint: 'Get a copy of the personal data PRMS holds about you.' },
   { value: 'CORRECTION', label: 'Correct my data', hint: 'Ask us to fix inaccurate or outdated information.' },
-  { value: 'DELETION', label: 'Delete my account', hint: 'Request permanent removal of your account and personal data.' },
+  { value: 'DELETION', label: 'Delete my account', hint: 'Request account closure and anonymization of basic profile details. Related records and files may be retained; this is not complete data erasure.' },
 ];
 
 function formatDateTime(d) {
@@ -104,7 +104,7 @@ export default function PrivacyPersonalData() {
     <div className="page-shell">
       <div className="page-header">
         <h1 className="page-title">Privacy & Personal Data</h1>
-        <p>View, correct or delete your personal data, and manage your consent choices.</p>
+        <p>View selected personal data, request corrections or account closure, and manage consent choices.</p>
       </div>
 
       {error && <div className="alert alert-danger mt-2">{error}</div>}
@@ -115,7 +115,7 @@ export default function PrivacyPersonalData() {
           {/* My stored data */}
           <div className="card-table ppd-section">
             <h2 className="ppd-section-title"><ShieldCheck size={18} /> My Stored Data</h2>
-            <p className="ppd-section-hint">See exactly what personal data PRMS holds about you.</p>
+            <p className="ppd-section-hint">View selected profile, application, agreement, viewing, maintenance, message, favorite and consent information. This is not a complete export of every record or file; submit an access request for additional information.</p>
             {!showStoredData ? (
               <button type="button" className="btn btn-outline btn-sm" onClick={handleViewStoredData}>View My Data</button>
             ) : (
@@ -176,7 +176,9 @@ export default function PrivacyPersonalData() {
               </div>
               <textarea
                 rows={3}
-                placeholder="Optional details (e.g. what needs correcting)…"
+                required={requestType === 'CORRECTION'}
+                aria-label="Request details"
+                placeholder={requestType === 'CORRECTION' ? 'Describe which information is wrong and the requested correction (required)' : 'Describe the data or action you are requesting'}
                 value={requestDetails}
                 onChange={(e) => setRequestDetails(e.target.value)}
               />
@@ -188,14 +190,14 @@ export default function PrivacyPersonalData() {
           <div className="card-table ppd-section">
             <h2 className="ppd-section-title">My Requests</h2>
             <table className="table">
-              <thead><tr><th>Type</th><th>Status</th><th>Submitted</th><th>Decision</th></tr></thead>
+              <thead><tr><th>Type</th><th>Status</th><th>Submitted</th><th>Decision and fulfillment</th></tr></thead>
               <tbody>
                 {requests.map((r) => (
                   <tr key={r.id}>
                     <td>{r.type}</td>
                     <td><span className={`shell-status-badge status-${r.status.toLowerCase()}`}>{r.status}</span></td>
                     <td>{formatDateTime(r.submitted_at)}</td>
-                    <td>{r.decisionReason || '—'}</td>
+                    <td>{r.decisionReason || '—'}{r.status === 'COMPLETED' && <p>{r.details}</p>}</td>
                   </tr>
                 ))}
                 {!requests.length && <tr><td colSpan={4}>No requests submitted yet.</td></tr>}
@@ -205,12 +207,10 @@ export default function PrivacyPersonalData() {
 
           {/* Privacy contact */}
           <div className="card-table ppd-section">
-            <h2 className="ppd-section-title"><Mail size={18} /> Data Protection Officer (DPO) Contact</h2>
-            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: 14, fontSize: 13, lineHeight: 1.6 }}>
-              <p style={{ margin: '0 0 4px' }}><strong>Officer:</strong> {privacyContact.name || 'Adrian Chew (Lead Data Protection Officer)'}</p>
-              <p style={{ margin: '0 0 4px' }}><strong>Unit:</strong> Compliance & Data Protection Unit</p>
-              <p style={{ margin: '0 0 4px' }}><strong>Official Inquiries:</strong> <a href={`mailto:${privacyContact.email || 'privacy@prms-malaysia.com'}`}>{privacyContact.email || 'privacy@prms-malaysia.com'}</a> / <a href="mailto:dpo@prms.com.my">dpo@prms.com.my</a></p>
-              <p style={{ margin: 0, color: 'var(--text-secondary)' }}><strong>Physical Office:</strong> Level 18, Menara PRMS, Jalan Tun Razak, 50400 Kuala Lumpur, Malaysia</p>
+            <h2 className="ppd-section-title"><Mail size={18} /> Privacy Contact</h2>
+            <div className="ppd-contact">
+              <p><strong>Contact:</strong> {privacyContact.name || 'Not configured'}</p>
+              <p><strong>Email:</strong> {privacyContact.email ? <a href={`mailto:${privacyContact.email}`}>{privacyContact.email}</a> : 'Not configured. Contact the system administrator through Messages.'}</p>
             </div>
           </div>
         </>
