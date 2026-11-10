@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { env } from './config';
-import { prisma } from './db';
+import { prisma, bootstrap } from './db';
 import path from 'path';
 import fs from 'fs';
 import { valerieGuard } from './middleware/valerieGuard';
@@ -174,8 +174,16 @@ if (fs.existsSync(frontendDist)) {
 
 app.use(errorHandler);
 
-const server = app.listen(PORT, () => {
-  console.log(`PRMS Backend running on http://localhost:${PORT} (${env.NODE_ENV})`);
-});
+// Bootstrap database: connect, create tables if missing, seed default admin
+bootstrap()
+  .then(async () => {
+    const server = app.listen(PORT, () => {
+      console.log(`PRMS Backend running on http://localhost:${PORT} (${env.NODE_ENV})`);
+    });
+  })
+  .catch((err: Error) => {
+    console.error('[Startup] Database bootstrap failed:', err);
+    process.exit(1);
+  });
 
 export default app;

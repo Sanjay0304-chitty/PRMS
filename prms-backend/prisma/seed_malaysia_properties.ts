@@ -7,9 +7,9 @@
  * Run with: npx tsx prisma/seed_malaysia_properties.ts
  */
 import { PrismaClient } from '@prisma/client';
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
+import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 
-const adapter = new PrismaBetterSqlite3({ url: './prisma/dev.db' });
+const adapter = new PrismaMariaDb(process.env.DATABASE_URL ?? 'mysql://root:password@localhost:3306/prms_db');
 const prisma = new PrismaClient({ adapter });
 
 const LOCATIONS = [

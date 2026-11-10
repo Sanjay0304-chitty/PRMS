@@ -1,12 +1,9 @@
 import { PrismaClient } from '@prisma/client';
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
+import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 
-const adapter = new PrismaBetterSqlite3({
-  url: './prisma/dev.db',
-});
-
+const adapter = new PrismaMariaDb(process.env.DATABASE_URL ?? 'mysql://root:password@localhost:3306/prms_db');
 const prisma = new PrismaClient({ adapter });
 
 async function main() {

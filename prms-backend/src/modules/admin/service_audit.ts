@@ -83,17 +83,14 @@ function buildWhere(filters: AuditFilters): any {
   if (filters.action) where.action = filters.action;
   if (filters.level) where.level = ['warn', 'warning'].includes(filters.level.toLowerCase()) ? { in: ['warn', 'warning'] } : filters.level;
   if (filters.userId) where.userId = filters.userId;
-  // Note: no `mode: 'insensitive'` — the SQLite provider (this project's DB)
-  // doesn't support it and throws a validation error if it's passed. SQLite's
-  // `contains`/`equals` are already case-insensitive for ASCII by default.
   if (filters.username) {
-    where.username = { contains: filters.username };
+    where.username = { contains: filters.username, mode: 'insensitive' as const };
   }
   if (filters.module) {
-    where.module = { equals: filters.module };
+    where.module = { equals: filters.module, mode: 'insensitive' as const };
   }
   if (filters.entity) {
-    where.entity = { contains: filters.entity };
+    where.entity = { contains: filters.entity, mode: 'insensitive' as const };
   }
   if (filters.status) {
     where.status = { equals: filters.status };
