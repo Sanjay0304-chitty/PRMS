@@ -45,18 +45,53 @@ const app = express();
 const router = express.Router();
 const PORT = env.PORT;
 
+// Trust local reverse proxies (such as cloudflared quick tunnels on loopback)
+app.set('trust proxy', 'loopback');
+
 // Parse CORS_ORIGIN: supports single string or comma-separated list → array
 const corsOrigins = env.CORS_ORIGIN.split(',').map((o: string) => o.trim());
 
-app.use(cors({
-  origin: (origin, callback) => {
-    return callback(null, isAllowedOrigin(origin, corsOrigins, env.NODE_ENV));
-  },
-  credentials: true,
-}));
+app.use((req, res, next) => {
+  cors({
+    origin: (origin, callback) => {
+      const tunnelHost = req.headers.host;
+      const isSameTunnelOrigin = Boolean(
+        origin &&
+        tunnelHost &&
+        /^[a-zA-Z0-9-]+\.trycloudflare\.com$/.test(tunnelHost) &&
+        origin === `https://${tunnelHost}`
+      );
+      return callback(null, isSameTunnelOrigin || isAllowedOrigin(origin, corsOrigins, env.NODE_ENV));
+    },
+    credentials: true,
+  })(req, res, next);
+});
 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://apis.google.com", "https://www.gstatic.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+      imgSrc: ["'self'", "data:", "blob:", "https:"],
+      mediaSrc: ["'self'", "data:", "blob:"],
+      connectSrc: [
+        "'self'",
+        "https://identitytoolkit.googleapis.com",
+        "https://securetoken.googleapis.com",
+        "https://*.googleapis.com",
+        "https://*.firebaseio.com",
+        "https://*.firebaseapp.com",
+        ...(env.NODE_ENV === 'development' ? ["http://localhost:*", "ws://localhost:*", "http://127.0.0.1:*"] : []),
+      ],
+      frameSrc: ["'self'", "https://www.google.com", "https://*.firebaseapp.com", "https://accounts.google.com"],
+      frameAncestors: ["'self'"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: null,
+    },
+  },
 }));
 
 // Valerie Guard: Mounted before routes and static files
@@ -145,26 +180,33 @@ router.use('/agreements', agreementRoutes);
 import privacyRoutes from './modules/privacy/routes_privacy';
 router.use('/privacy', privacyRoutes);
 
-app.use('/api', router);
-app.use(router);
+const isSpaPagePath = (reqPath: string) => (
+  !reqPath.startsWith('/api') &&
+  !reqPath.startsWith('/uploads') &&
+  !reqPath.startsWith('/files') &&
+  !reqPath.startsWith('/images') &&
+  !reqPath.startsWith('/health') &&
+  !path.extname(reqPath)
+);
 
-// Serve frontend dist when built (single-origin hosting mode with SPA fallback)
+// Serve built frontend and browser page navigations before bare-path API router
+// so refreshing SPA routes like /properties returns the UI instead of raw JSON.
 if (fs.existsSync(frontendDist)) {
   app.use(express.static(frontendDist));
   app.use((req, res, next) => {
-    if (req.method !== 'GET') return next();
-    // Skip static assets, uploads, and health/api endpoints
-    if (
-      req.path.startsWith('/api') ||
-      req.path.startsWith('/uploads') ||
-      req.path.startsWith('/files') ||
-      req.path.startsWith('/images') ||
-      req.path.startsWith('/health') ||
-      path.extname(req.path)
-    ) {
-      return next();
+    if (req.method === 'GET' && req.headers.accept?.includes('text/html') && isSpaPagePath(req.path)) {
+      return res.sendFile(path.join(frontendDist, 'index.html'));
     }
-    // API clients expecting JSON should not receive HTML
+    next();
+  });
+}
+
+app.use('/api', router);
+app.use(router);
+
+if (fs.existsSync(frontendDist)) {
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' || !isSpaPagePath(req.path)) return next();
     if (req.headers.accept?.includes('application/json') && !req.headers.accept?.includes('text/html')) {
       return next();
     }

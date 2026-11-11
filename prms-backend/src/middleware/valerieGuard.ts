@@ -322,11 +322,18 @@ async function sendHeartbeat() {
  */
 function handleSessionEnded() {
   console.log('[ValerieGuard] Received 401 from Valerie: session ended. Cleaning up .valerie-session.json...');
-  const sessionPath = path.resolve(process.cwd(), '.valerie-session.json');
-  if (fs.existsSync(sessionPath)) {
-    try {
-      fs.unlinkSync(sessionPath);
-    } catch {}
+  const candidates = [
+    process.env.VALERIE_SESSION_FILE,
+    path.resolve(process.cwd(), '.valerie-session.json'),
+    path.resolve(process.cwd(), '..', '.valerie-session.json'),
+  ].filter((p): p is string => Boolean(p));
+
+  for (const sessionPath of candidates) {
+    if (fs.existsSync(sessionPath)) {
+      try {
+        fs.unlinkSync(sessionPath);
+      } catch {}
+    }
   }
   process.exit(0);
 }

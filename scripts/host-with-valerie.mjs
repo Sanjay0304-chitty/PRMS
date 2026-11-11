@@ -48,15 +48,30 @@ async function isValerieReachable() {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 4000);
     const res = await fetch(`${VALERIE_URL}/prms/guard/session`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: '000000' }),
+      method: 'GET',
       signal: controller.signal,
     });
     clearTimeout(timeout);
     return res.status !== 0;
   } catch (err) {
     return false;
+  }
+}
+
+async function isSavedSessionValid(sessionId, sessionKey) {
+  try {
+    const bodyStr = JSON.stringify({ stats: { requests: 0 } });
+    const headers = createSignedHeaders(sessionId, sessionKey, bodyStr);
+    const res = await fetch(`${VALERIE_URL}/prms/guard/heartbeat`, {
+      method: 'POST',
+      headers,
+      body: bodyStr,
+      signal: AbortSignal.timeout(4000),
+    });
+    if (res.status === 401) return 'expired';
+    return res.ok ? 'valid' : 'unreachable';
+  } catch {
+    return 'unreachable';
   }
 }
 
@@ -70,9 +85,17 @@ async function main() {
     try {
       const data = JSON.parse(fs.readFileSync(sessionFilePath, 'utf8'));
       if (data.session_id && data.session_key) {
-        sessionId = data.session_id;
-        sessionKey = data.session_key;
-        console.log(`[Valerie Guard] Resuming existing session: ${sessionId}`);
+        const status = await isSavedSessionValid(data.session_id, data.session_key);
+        if (status === 'valid') {
+          sessionId = data.session_id;
+          sessionKey = data.session_key;
+          console.log(`[Valerie Guard] Resuming existing session: ${sessionId}`);
+        } else if (status === 'expired') {
+          console.warn('[Valerie Guard] Saved session expired (401). Removing stale session file...');
+          try { fs.unlinkSync(sessionFilePath); } catch {}
+        } else {
+          console.warn('[Valerie Guard] Saved session found, but Valerie is currently unreachable.');
+        }
       }
     } catch (e) {
       console.warn('[Valerie Guard] Failed to parse .valerie-session.json, requesting fresh code...');
@@ -156,16 +179,23 @@ async function main() {
     VALERIE_URL: VALERIE_URL,
     VALERIE_SESSION_ID: sessionId || '',
     VALERIE_SESSION_KEY: sessionKey || '',
+    VALERIE_SESSION_FILE: sessionFilePath,
   };
 
   const backend = spawn('npx', ['tsx', 'src/app.ts'], {
     cwd: path.join(rootDir, 'prms-backend'),
     env: backendEnv,
-    stdio: ['inherit', 'pipe', 'pipe'],
+    shell: process.platform === 'win32',
+    stdio: ['ignore', 'pipe', 'pipe'],
   });
 
   backend.stdout.on('data', (d) => process.stdout.write(`[backend] ${d}`));
   backend.stderr.on('data', (d) => process.stderr.write(`[backend] ${d}`));
+
+  backend.on('error', (err) => {
+    console.error(`[PRMS Host] Failed to start backend process: ${err.message}`);
+    cleanupAndExit(1);
+  });
 
   backend.on('exit', (code) => {
     console.log(`[PRMS Host] Backend process exited with code ${code}`);
@@ -174,14 +204,16 @@ async function main() {
 
   // 4. Start Cloudflare Tunnel
   console.log('[PRMS Host] Starting Cloudflare Quick Tunnel...');
+  const pathSep = process.platform === 'win32' ? ';' : ':';
   const cloudflaredEnv = {
     ...process.env,
-    PATH: `/opt/homebrew/bin:/usr/local/bin:${process.env.PATH || ''}`,
+    PATH: `/opt/homebrew/bin${pathSep}/usr/local/bin${pathSep}${process.env.PATH || ''}`,
   };
 
   const cloudflared = spawn('cloudflared', ['tunnel', '--url', 'http://localhost:3500'], {
     env: cloudflaredEnv,
-    stdio: ['inherit', 'pipe', 'pipe'],
+    shell: process.platform === 'win32',
+    stdio: ['ignore', 'pipe', 'pipe'],
   });
 
   let liveReported = false;
@@ -263,6 +295,11 @@ async function main() {
   cloudflared.stdout.on('data', handleCloudflaredOutput);
   cloudflared.stderr.on('data', handleCloudflaredOutput);
 
+  cloudflared.on('error', (err) => {
+    console.error(`[PRMS Host] Failed to launch cloudflared (${err.message}). Make sure cloudflared is installed.`);
+    cleanupAndExit(1);
+  });
+
   cloudflared.on('exit', (code) => {
     console.log(`[PRMS Host] Cloudflared process exited with code ${code}`);
     cleanupAndExit(code || 0);
@@ -290,6 +327,7 @@ async function main() {
           method: 'POST',
           headers,
           body: bodyStr,
+          signal: AbortSignal.timeout(3000),
         });
         console.log('[Valerie Guard] POST /pause sent. Session preserved for next run.');
       } catch (err) {
