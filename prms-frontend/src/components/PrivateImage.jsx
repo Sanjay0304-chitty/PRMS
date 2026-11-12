@@ -6,7 +6,7 @@ const unavailable = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http
 const PrivateImage = forwardRef(function PrivateImage({ src, alt = '', fallbackSources = [], onError, ...props }, ref) {
   const [attempt, setAttempt] = useState(null);
   const candidates = [src, ...fallbackSources].filter(Boolean);
-  const index = attempt?.src === src ? attempt.index : 0;
+  const index = attempt && attempt.src === src ? attempt.index : 0;
   const { source, failed } = useMediaSource(candidates[index]);
   function handleError(event) {
     if (index + 1 < candidates.length) setAttempt({ src, index: index + 1 });
