@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { propertyApi, getApiError } from '../api'
+import { categoryApi } from '../api/categories'
 import { getPropertyDetailPath } from '../config/routes'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -116,7 +117,7 @@ export default function EditProperty() {
   // Load categories
   async function loadCategories() {
     try {
-      const { data } = await propertyApi.getCategories()
+      const { data } = await categoryApi.assignable()
       setCategories(data.categories || data.data || data || [])
     } catch (_) {
       // non critical

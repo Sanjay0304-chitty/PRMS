@@ -2,6 +2,11 @@
 import { apiClient } from '../api';
 
 export const categoryApi = {
+  assignable: async () => {
+    const [shared, personal] = await Promise.all([categoryApi.shared(), categoryApi.personalList()]);
+    const categories = [...(shared.data?.data ?? []), ...(personal.data?.data ?? [])];
+    return { data: { data: [...new Map(categories.filter(category => !category.isDisabled).map(category => [category.id, category])).values()] } };
+  },
   list: (params) => apiClient.get('/categories', { params }),
   shared: () => apiClient.get('/categories/shared'),
   getById: (id) => apiClient.get(`/categories/${id}`),

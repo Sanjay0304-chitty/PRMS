@@ -54,7 +54,7 @@ function AddProperty() {
 
   useEffect(() => {
     categoryApi
-      .shared()
+      .assignable()
       .then(({ data }) => setCategories(data?.data ?? []))
       .catch(() => setCategories([]));
   }, []);
