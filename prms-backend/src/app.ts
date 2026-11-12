@@ -7,7 +7,7 @@ import { env } from './config';
 import { prisma, bootstrap } from './db';
 import path from 'path';
 import fs from 'fs';
-import { valerieGuard } from './middleware/valerieGuard';
+import { valerieGuard, startValerieGuard } from './middleware/valerieGuard';
 import { protectAgreements, protectUserFiles, protectPropertyUploads, protectMaintenance, protectUserThumbnails } from './middleware/fileAuth';
 import { isAllowedOrigin } from './middleware/corsPolicy';
 import { requestLogger } from './middleware/logging';
@@ -221,6 +221,7 @@ bootstrap()
   .then(async () => {
     const server = app.listen(PORT, () => {
       console.log(`PRMS Backend running on http://localhost:${PORT} (${env.NODE_ENV})`);
+      startValerieGuard();   // check in with Valerie from the start, not only after the first visitor
     });
   })
   .catch((err: Error) => {

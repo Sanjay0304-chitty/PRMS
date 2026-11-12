@@ -220,6 +220,21 @@ export function queueEvent(event: GuardEvent) {
 /**
  * Check if the request has a valid logged-in JWT session
  */
+/**
+ * What stays open during lockdown: the web app's own pages and files (GET/HEAD outside /api, so the sign-in page
+ * loads) and the sign-in calls themselves (login + token refresh).
+ */
+const LOCKDOWN_OPEN_API = new Set(['/api/auth/login', '/api/auth/refresh']);
+
+export function isOpenDuringLockdown(req: Request): boolean {
+  const rawPath = (req.originalUrl || req.url || '').split('?')[0].replace(/\/+$/, '') || '/';
+  const p = rawPath.toLowerCase();
+  if (p === '/api' || p.startsWith('/api/')) {
+    return req.method === 'POST' && LOCKDOWN_OPEN_API.has(p);
+  }
+  return req.method === 'GET' || req.method === 'HEAD';
+}
+
 function isUserLoggedIn(req: Request): boolean {
   try {
     const authHeader = req.headers.authorization;
@@ -371,6 +386,17 @@ function ensureTimersStarted() {
 /**
  * Valerie Guard Middleware
  */
+/**
+ * Start checking in with Valerie as soon as the server is up. Before, the timers only started on the first request,
+ * so a site nobody had visited yet sent no heartbeats: Valerie marked it "down" after 2 minutes and never saw
+ * "end prms". The first heartbeat goes out straight away so Valerie's blocks and lockdown apply from the start.
+ */
+export function startValerieGuard() {
+  if (process.env.VALERIE_GUARD !== '1') return;
+  ensureTimersStarted();
+  void sendHeartbeat();
+}
+
 export function valerieGuard(req: Request, res: Response, next: NextFunction) {
   // If VALERIE_GUARD isn't 1, just call next()
   if (process.env.VALERIE_GUARD !== '1') {
@@ -432,8 +458,9 @@ export function valerieGuard(req: Request, res: Response, next: NextFunction) {
     return res.status(403).json({ error: 'Rate limit exceeded' });
   }
 
-  // 5. Lockdown mode: only logged-in requests pass. Everything else gets 503
-  if (isLockdown && !isUserLoggedIn(req)) {
+  // 5. Lockdown mode: only logged-in users can use the API. The website itself (pages, scripts, images) and
+  // signing in stay open, otherwise nobody could log in at all. Every other API call without a valid token gets 503.
+  if (isLockdown && !isUserLoggedIn(req) && !isOpenDuringLockdown(req)) {
     return res.status(503).json({ error: 'Temporarily locked down' });
   }
 

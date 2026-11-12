@@ -120,7 +120,7 @@ async function main() {
         process.exit(1);
       }
 
-      console.log(`[Valerie Guard] Requesting session for code ${code}...`);
+      console.log('[Valerie Guard] Checking the code with Valerie...');
       try {
         const res = await fetch(`${VALERIE_URL}/prms/guard/session`, {
           method: 'POST',
@@ -305,6 +305,16 @@ async function main() {
     cleanupAndExit(code || 0);
   });
 
+  // Stop a child and everything it started. On Windows the children run through a shell, so kill() only stopped
+  // the shell and cloudflared / the backend kept running - taskkill /T stops the whole tree.
+  function stopChild(child) {
+    if (!child || child.exitCode !== null) return;
+    if (process.platform === 'win32' && child.pid) {
+      try { execSync(`taskkill /pid ${child.pid} /T /F`, { stdio: 'ignore' }); return; } catch {}
+    }
+    if (!child.killed) child.kill('SIGTERM');
+  }
+
   // 5. Clean shutdown handler
   let shuttingDown = false;
   async function cleanupAndExit(code = 0) {
@@ -318,29 +328,37 @@ async function main() {
 
     console.log('\n[PRMS Host] Shutting down cleanly...');
 
-    // On Ctrl+C, call POST /pause if we had an active guard session
+    // On Ctrl+C, call POST /pause if we had an active guard session. If the session was ended in Valerie
+    // ("end prms"), the backend has already removed .valerie-session.json - say so instead of "preserved".
     if (!isUnguarded && sessionId && sessionKey) {
-      try {
-        const bodyStr = JSON.stringify({});
-        const headers = createSignedHeaders(sessionId, sessionKey, bodyStr);
-        await fetch(`${VALERIE_URL}/prms/guard/pause`, {
-          method: 'POST',
-          headers,
-          body: bodyStr,
-          signal: AbortSignal.timeout(3000),
-        });
-        console.log('[Valerie Guard] POST /pause sent. Session preserved for next run.');
-      } catch (err) {
-        console.warn('[Valerie Guard] Pause call failed:', err.message);
+      if (!fs.existsSync(sessionFilePath)) {
+        console.log('[Valerie Guard] The session was ended in Valerie ("end prms"). Ask Valerie for a new code next time.');
+      } else {
+        try {
+          const bodyStr = JSON.stringify({});
+          const headers = createSignedHeaders(sessionId, sessionKey, bodyStr);
+          const res = await fetch(`${VALERIE_URL}/prms/guard/pause`, {
+            method: 'POST',
+            headers,
+            body: bodyStr,
+            signal: AbortSignal.timeout(3000),
+          });
+          if (res.ok) {
+            console.log('[Valerie Guard] Paused. The session is kept - run this script again to restart (no new code needed).');
+          } else if (res.status === 401) {
+            try { fs.unlinkSync(sessionFilePath); } catch {}
+            console.log('[Valerie Guard] The session was ended in Valerie ("end prms"). Ask Valerie for a new code next time.');
+          } else {
+            console.warn(`[Valerie Guard] Pause call answered ${res.status}.`);
+          }
+        } catch (err) {
+          console.warn('[Valerie Guard] Pause call failed:', err.message);
+        }
       }
     }
 
-    if (cloudflared && !cloudflared.killed) {
-      cloudflared.kill('SIGTERM');
-    }
-    if (backend && !backend.killed) {
-      backend.kill('SIGTERM');
-    }
+    stopChild(cloudflared);
+    stopChild(backend);
 
     // Keep .valerie-session.json intact on regular stop
     setTimeout(() => process.exit(code), 500);
