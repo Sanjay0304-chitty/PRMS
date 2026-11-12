@@ -1912,6 +1912,7 @@ body.customization-mode [data-customize-id].customization-hover {
   margin-top: var(--spacing-md);
 }
 .modal .modal-footer {
+  flex-wrap: wrap;
   margin-top: var(--spacing-lg);
   padding-top: var(--spacing-md);
   border-top: 1px solid var(--border-color);
@@ -1923,6 +1924,13 @@ body.customization-mode [data-customize-id].customization-hover {
 .modal .input {
   width: 100%;
   box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  .modal.modal { padding: 16px; }
+  .modal .flex, .modal .step-progress, .modal .modal-footer { flex-wrap: wrap; }
+  .modal input:not([type="checkbox"]):not([type="radio"]), .modal select, .modal textarea { min-width: 0; max-width: 100%; font-size: 16px; }
+  .modal button, .modal [role="button"] { min-height: 44px; }
 }
 
 /* Maintenance ticket form's step tabs (Details / Photos / Location) —

@@ -309,6 +309,11 @@
 }
 
 @media (max-width: 800px) {
+  .admin-dashboard-page .dashboard-main-grid { grid-template-columns: minmax(0, 1fr); }
+  .admin-dashboard-page .panel-card { min-width: 0; padding: 16px; overflow-wrap: anywhere; }
+  .admin-dashboard-page .panel-title { flex-wrap: wrap; gap: 12px; }
+  .admin-dashboard-page .admin-search { width: 100%; min-width: 0; }
+  .admin-dashboard-page .admin-search input { min-width: 0; }
   .admin-table-head,
   .admin-table-row {
     grid-template-columns: 1fr auto;

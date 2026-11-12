@@ -1,0 +1,27 @@
+.mobile-nav-trigger { display: none; }
+.mobile-nav-dialog { position: fixed; inset: 0 auto 0 0; margin: 0; width: min(300px, 86vw); max-width: 86vw; height: 100dvh; max-height: 100dvh; box-sizing: border-box; padding: 16px; border: 0; background: var(--surface, #fff); color: var(--text-primary, #111827); overflow-y: auto; overscroll-behavior: contain; }
+.mobile-nav-dialog::backdrop { background: rgb(0 0 0 / 55%); }
+.mobile-nav-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.mobile-nav-dialog button { display: flex; align-items: center; gap: 14px; min-height: 44px; padding: 12px; border: 0; border-radius: 10px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.mobile-nav-dialog nav button { width: 100%; margin-bottom: 4px; }
+.mobile-nav-dialog nav button[aria-current=page] { background: var(--primary, #9333ea); color: white; }
+.mobile-nav-dialog button:focus-visible, .mobile-nav-trigger:focus-visible { outline: 3px solid #a855f7; outline-offset: 2px; }
+@media (max-width: 600px) {
+  .mobile-nav-trigger { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 1px solid var(--border-color); border-radius: 10px; color: inherit; background: transparent; grid-column: 1; grid-row: 1; cursor: pointer; }
+  main[class$="-layout-shell"] { display: block; width: 100%; min-width: 0; }
+  main[class$="-layout-shell"] > aside { display: none; }
+  main[class$="-layout-shell"] > section { width: 100%; min-width: 0; }
+  main[class$="-layout-shell"] header[class$="-layout-topbar"] { height: auto; padding: 12px 16px; display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; }
+  main[class$="-layout-shell"] [class$="-layout-brand"] { grid-column: 2; grid-row: 1; gap: 8px; flex-wrap: nowrap; min-width: 0; }
+  main[class$="-layout-shell"] [class$="-layout-brand"] h2 { font-size: 22px; }
+  main[class$="-layout-shell"] [class$="-layout-brand"] p { font-size: 12px; }
+  main[class$="-layout-shell"] [class$="-layout-search"] { grid-column: 1 / -1; grid-row: 3; width: 100%; min-width: 0; box-sizing: border-box; height: 44px; padding: 0 12px; }
+  main[class$="-layout-shell"] [class$="-layout-search"] input { min-width: 0; font-size: 16px; }
+  main[class$="-layout-shell"] [data-customize-id="global.top-actions"] { grid-column: 1 / -1; grid-row: 2; display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap; }
+  main[class$="-layout-shell"] [class$="-layout-content"] { padding: 20px 16px; min-width: 0; }
+  .notification-toggle, .profile-dropdown-toggle { min-height: 44px; }
+  main[class$="-layout-shell"] .notification-dropdown-root { position: static; }
+  main[class$="-layout-shell"] header { position: relative; }
+  main[class$="-layout-shell"] .notification-panel { top: 112px; right: 16px; width: calc(100% - 32px); max-height: min(420px, 65dvh); }
+  .profile-dropdown-info { max-width: 160px; }
+}

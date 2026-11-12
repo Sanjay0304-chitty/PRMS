@@ -355,7 +355,7 @@ function CommunicationHub() {
         {selectedConv ? (
           <div className="comm-thread">
             <div className="comm-thread-header">
-              <button className="comm-back-btn" onClick={() => setSelectedConv(null)}>
+              <button className="comm-back-btn" aria-label="Back to conversations" onClick={() => setSelectedConv(null)}>
                 <ChevronLeft size={18} />
               </button>
               <div className="comm-thread-avatar">{selectedConv.partner?.full_name?.[0]?.toUpperCase() || '?'}</div>
@@ -442,12 +442,13 @@ function CommunicationHub() {
               <input
                 type="text"
                 className="comm-input"
+                aria-label="Message"
                 placeholder="Type a message..."
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
               />
-              <button className="comm-send-btn" onClick={handleSend}>
+              <button className="comm-send-btn" aria-label="Send message" onClick={handleSend}>
                 <Send size={18} />
               </button>
             </div>

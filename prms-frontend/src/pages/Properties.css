@@ -568,6 +568,15 @@
 }
 
 @media (max-width: 600px) {
+  .properties-page.properties-page { padding: 0; }
+  .properties-page .panel-card.properties-toolbar { padding: 16px; }
+  .properties-page .properties-search { width: 100%; box-sizing: border-box; padding: 0 12px; }
+  .properties-page .properties-search input { min-width: 0; font-size: 16px; }
+  .properties-page .properties-controls { width: 100%; min-width: 0; }
+  .properties-page .properties-toolbar { min-width: 0; }
+  .properties-page .chip-btn { min-height: 44px; flex-shrink: 0; }
+  .properties-page .properties-type-filters { max-width: 100%; }
+  .properties-page .property-card { min-width: 0; }
   .properties-grid {
     grid-template-columns: 1fr;
   }

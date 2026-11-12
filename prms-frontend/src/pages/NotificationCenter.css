@@ -299,6 +299,9 @@
 }
 
 @media (max-width: 640px) {
+  .notification-center .notif-header { flex-wrap: wrap; gap: 12px; }
+  .notification-center .notif-header-left { min-width: 0; flex-wrap: wrap; }
+  .notification-center button { min-height: 44px; }
   .notification-center {
     padding: var(--spacing-md);
   }

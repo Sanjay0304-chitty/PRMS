@@ -7,6 +7,7 @@ import {
   Search,
 } from 'lucide-react'
 import PageTransition from './PageTransition'
+import MobileNavigation from './MobileNavigation'
 import { useAuth } from '../contexts/AuthContext'
 import { useBranding } from '../contexts/BrandingContext'
 import { buildNavItems, resolveActivePage } from './NavigationConfig'
@@ -110,6 +111,7 @@ function LandlordLayout() {
 
       <section className="landlord-layout-main" data-customize-id="global.content">
         <header className="landlord-layout-topbar" data-customize-id="global.header">
+          <MobileNavigation items={navItems} activePage={activePage} prefix="/landlord" onLogout={handleLogout} />
           <div className="landlord-layout-brand" onClick={() => safeNavigate('/landlord')} data-customize-id="global.brand">
             {brandLogo && <img src={brandLogo} alt="" className="landlord-layout-brand-logo" />}
             <h2 data-customize-id="global.brand.title">{brandName}</h2>

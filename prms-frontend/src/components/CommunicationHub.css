@@ -414,6 +414,11 @@
 /* Narrow screens: show either the list or the thread, never a cramped
    side-by-side. The existing back button drives navigation between them. */
 @media (max-width: 760px) {
+  .communication-hub { min-width: 0; height: 75dvh; min-height: 360px; }
+  .communication-hub .comm-main { min-width: 0; width: 100%; }
+  .comm-input-row.comm-input-row { padding: 12px; }
+  .comm-input.comm-input { min-width: 0; font-size: 16px; }
+  .comm-send-btn.comm-send-btn, .comm-back-btn.comm-back-btn, .comm-new-btn.comm-new-btn { min-height: 44px; min-width: 44px; }
   .comm-sidebar {
     width: 100%;
     border-right: none;

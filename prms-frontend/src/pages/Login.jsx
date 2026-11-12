@@ -220,12 +220,13 @@ function Login() {
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.46, duration: 0.35 }}
             >
-              <label>Email Address</label>
+              <label htmlFor="login-email">Email Address</label>
 
               <div className={`input-box ${emailError ? 'has-error' : ''}`}>
                 <Mail size={22} />
                 <input
                   type="email"
+                  id="login-email"
                   placeholder="name@example.com"
                   value={email}
                   onChange={handleEmailChange}
@@ -262,12 +263,13 @@ function Login() {
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.54, duration: 0.35 }}
             >
-              <label>Password</label>
+              <label htmlFor="login-password">Password</label>
 
               <div className="input-box">
                 <LockKeyhole size={22} />
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  id="login-password"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => {

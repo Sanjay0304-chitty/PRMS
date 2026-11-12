@@ -1,3 +1,12 @@
+@media (max-width: 600px) {
+  .tenant-payments.tenant-payments { padding: 0; }
+  .tenant-payments .payment-main { flex-wrap: wrap; padding: 14px; gap: 12px; }
+  .tenant-payments .payment-details { flex-basis: 100%; }
+  .tenant-payments .payment-actions-group { justify-content: flex-start; width: 100%; }
+  .tenant-payments .payment-property span { white-space: normal; overflow-wrap: anywhere; }
+  .tenant-payments button { min-height: 44px; }
+}
+
 .tenant-payments {
   max-width: 800px;
   margin: 0 auto;

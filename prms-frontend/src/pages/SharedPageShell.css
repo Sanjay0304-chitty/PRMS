@@ -4,6 +4,14 @@
    ever defined anywhere, so every page using them rendered as unstyled
    browser-default tables/buttons. */
 
+@media (max-width: 600px) {
+  .page-shell.page-shell { padding: 0; min-width: 0; }
+  .page-shell .card-table { padding: 12px; max-width: 100%; overflow-x: auto; }
+  .page-shell .booking-property-grid { grid-template-columns: minmax(0, 1fr); }
+  .page-shell .page-title { font-size: 24px; overflow-wrap: anywhere; }
+  .page-shell .status-filter button { min-height: 44px; }
+}
+
 .page-shell {
   padding: var(--spacing-lg, 24px);
   max-width: 1280px;

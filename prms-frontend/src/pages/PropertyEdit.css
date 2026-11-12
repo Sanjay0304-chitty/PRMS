@@ -1,6 +1,17 @@
 /* ================= PROPERTY EDIT PAGE ================= */
 
 /* ---- Page layout ---- */
+@media (max-width: 600px) {
+  .pe-page .pe-body { padding: 16px 0 32px; gap: 16px; }
+  .pe-page .pe-left, .pe-page .pe-right { width: 100%; min-width: 0; flex-basis: 100%; }
+  .pe-page .pe-section { padding: 16px; }
+  .pe-page .pe-topbar { height: auto; flex-wrap: wrap; padding: 12px; gap: 12px; }
+  .pe-page .pe-topbar-actions { flex-wrap: wrap; }
+  .pe-page .pe-steps { overflow-x: auto; max-width: 100%; }
+  .pe-page .pe-step { flex-shrink: 0; }
+  .pe-page input, .pe-page select, .pe-page textarea { min-width: 0; max-width: 100%; font-size: 16px; }
+}
+
 .pe-page {
   min-height: 100vh;
   background: var(--background-color, #f8f9fb);

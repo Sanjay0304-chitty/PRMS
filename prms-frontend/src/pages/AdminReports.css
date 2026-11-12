@@ -1,5 +1,11 @@
 /* ================= OFFICIAL REPORT STATEMENT STYLES ================= */
 
+@media screen and (max-width: 600px) {
+  .admin-reports-container .statement-info-strip, .admin-reports-container .statement-summary-grid, .admin-reports-container .statement-footer-section { grid-template-columns: minmax(0, 1fr); }
+  .admin-reports-container .report-statement-document { padding: 20px 16px; overflow-x: auto; }
+  .admin-reports-container .statement-header, .admin-reports-container .report-actions-bar, .admin-reports-container .report-actions-right { flex-wrap: wrap; gap: 12px; }
+}
+
 .admin-reports-container {
   display: flex;
   flex-direction: column;

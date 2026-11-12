@@ -6,6 +6,7 @@ import {
   Search,
 } from 'lucide-react'
 import PageTransition from './PageTransition'
+import MobileNavigation from './MobileNavigation'
 import { useAuth } from '../contexts/AuthContext'
 import { useBranding } from '../contexts/BrandingContext'
 import { buildNavItems, resolveActivePage } from './NavigationConfig'
@@ -150,6 +151,7 @@ function AdminLayout() {
 
       <section className="admin-layout-main" data-customize-id="global.content">
         <header className="admin-layout-topbar" data-customize-id="global.header">
+          <MobileNavigation items={navItems} activePage={activePage} prefix="/admin" onLogout={handleLogout} />
           <div className="admin-layout-brand" onClick={() => safeNavigate('/admin')} data-customize-id="global.brand">
             {brandLogo && <img src={brandLogo} alt="" className="admin-layout-brand-logo" />}
             <h2 data-customize-id="global.brand.title">{brandName}</h2>

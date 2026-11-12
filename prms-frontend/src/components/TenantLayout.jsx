@@ -7,6 +7,7 @@ import {
   Search,
 } from 'lucide-react'
 import PageTransition from './PageTransition'
+import MobileNavigation from './MobileNavigation'
 import { useAuth } from '../contexts/AuthContext'
 import { useBranding } from '../contexts/BrandingContext'
 import { buildNavItems, resolveActivePage } from './NavigationConfig'
@@ -57,7 +58,7 @@ function TenantLayout() {
     event.preventDefault()
     const query = searchTerm.trim()
     if (!query) return
-    navigate(`/search?q=${encodeURIComponent(query)}`)
+    navigate(`/tenant/properties?search=${encodeURIComponent(query)}`)
   }
 
   return (
@@ -108,6 +109,7 @@ function TenantLayout() {
 
       <section className="tenant-layout-main" data-customize-id="global.content">
         <header className="tenant-layout-topbar" data-customize-id="global.header">
+          <MobileNavigation items={navItems} activePage={activePage} prefix="/tenant" onLogout={handleLogout} />
           <div className="tenant-layout-brand" onClick={() => safeNavigate('/tenant')} data-customize-id="global.brand">
             {brandLogo && <img src={brandLogo} alt="" className="tenant-layout-brand-logo" />}
             <h2 data-customize-id="global.brand.title">{brandName}</h2>

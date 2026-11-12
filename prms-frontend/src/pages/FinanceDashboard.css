@@ -1,3 +1,14 @@
+@media (max-width: 600px) {
+  .finance-dashboard .finance-cards { grid-template-columns: minmax(0, 1fr); }
+  .finance-dashboard .finance-header, .finance-dashboard .finance-payments-header { flex-wrap: wrap; gap: 12px; }
+  .finance-dashboard .finance-bar-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+  .finance-dashboard .finance-bar-label { min-width: 0; white-space: normal; }
+  .finance-dashboard .finance-bar-track { grid-column: 1 / -1; grid-row: 2; }
+  .finance-dashboard .finance-table { min-width: 600px; }
+  .finance-dashboard .finance-filter { flex-wrap: wrap; }
+  .finance-dashboard .finance-filter select { max-width: 100%; min-height: 44px; }
+}
+
 .finance-dashboard {
   padding: var(--spacing-xs) 0;
 }
