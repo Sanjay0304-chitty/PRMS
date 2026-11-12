@@ -84,13 +84,13 @@ function buildWhere(filters: AuditFilters): any {
   if (filters.level) where.level = ['warn', 'warning'].includes(filters.level.toLowerCase()) ? { in: ['warn', 'warning'] } : filters.level;
   if (filters.userId) where.userId = filters.userId;
   if (filters.username) {
-    where.username = { contains: filters.username, mode: 'insensitive' as const };
+    where.username = { contains: filters.username };
   }
   if (filters.module) {
-    where.module = { equals: filters.module, mode: 'insensitive' as const };
+    where.module = { equals: filters.module };
   }
   if (filters.entity) {
-    where.entity = { contains: filters.entity, mode: 'insensitive' as const };
+    where.entity = { contains: filters.entity };
   }
   if (filters.status) {
     where.status = { equals: filters.status };

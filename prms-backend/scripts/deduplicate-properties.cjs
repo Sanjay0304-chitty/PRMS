@@ -1,6 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const Database = require('better-sqlite3');
+if (require.main === module) require('./legacy-sqlite-guard.cjs')(process.argv.slice(2));
 const normalize = value => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
 function plan(db) {

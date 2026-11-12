@@ -1,3 +1,4 @@
+import { prisma } from '../src/db';
 /**
  * One-off, idempotent import of the "propertydata.xlsx" apartment listings
  * (50 rows) into prisma/data/propertydata_apartments.json. Safe to re-run —
@@ -11,13 +12,10 @@
  *
  * Run with: npx tsx prisma/seed_propertydata.ts
  */
-import { PrismaClient } from '@prisma/client';
-import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import fs from 'fs';
 import path from 'path';
 
-const adapter = new PrismaMariaDb(process.env.DATABASE_URL ?? 'mysql://root:password@localhost:3306/prms_db');
-const prisma = new PrismaClient({ adapter });
+
 
 type Listing = {
   id: string;

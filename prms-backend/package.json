@@ -13,7 +13,14 @@
     "prisma:migrate": "npx prisma migrate dev --name init_migration",
     "prisma:generate": "npx prisma generate",
     "prisma:seed": "npx tsx prisma/seed.ts",
-    "demo:catalogue": "node scripts/import-demo-catalogue.cjs"
+    "categories:seed": "tsx prisma/seed_categories.ts",
+    "prisma:deploy": "prisma migrate deploy",
+    "mysql:start": "node scripts/local-mysql.cjs start",
+    "mysql:stop": "node scripts/local-mysql.cjs stop",
+    "mysql:status": "node scripts/local-mysql.cjs status",
+    "mysql:validate": "prisma validate",
+    "mysql:generate": "prisma generate",
+    "mysql:deploy": "prisma migrate deploy"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.8.0",

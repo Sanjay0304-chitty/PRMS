@@ -174,10 +174,10 @@ if (fs.existsSync(frontendDist)) {
 
 app.use(errorHandler);
 
-// Bootstrap database: connect, create tables if missing, seed default admin
+// Check the configured database before accepting requests.
 bootstrap()
-  .then(async () => {
-    const server = app.listen(PORT, () => {
+  .then(() => {
+    app.listen(PORT, () => {
       console.log(`PRMS Backend running on http://localhost:${PORT} (${env.NODE_ENV})`);
     });
   })

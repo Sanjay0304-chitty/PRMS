@@ -18,17 +18,17 @@ export async function getAllProperties(page = 1, limit = 10, filters: { type?: s
   };
 
   if (filters.type) {
-    where.property_type = { equals: filters.type, mode: 'insensitive' as const };
+    where.property_type = { equals: filters.type };
   }
 
   if (filters.search) {
     const s = filters.search;
     where.OR = [
-      { title: { contains: s, mode: 'insensitive' as const } },
-      { address: { contains: s, mode: 'insensitive' as const } },
-      { city: { contains: s, mode: 'insensitive' as const } },
-      { state: { contains: s, mode: 'insensitive' as const } },
-      { property_type: { contains: s, mode: 'insensitive' as const } },
+      { title: { contains: s } },
+      { address: { contains: s } },
+      { city: { contains: s } },
+      { state: { contains: s } },
+      { property_type: { contains: s } },
     ];
   }
 

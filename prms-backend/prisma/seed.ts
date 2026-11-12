@@ -1,10 +1,9 @@
-import { PrismaClient } from '@prisma/client';
-import { PrismaMariaDb } from '@prisma/adapter-mariadb';
+import { prisma } from '../src/db';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
+import { seedDefaultCategories } from '../src/modules/category/service_category';
 
-const adapter = new PrismaMariaDb(process.env.DATABASE_URL ?? 'mysql://root:password@localhost:3306/prms_db');
-const prisma = new PrismaClient({ adapter });
+
 
 async function main() {
   console.log('Seeding roles...');
@@ -23,7 +22,7 @@ async function main() {
       firebase_uid: 'admin-001', full_name: 'System Admin', is_active: true,
       UserRole: { create: [{ role: { connect: { name: 'Admin' } } }] },
     },
-    update: { passwordHash: await hash('Admin123!'), full_name: 'System Admin' },
+    update: {},
   });
 
   const landlord = await prisma.user.upsert({
@@ -34,7 +33,7 @@ async function main() {
       phone: '+123****7890', is_active: true,
       UserRole: { create: [{ role: { connect: { name: 'Landlord' } } }] },
     },
-    update: { passwordHash: await hash('Landlord123!') },
+    update: {},
   });
 
   const tenant = await prisma.user.upsert({
@@ -45,7 +44,7 @@ async function main() {
       phone: '+198****4321', is_active: true,
       UserRole: { create: [{ role: { connect: { name: 'Tenant' } } }] },
     },
-    update: { passwordHash: await hash('Tenant123!') },
+    update: {},
   });
 
   const agent = await prisma.user.upsert({
@@ -56,8 +55,11 @@ async function main() {
       phone: '+199****5678', is_active: true,
       UserRole: { create: [{ role: { connect: { name: 'Agent' } } }] },
     },
-    update: { passwordHash: await hash('Agent123!') },
+    update: {},
   });
+
+  console.log('Seeding shared property categories...');
+  await seedDefaultCategories(admin.id);
 
   console.log('Seeding properties...');
   const prop1 = await prisma.property.upsert({
@@ -81,14 +83,14 @@ async function main() {
   });
 
   console.log('Seeding amenities...');
-  await prisma.amenity.deleteMany();
-  await prisma.amenity.createMany({
-    data: [
-      { name: 'WiFi', description: 'High-speed WiFi', propertyId: prop1.id },
-      { name: 'Parking', description: 'Free parking', propertyId: prop1.id },
-      { name: 'Laundry', description: 'In-unit laundry', propertyId: prop2.id },
-    ],
-  });
+  for (const data of [
+    { name: 'WiFi', description: 'High-speed WiFi', propertyId: prop1.id },
+    { name: 'Parking', description: 'Free parking', propertyId: prop1.id },
+    { name: 'Laundry', description: 'In-unit laundry', propertyId: prop2.id },
+  ]) {
+    const existing = await prisma.amenity.findFirst({ where: { name: data.name, propertyId: data.propertyId } });
+    if (!existing) await prisma.amenity.create({ data });
+  }
 
   console.log('Seeding system settings...');
   await prisma.systemSetting.upsert({
@@ -98,7 +100,7 @@ async function main() {
   });
   await prisma.systemSetting.upsert({
     where: { key: 'currency' },
-    create: { key: 'currency', value: 'USD', category: 'general', description: 'Default currency' },
+    create: { key: 'currency', value: 'MYR', category: 'general', description: 'Default currency' },
     update: {},
   });
 

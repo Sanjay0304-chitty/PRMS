@@ -16,6 +16,8 @@ jest.mock('../../admin/service_audit', () => ({
   recordAudit: (...args: any[]) => recordAudit(...args),
 }));
 jest.mock('../../../utils/propertyAuthority', () => ({ hasPropertyAuthority: jest.fn() }));
+// This controller unit test must not open a real database through notification delivery.
+jest.mock('../../notification/property_notifications', () => ({ notifyPropertyManagers: jest.fn().mockResolvedValue(undefined) }));
 
 function response() {
   const res: any = {};

@@ -1,3 +1,4 @@
+import { prisma } from '../src/db';
 /**
  * One-off, idempotent seed script: 10 properties per property type (8
  * types = 80 properties) across real Malaysian cities/states. Safe to
@@ -6,11 +7,8 @@
  *
  * Run with: npx tsx prisma/seed_malaysia_properties.ts
  */
-import { PrismaClient } from '@prisma/client';
-import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 
-const adapter = new PrismaMariaDb(process.env.DATABASE_URL ?? 'mysql://root:password@localhost:3306/prms_db');
-const prisma = new PrismaClient({ adapter });
+
 
 const LOCATIONS = [
   { city: 'Kuala Lumpur', state: 'WP Kuala Lumpur' },

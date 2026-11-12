@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const Database = require('better-sqlite3');
+if (require.main === module) require('./legacy-sqlite-guard.cjs')(process.argv.slice(2));
 
 const backend = path.resolve(__dirname, '..');
 const catalogueFile = path.join(backend, 'prisma/data/demo-catalogue.json');

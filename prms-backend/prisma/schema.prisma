@@ -69,7 +69,7 @@ model AgentProperty {
 model PropertyCategory {
   id          String     @id @default(uuid())
   name        String
-  description String?
+  description String? @db.LongText
   isShared    Boolean    @default(true)
   ownerId     String?
   owner       User?      @relation("user_categories", fields: [ownerId], references: [id])
@@ -88,11 +88,11 @@ model User {
   id              String   @id @default(uuid())
   firebase_uid    String   @unique
   email           String?  @unique
-  passwordHash    String?
-  full_name       String?
-  phone           String?
-  profile_img_url String?
-  refreshToken    String?
+  passwordHash    String? @db.LongText
+  full_name       String? @db.LongText
+  phone           String? @db.LongText
+  profile_img_url String? @db.LongText
+  refreshToken    String? @db.LongText
   is_active       Boolean  @default(true)
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
@@ -127,12 +127,12 @@ model ConsentRecord {
   userId      String
   user        User      @relation(fields: [userId], references: [id])
   type        String // PRIVACY_NOTICE, MARKETING, TERMS
-  wording     String // exact text shown to the user at the time
-  version     String // e.g. "1.0" - bump when wording changes materially
+  wording     String @db.LongText // exact text shown to the user at the time
+  version     String @db.LongText // e.g. "1.0" - bump when wording changes materially
   consented   Boolean
   consentedAt DateTime  @default(now())
   withdrawnAt DateTime?
-  ipAddress   String?
+  ipAddress   String? @db.LongText
 
   @@index([userId])
   @@index([userId, type])
@@ -143,12 +143,12 @@ model PrivacyRequest {
   id              String    @id @default(uuid())
   userId          String
   user            User      @relation(fields: [userId], references: [id])
-  type            String // ACCESS, CORRECTION, DELETION, CONSENT_WITHDRAWAL
-  details         String?
+  type            String @db.LongText // ACCESS, CORRECTION, DELETION, CONSENT_WITHDRAWAL
+  details         String? @db.LongText
   status          String    @default("SUBMITTED") // SUBMITTED, IN_REVIEW, APPROVED, REJECTED, COMPLETED
-  assignedAdminId String?
-  decision        String?
-  decisionReason  String?
+  assignedAdminId String? @db.LongText
+  decision        String? @db.LongText
+  decisionReason  String? @db.LongText
   submitted_at    DateTime  @default(now())
   updated_at      DateTime  @updatedAt
   completed_at    DateTime?
@@ -161,9 +161,9 @@ model PrivacyRequest {
 model RetentionPolicy {
   id            String   @id @default(uuid())
   category      String   @unique
-  label         String
+  label         String @db.LongText
   retentionDays Int
-  description   String?
+  description   String? @db.LongText
   updated_at    DateTime @updatedAt
 
   @@map("retention_policies")
@@ -171,18 +171,18 @@ model RetentionPolicy {
 
 model DataBreachIncident {
   id                 String   @id @default(uuid())
-  title              String
+  title              String @db.LongText
   detectedAt         DateTime
-  nature             String
-  cause              String?
-  dataTypesAffected  String
+  nature             String @db.LongText
+  cause              String? @db.LongText
+  dataTypesAffected  String @db.LongText
   affectedUserCount  Int      @default(0)
-  containmentAction  String?
-  riskAssessment     String?
+  containmentAction  String? @db.LongText
+  riskAssessment     String? @db.LongText
   notificationStatus String   @default("PENDING") // PENDING, COMMISSIONER_NOTIFIED, USERS_NOTIFIED, NOT_REQUIRED
-  resolution         String?
+  resolution         String? @db.LongText
   status             String   @default("OPEN") // OPEN, CONTAINED, RESOLVED
-  createdById        String?
+  createdById        String? @db.LongText
   created_at         DateTime @default(now())
   updated_at         DateTime @updatedAt
 
@@ -209,18 +209,18 @@ model UserRole {
 
 model Property {
   id                  String               @id @default(uuid())
-  title               String
-  address             String
+  title               String @db.LongText
+  address             String @db.LongText
   property_type       String               @default("apartment")
-  description         String?
+  description         String? @db.LongText
   categoryId          String?
   category            PropertyCategory?    @relation(fields: [categoryId], references: [id])
   rent                Float
   status              PropertyStatus       @default(AVAILABLE)
   availableFrom       DateTime?
   availableTo         DateTime?
-  city                String?
-  state               String?
+  city                String? @db.LongText
+  state               String? @db.LongText
   ownerId             String
   owner               User                 @relation(fields: [ownerId], references: [id])
   amenities           Amenity[]
@@ -246,11 +246,11 @@ model Review {
   id         String   @id @default(uuid())
   propertyId String
   property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  userId     String?
-  userName   String
-  userAvatar String?
+  userId     String? @db.LongText
+  userName   String @db.LongText
+  userAvatar String? @db.LongText
   rating     Float    @default(5.0)
-  comment    String
+  comment    String @db.LongText
   created_at DateTime @default(now())
 
   @@index([propertyId])
@@ -259,8 +259,8 @@ model Review {
 
 model Amenity {
   id          String   @id @default(uuid())
-  name        String
-  description String?
+  name        String @db.LongText
+  description String? @db.LongText
   propertyId  String
   property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
@@ -269,10 +269,10 @@ model Amenity {
 
 model PropertyImage {
   id           String   @id @default(uuid())
-  url          String
-  thumbnailUrl String?
+  url          String @db.LongText
+  thumbnailUrl String? @db.LongText
   type         String   @default("image")
-  documentName String?
+  documentName String? @db.LongText
   sortOrder    Int      @default(0)
   propertyId   String
   property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
@@ -301,26 +301,26 @@ model Booking {
   alternative_start_date DateTime?
   lease_duration_months  Int?
   occupants              Int?
-  applicant_message      String?
+  applicant_message      String? @db.LongText
   pdpa_consent           Boolean   @default(false)
   acknowledgement        Boolean   @default(false)
 
   // ── Review / offer fields (Part 4) ──
   application_stage String?   @default("SUBMITTED") // SUBMITTED, UNDER_REVIEW, NEEDS_INFORMATION, APPROVED, REJECTED, WITHDRAWN, EXPIRED
-  reviewer_notes    String?
-  rejection_reason  String?
+  reviewer_notes    String? @db.LongText
+  rejection_reason  String? @db.LongText
   offer_expiry      DateTime?
   security_deposit  Float?
   utility_deposit   Float?
 
   // ── Tenancy lifecycle fields (Part 8) ──
   moveInConfirmedAt      DateTime?
-  moveInConditionReport  String?
+  moveInConditionReport  String? @db.LongText
   keyHandoverConfirmedAt DateTime?
   noticeSubmittedAt      DateTime?
-  noticeSubmittedById    String?
+  noticeSubmittedById    String? @db.LongText
   moveOutInspectionAt    DateTime?
-  moveOutConditionReport String?
+  moveOutConditionReport String? @db.LongText
   closedAt               DateTime?
 
   agreements Agreement[]
@@ -338,10 +338,10 @@ model ViewingAppointment {
   tenant          User      @relation("TenantViewings", fields: [tenantId], references: [id])
   preferredTime   DateTime
   alternativeTime DateTime?
-  message         String?
+  message         String? @db.LongText
   status          String    @default("REQUESTED") // REQUESTED, ACCEPTED, PROPOSED_ALTERNATE, CONFIRMED, COMPLETED, NO_SHOW, CANCELLED
   proposedTime    DateTime?
-  respondedById   String?
+  respondedById   String? @db.LongText
   created_at      DateTime  @default(now())
   updated_at      DateTime  @updatedAt
 
@@ -362,19 +362,19 @@ model Agreement {
   utilityDeposit       Float
   leaseStartDate       DateTime
   leaseEndDate         DateTime
-  terms                String?
-  signingMethod        String? // ELECTRONIC, PHYSICAL
+  terms                String? @db.LongText
+  signingMethod        String? @db.LongText // ELECTRONIC, PHYSICAL
   tenantConsentAt      DateTime?
-  tenantLegalName      String?
-  tenantOtp            String?
+  tenantLegalName      String? @db.LongText
+  tenantOtp            String? @db.LongText
   tenantOtpVerifiedAt  DateTime?
   tenantSignedAt       DateTime?
   landlordSignedAt     DateTime?
-  landlordLegalName    String?
-  documentHash         String?
-  physicalCopyUrl      String?
+  landlordLegalName    String? @db.LongText
+  documentHash         String? @db.LongText
+  physicalCopyUrl      String? @db.LongText
   physicalVerifiedAt   DateTime?
-  physicalVerifiedById String?
+  physicalVerifiedById String? @db.LongText
   created_at           DateTime  @default(now())
   updated_at           DateTime  @updatedAt
 
@@ -401,7 +401,7 @@ model Payment {
   status     PaymentStatus         @default(PENDING)
   due_date   DateTime
   paid_at    DateTime?
-  reference  String?
+  reference  String? @db.LongText
   created_at DateTime              @default(now())
   updated_at DateTime              @updatedAt
 
@@ -415,10 +415,10 @@ model MockPaymentTransaction {
   id            String           @id @default(uuid())
   paymentId     String
   payment       Payment          @relation(fields: [paymentId], references: [id])
-  method        String           // FPX, QR, CARD
+  method        String @db.LongText // FPX, QR, CARD
   status        MockPaymentStatus @default(PENDING)
   reference     String           @unique // MOCK-<timestamp>-<random>
-  failureMessage String?
+  failureMessage String? @db.LongText
   created_at    DateTime         @default(now())
   updated_at    DateTime         @updatedAt
 
@@ -462,12 +462,12 @@ model MaintenanceTicket {
   userId           String
   user             User                    @relation(fields: [userId], references: [id])
   propertyId       String?
-  title            String
-  description      String
+  title            String @db.LongText
+  description      String @db.LongText
   status           MaintenanceStatus       @default(OPEN)
   priority         MaintenancePriority     @default(MEDIUM)
-  assignedTo       String?
-  inspectionNotes  String?
+  assignedTo       String? @db.LongText
+  inspectionNotes  String? @db.LongText
   resolved_at      DateTime?
   created_at       DateTime                @default(now())
   updated_at       DateTime                @updatedAt
@@ -482,9 +482,9 @@ model MaintenanceAttachment {
   id           String            @id @default(uuid())
   ticketId     String
   ticket       MaintenanceTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  url          String
-  originalName String
-  uploadedById String
+  url          String @db.LongText
+  originalName String @db.LongText
+  uploadedById String @db.LongText
   created_at   DateTime          @default(now())
 
   @@index([ticketId])
@@ -497,7 +497,7 @@ model Message {
   sender         User     @relation("sender", fields: [senderId], references: [id])
   receiverId     String
   receiver       User     @relation("receiver", fields: [receiverId], references: [id])
-  content        String
+  content        String @db.LongText
   conversationId String
   isRead         Boolean  @default(false)
   edited         Boolean  @default(false)
@@ -512,9 +512,9 @@ model Notification {
   id         String   @id @default(uuid())
   userId     String
   user       User     @relation(fields: [userId], references: [id])
-  type       String
-  title      String
-  message    String
+  type       String @db.LongText
+  title      String @db.LongText
+  message    String @db.LongText
   isRead     Boolean  @default(false)
   created_at DateTime @default(now())
 
@@ -525,9 +525,9 @@ model Notification {
 model SystemSetting {
   id          String   @id @default(uuid())
   key         String   @unique
-  value       String
+  value       String @db.LongText
   category    String   @default("general")
-  description String?
+  description String? @db.LongText
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
@@ -570,7 +570,7 @@ model ThemeVersion {
   lightConfig Json?
   darkConfig  Json?
   createdAt   DateTime @default(now())
-  createdBy   String?
+  createdBy   String? @db.LongText
 
   @@unique([themeId, version])
   @@index([themeId])
@@ -592,22 +592,22 @@ model AuditLog {
   id           String   @id @default(uuid())
   userId       String?
   user         User?    @relation(fields: [userId], references: [id])
-  username     String?
-  userRole     String?
+  username     String? @db.LongText
+  userRole     String? @db.LongText
   module       String
   action       String
   entity       String
-  entityId     String?
-  description  String?
-  oldValue     String?
-  newValue     String?
+  entityId     String? @db.LongText
+  description  String? @db.LongText
+  oldValue     String? @db.LongText
+  newValue     String? @db.LongText
   status       String   @default("Success")
   level        String   @default("info")
-  ipAddress    String?
-  userAgent    String?
-  requestUrl   String?
-  httpMethod   String?
-  errorMessage String?
+  ipAddress    String? @db.LongText
+  userAgent    String? @db.LongText
+  requestUrl   String? @db.LongText
+  httpMethod   String? @db.LongText
+  errorMessage String? @db.LongText
   created_at   DateTime @default(now())
 
   @@index([userId])
@@ -634,14 +634,14 @@ model UserProfileFile {
   id           String   @id @default(uuid())
   userId       String
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  originalName String
+  originalName String @db.LongText
   storageName  String   @unique
-  mimeType     String
+  mimeType     String @db.LongText
   fileSize     Int
-  category     String // "image" | "document"
-  url          String
-  thumbnailUrl String?
-  description  String?
+  category     String @db.LongText // "image" | "document"
+  url          String @db.LongText
+  thumbnailUrl String? @db.LongText
+  description  String? @db.LongText
   created_at   DateTime @default(now())
 
   @@index([userId])
@@ -653,8 +653,8 @@ model WebsiteCustomizer {
   userId             String   @unique
   user               User     @relation(fields: [userId], references: [id])
   company_name       String   @default("PRMS")
-  logo_url           String?
-  logo_thumb_url     String?
+  logo_url           String? @db.LongText
+  logo_thumb_url     String? @db.LongText
   // Light mode colors - default to the app's actual built-in navy/purple
   // branding (matching styles.css's :root tokens), not an arbitrary theme,
   // so an account that never touches the customizer looks unchanged.

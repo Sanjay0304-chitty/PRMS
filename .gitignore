@@ -56,3 +56,6 @@ bcrypt_whl_file.whl
 
 # Local backups and integration reports (may contain private data)
 .artifacts/
+
+# Locally generated MySQL Prisma client
+prms-backend/generated/
