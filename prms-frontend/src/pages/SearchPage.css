@@ -1,6 +1,9 @@
 /* SearchPage styles - Design System Tokens */
 
 .search-page {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -52,6 +55,9 @@
 }
 
 .search-input-group input {
+  min-width: 0;
+  width: 100%;
+  background: transparent;
   flex: 1;
   border: none;
   outline: none;
@@ -94,7 +100,8 @@
   flex: 1;
   gap: var(--spacing-lg);
   padding: var(--spacing-lg);
-  max-width: var(--max-width);
+  max-width: 100%;
+  min-width: 0;
   margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
@@ -153,6 +160,7 @@
 }
 
 .filter-group select {
+  background: var(--surface-container-lowest);
   width: 100%;
   padding: var(--spacing-xs) var(--spacing-sm);
   border: 1px solid var(--border-color);
@@ -223,6 +231,7 @@
 }
 
 .sort-inline select {
+  background: var(--surface-container-lowest);
   padding: var(--spacing-xs) var(--spacing-xs);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
@@ -232,13 +241,16 @@
 
 /* ---------- Results Grid ---------- */
 
-.results-grid {
+.search-page .results-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
   gap: var(--spacing-md);
 }
 
 .result-card {
+  min-width: 0;
   background: var(--surface-container-lowest);
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -351,6 +363,7 @@
 }
 
 .result-card-footer {
+  flex-wrap: wrap;
   margin-top: var(--spacing-xs);
   display: flex;
   align-items: center;
@@ -446,6 +459,12 @@
 
 /* Mobile: hide sidebar filters, show toggle */
 @media (max-width: 768px) {
+  .search-page .search-body { padding: 16px; }
+  .search-page .search-header { padding: 24px 16px; }
+  .search-page .search-input-group { max-width: none; flex-basis: 100%; min-height: 44px; }
+  .search-page .search-input-group input { font-size: 16px; }
+  .search-page .results-toolbar { flex-wrap: wrap; }
+  .search-page .sort-inline { margin-left: 0; }
   .search-filters {
     position: fixed;
     left: -300px;

@@ -39,7 +39,7 @@ export default function AgentProperties() {
   const visibleProperties = searchTerm
     ? properties.filter((p) =>
         (p.title || '').toLowerCase().includes(searchTerm) ||
-        (p.address || '').toLowerCase().includes(searchTerm))
+        [p.address, p.city, p.state, p.property_type].filter(Boolean).join(' ').toLowerCase().includes(searchTerm))
     : properties;
 
   return (

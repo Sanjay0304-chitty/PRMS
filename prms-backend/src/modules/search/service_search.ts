@@ -1,9 +1,10 @@
 import { catalogueOrder, photoOrder } from '../../utils/catalogueOrder';
 import { prisma } from '../../db';
 
-export async function searchProperties(query: { location?: string; property_type?: string; min_price?: string; max_price?: string; amenity?: string; page?: string; limit?: string; }) {
-  const where: any = {};
-  if (query.location) where.OR = [{ city: { contains: query.location } }, { address: { contains: query.location } }, { state: { contains: query.location } }];
+export async function searchProperties(query: { location?: string; property_type?: string; min_price?: string; max_price?: string; amenity?: string; page?: string; limit?: string; sort?: string; q?: string; }) {
+  const where: any = { status: { not: 'INACTIVE' } };
+  const term = (query.location || query.q || '').trim();
+  if (term) where.OR = ['title', 'city', 'address', 'state', 'property_type'].map(field => ({ [field]: { contains: term } }));
   if (query.property_type) where.property_type = query.property_type;
   if (query.min_price || query.max_price) {
     where.rent = {};
@@ -16,7 +17,7 @@ export async function searchProperties(query: { location?: string; property_type
   const limit = parseInt(query.limit || '10');
 
   const [properties, total] = await Promise.all([
-    prisma.property.findMany({ where, include: { owner: { select: { id: true, full_name: true, email: true } }, amenities: true, images: { take: 3, orderBy: photoOrder }, category: true }, skip: (page - 1) * limit, take: limit, orderBy: catalogueOrder }),
+    prisma.property.findMany({ where, include: { owner: { select: { id: true, full_name: true, email: true } }, amenities: true, images: { take: 3, orderBy: photoOrder }, category: true }, skip: (page - 1) * limit, take: limit, orderBy: query.sort === 'price_asc' ? [{ rent: 'asc' }, ...catalogueOrder] : query.sort === 'price_desc' ? [{ rent: 'desc' }, ...catalogueOrder] : catalogueOrder }),
     prisma.property.count({ where }),
   ]);
   return { properties, total, page, limit, totalPages: Math.ceil(total / limit) };

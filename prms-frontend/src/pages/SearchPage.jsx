@@ -41,8 +41,7 @@ function SearchPage() {
       if (query) params.location = query
       if (location) params.location = location
       if (type !== 'all') params.property_type = type
-      if (sort === 'price_asc') params.min_price = '0'
-      else if (sort === 'price_desc') params.max_price = '1000000'
+      params.sort = sort
 
       let response
       try {
@@ -71,15 +70,14 @@ function SearchPage() {
     }
   }, [query, location, type, sort, page])
 
-  // Run the search once on load when arriving with ?q= already set (e.g.
-  // from the sidebar search box) - otherwise landing here just shows the
-  // empty filter panel with no results until the user re-submits.
   useEffect(() => {
-    if (searchParams.get('q')) {
-      Promise.resolve().then(() => handleSearch())
-    }
+    Promise.resolve().then(() => { setQuery(searchParams.get('q') || ''); setPage(1) })
+  }, [searchParams])
 
-  }, [])
+  useEffect(() => {
+    const timer = setTimeout(() => handleSearch(), 300)
+    return () => clearTimeout(timer)
+  }, [handleSearch])
 
   const clearFilters = useCallback(() => {
     setQuery('')
@@ -110,7 +108,7 @@ function SearchPage() {
       <div className="search-header" data-customize-id="search.header">
         <div className="search-header-content">
           <h1>Find Your Next Home</h1>
-          <p>Search verified rental properties across Malaysia</p>
+              <p>Browse rental property listings across Malaysia</p>
 
           <form className="search-form" onSubmit={handleSearch}>
             <div className="search-input-group">

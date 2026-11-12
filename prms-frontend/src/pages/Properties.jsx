@@ -155,6 +155,10 @@ function Properties() {
     }
   }, [activeStatus, activeType, currentPage, debouncedSearch, isLandlord, perPage])
 
+  useEffect(() => {
+    Promise.resolve().then(() => setSearchTerm(searchParams.get('search') || ''))
+  }, [searchParams])
+
   // Debounce the raw search input into `debouncedSearch`
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -190,7 +194,7 @@ function Properties() {
 
     if (activeType !== 'all' && (p.property_type || '').toLowerCase() !== activeType.toLowerCase()) return false
     if (debouncedSearch) {
-      const searchable = [p.title, p.name, p.address, p.city, p.location]
+      const searchable = [p.title, p.name, p.address, p.city, p.state, p.property_type, p.location]
         .filter(Boolean)
         .join(' ')
         .toLowerCase()
