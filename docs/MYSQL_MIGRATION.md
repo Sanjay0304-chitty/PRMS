@@ -32,6 +32,13 @@ MYSQL_SSL=false
 
 For a hosted connection requiring TLS, set `MYSQL_SSL=true`. If the provider supplies a CA, save it privately and set `MYSQL_SSL_CA` to its file path. TLS verification is never disabled. The URL's host, port and credentials must be identical for Prisma and the running app. Never commit credentials or put them in frontend environment variables.
 
+For local MySQL accounts using `caching_sha2_password` without TLS, set
+`MYSQL_RSA_PUBLIC_KEY` to the trusted server `public_key.pem` file. This computer's
+private environment points to `.artifacts/local-mysql/data/public_key.pem` through
+an absolute path. This lets the driver complete password authentication even
+after MySQL restarts and its authentication cache is empty. The setting contains
+only the public key; do not use the server's private key.
+
 Backend first-time setup:
 
 ```cmd

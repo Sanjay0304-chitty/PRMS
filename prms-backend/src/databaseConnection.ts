@@ -16,6 +16,7 @@ export function databaseOptions(settings: NodeJS.ProcessEnv = process.env) {
     password: decodeURIComponent(url.password),
     database: decodeURIComponent(url.pathname.slice(1)),
     connectionLimit: 5,
+    ...(settings.MYSQL_RSA_PUBLIC_KEY ? { cachingRsaPublicKey: fs.readFileSync(settings.MYSQL_RSA_PUBLIC_KEY, 'utf8') } : {}),
     ssl: settings.MYSQL_SSL === 'true' ? {
       rejectUnauthorized: true,
       ...(settings.MYSQL_SSL_CA ? { ca: fs.readFileSync(settings.MYSQL_SSL_CA, 'utf8') } : {}),
