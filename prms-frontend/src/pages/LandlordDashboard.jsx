@@ -20,6 +20,7 @@ import {
 import { bookingApi } from '../api/booking'
 import { maintenanceApi } from '../api/maintenance'
 import { propertyApi } from '../api/property'
+import { paymentApi } from '../api/payment'
 import { getImageUrl } from '../config/imageHelper'
 import { propertyStatusInfo } from '../config/propertyStatus'
 import './LandlordDashboard.css'
@@ -71,12 +72,23 @@ function LandlordDashboard() {
   })
   const [approvals, setApprovals] = useState([])
   const [propertiesList, setPropertiesList] = useState([])
+  const [finance, setFinance] = useState(null)
+  const months = finance?.monthlyRevenue ?? []
+  const maxRevenue = Math.max(1, ...months.map(m => m.amount))
+  const money = (value) => `RM ${Number(value).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
   async function loadDashboard() {
     setLoading(true)
     let errCount = 0
+    setFinance(null)
 
     try {
+      try {
+        const res = await paymentApi.getPaymentSummary()
+        setFinance(res.data.data)
+      } catch {
+        errCount++
+      }
       /* ---- Booking stats (pending / confirmed / cancelled counts) ---- */
       try {
         const res = await bookingApi.landlordBookings({ limit: 100 })
@@ -144,6 +156,31 @@ function LandlordDashboard() {
     Promise.resolve().then(loadDashboard)
   }, [])
 
+  function exportDashboard() {
+    if (!finance) return
+    const rows = [
+      ['Landlord portfolio summary', 'Simulated payments'],
+      ['Exported at', new Date().toISOString()],
+      ['Total revenue collected RM', Number(finance.collectedAmount).toFixed(2)],
+      ['Outstanding amount RM', Number(finance.pendingAmount).toFixed(2)],
+      ['Owned properties', stats.totalProperties],
+      ['Rented properties', stats.activeProperties],
+      ['Pending bookings', stats.pendingBookings],
+      ['Open maintenance tickets', stats.openTickets],
+      [], ['Month Malaysia time', 'Revenue collected RM'],
+      ...months.map(m => [m.month, Number(m.amount).toFixed(2)]),
+    ]
+    const csv = rows.map(row => row.map(v => `"${String(v).replaceAll('"', '""')}"`).join(',')).join('\r\n')
+    const url = URL.createObjectURL(new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `landlord-portfolio-${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
+
   async function handleApprove(bookingId, status) {
     // Approving now requires offer terms (deposits + expiry) that can't be
     // meaningfully collected in a one-click dashboard widget, so "Approve"
@@ -203,7 +240,7 @@ function LandlordDashboard() {
         </div>
 
         <div className="landlord-page-actions">
-          <button type="button" className="btn-outline" disabled title="Export will be available with Sprint 6 finance reporting">
+          <button type="button" className="btn-outline" disabled={loading || !finance || errors > 0} onClick={exportDashboard} title="Export the loaded portfolio summary and six-month revenue as CSV">
             <Download size={18} />
             Export
           </button>
@@ -237,8 +274,8 @@ function LandlordDashboard() {
               icon={WalletCards}
               iconBg="icon-purple"
               label="Total Revenue"
-              value="—"
-              sublabel="Payment integration planned for Sprint 6"
+              value={finance ? money(finance.collectedAmount) : 'Unavailable'}
+              sublabel={finance ? 'All-time paid payments · simulated' : 'Payment data could not be loaded'}
             />
 
             {/* Occupancy */}
@@ -283,12 +320,12 @@ function LandlordDashboard() {
         <div className="panel-card revenue-panel">
           <div className="panel-title">
             <div>
-              <h3 className="panel-title-text">Revenue Growth</h3>
-              <p className="panel-subtitle">Monthly performance comparison</p>
+              <h3 className="panel-title-text">Revenue Collected</h3>
+              <p className="panel-subtitle">Last six months · paid dates in Malaysia time · simulated payments</p>
             </div>
-            <button type="button" className="btn-ghost" disabled title="Revenue reporting is planned for Sprint 6">
+            <button type="button" className="btn-ghost" onClick={() => navigate(ROUTES.landlord.finance)}>
               <TrendingUp size={16} />
-              Last 6 Months
+              View Finance
             </button>
           </div>
 
@@ -300,10 +337,19 @@ function LandlordDashboard() {
                   <span>...</span>
                 </div>
               ))
+            ) : finance && months.some(m => m.amount > 0) ? (
+              months.map(m => (
+                <div className="bar-item" key={m.month} title={`${m.month}: ${money(m.amount)}`}>
+                  <span className="revenue-bar-value">{money(m.amount)}</span>
+                  <div className="bar bar-active" style={{ height: `${m.amount / maxRevenue * 60}%`, minHeight: m.amount > 0 ? 4 : 0 }} role="img" aria-label={`${m.month}: ${money(m.amount)}`} />
+                  <span className="bar-label">{new Date(`${m.month}-01T00:00:00Z`).toLocaleDateString('en-MY', { month: 'short', year: '2-digit', timeZone: 'UTC' })}</span>
+                </div>
+              ))
             ) : (
               <div className="chart-empty">
                 <TrendingUp size={32} className="text-text-secondary" />
-                <p>Revenue reporting is planned for Sprint 6.</p>
+                <p>{finance ? 'No paid payments recorded in the last six months.' : 'Revenue data could not be loaded.'}</p>
+                {!finance && <button type="button" className="btn-ghost" onClick={loadDashboard}>Retry dashboard</button>}
               </div>
             )}
           </div>
@@ -422,7 +468,7 @@ function LandlordDashboard() {
       {/* Error indicator */}
       {errors > 0 && (
         <div className="dashboard-warn">
-          ⚠ Some dashboard data may be incomplete ({errors}/3 endpoints failed)
+          ⚠ Some dashboard data may be incomplete ({errors}/4 endpoints failed)
         </div>
       )}
     </div>

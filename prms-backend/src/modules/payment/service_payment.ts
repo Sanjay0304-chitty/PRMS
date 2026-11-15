@@ -1,5 +1,6 @@
 import { prisma } from '../../db';
 import type { Prisma } from '@prisma/client';
+import { monthlyPaidRevenue } from './monthlyRevenue';
 
 // Platform-wide finance summary. Consumed by both Admin Reports (which reads
 // total/pending/collected/overdue as *counts*) and FinanceDashboard (which
@@ -34,6 +35,7 @@ async function calculateFinanceSummary(propertyIds?: string[]) {
   return {
     total,
     totalRevenue: total,
+    monthlyRevenue: monthlyPaidRevenue(paidPayments, now),
     pending: pendingCount,
     pendingAmount: pendingAgg._sum.amount || 0,
     collected: collectedCount,
@@ -112,7 +114,7 @@ export async function getAgentFinanceSummary(userId: string) {
 
 export async function getLandlordFinanceSummary(userId: string) {
   const propertyIds = await getOwnedPropertyIds(userId);
-  if (!propertyIds.length) return { total: 0, totalRevenue: 0, pending: 0, pendingAmount: 0, collected: 0, collectedAmount: 0, overdue: 0, totalBookings: 0, byProperty: [] };
+  if (!propertyIds.length) return { total: 0, totalRevenue: 0, monthlyRevenue: monthlyPaidRevenue([]), pending: 0, pendingAmount: 0, collected: 0, collectedAmount: 0, overdue: 0, totalBookings: 0, byProperty: [] };
   return calculateFinanceSummary(propertyIds);
 }
 

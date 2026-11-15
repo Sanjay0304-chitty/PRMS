@@ -96,6 +96,13 @@
   color: var(--text-secondary);
 }
 
+.revenue-bar-value {
+  font-size: 11px;
+  color: var(--text-primary);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
 .chart-empty {
   width: 100%;
   height: 100%;
