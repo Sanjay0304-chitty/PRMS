@@ -7,6 +7,9 @@
     "test": "jest --runInBand",
     "dev": "tsx watch src/app.ts",
     "host": "node ../scripts/host-with-valerie.mjs",
+    "demo:cloudflare": "node ../scripts/start-cloudflare-demo.mjs",
+    "demo:stop": "node ../scripts/stop-cloudflare-demo.mjs",
+    "demo:gateway": "node ../scripts/run-demo-gateway.mjs",
     "build": "tsc",
     "start": "node dist/app.js",
     "postinstall": "npx prisma generate",
@@ -14,17 +17,14 @@
     "prisma:generate": "npx prisma generate",
     "prisma:seed": "npx tsx prisma/seed.ts",
     "categories:seed": "tsx prisma/seed_categories.ts",
+    "photos:seed": "tsx prisma/seed_property_photos.ts",
     "prisma:deploy": "prisma migrate deploy",
     "mysql:start": "node scripts/local-mysql.cjs start",
     "mysql:stop": "node scripts/local-mysql.cjs stop",
     "mysql:status": "node scripts/local-mysql.cjs status",
     "mysql:validate": "prisma validate",
     "mysql:generate": "prisma generate",
-    "mysql:deploy": "prisma migrate deploy",
-    "demo:cloudflare": "node ../scripts/start-cloudflare-demo.mjs",
-    "demo:stop": "node ../scripts/stop-cloudflare-demo.mjs",
-    "demo:gateway": "node ../scripts/run-demo-gateway.mjs",
-    "photos:seed": "tsx prisma/seed_property_photos.ts"
+    "mysql:deploy": "prisma migrate deploy"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.8.0",
@@ -69,6 +69,12 @@
     "typescript": "^6.0.0"
   },
   "overrides": {
+    "rimraf": {
+      "glob": "^14.0.2"
+    },
+    "glob": {
+      "minimatch": "^11.0.1"
+    },
     "deepmerge-ts": "^8.0.0",
     "mysql2": "^3.24.4",
     "uuid": "^14.0.0"
