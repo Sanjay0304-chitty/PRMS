@@ -23,7 +23,8 @@
     "mysql:deploy": "prisma migrate deploy",
     "demo:cloudflare": "node ../scripts/start-cloudflare-demo.mjs",
     "demo:stop": "node ../scripts/stop-cloudflare-demo.mjs",
-    "demo:gateway": "node ../scripts/run-demo-gateway.mjs"
+    "demo:gateway": "node ../scripts/run-demo-gateway.mjs",
+    "photos:seed": "tsx prisma/seed_property_photos.ts"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.8.0",
