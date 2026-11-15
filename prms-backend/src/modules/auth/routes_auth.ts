@@ -21,6 +21,7 @@ router.post('/me/avatar', authenticate, upload.single('profileImage'), auth.uplo
 router.post('/change-password', authenticate, auth.changePassword);
 router.post('/set-password', authenticate, auth.setPassword);
 router.post('/google', authLimiter, auth.googleLogin);
+router.post('/google/register', authLimiter, auth.googleRegister);
 router.post('/forgot-password', authLimiter, checkEmailBody, auth.forgotPassword);
 router.post('/verify-otp', authLimiter, verifyOtpBody, auth.verifyOtp);
 router.post('/reset-password', authLimiter, resetPasswordBody, auth.resetPassword);

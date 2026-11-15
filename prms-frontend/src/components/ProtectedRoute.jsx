@@ -35,21 +35,15 @@ export function ProtectedRoute({ children, allowedRoles }) {
  * Redirect to dashboard when user is already authenticated.
  * Uses role-based path, not localStorage (AUTH-005/007).
  *
- * Exception: a brand-new Google sign-in is authenticated immediately, with
- * a placeholder Tenant role, before the user has picked their real role on
- * /role-selection (see AuthContext.googleLogin's isNewUser handling). That
- * page sets prmsOnboarding='true' right before navigating here; without this
- * check, this guard fired first and bounced every new Google user straight
- * to /tenant before they could ever see the role picker.
+ * New Google users have a registration grant, not an authenticated session,
+ * until they choose a role and acknowledge the notice.
  */
 export function PublicRoute({ children }) {
   const { loading, isAuthenticated, user } = useAuth();
 
   if (loading) return null;
 
-  const isGoogleOnboarding = localStorage.getItem('prmsOnboarding') === 'true';
-
-  if (isAuthenticated && user?.role && !isGoogleOnboarding) {
+  if (isAuthenticated && user?.role) {
     const path = roleToPath(user.role);
     return <Navigate to={path} replace />;
   }

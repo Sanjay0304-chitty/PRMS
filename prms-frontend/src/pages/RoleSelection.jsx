@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { intendedPublicRole, consumePropertyReturn } from '../utils/publicJourney';
+import { intendedPublicRole } from '../utils/publicJourney';
 import { motion } from 'framer-motion';
 import {
   ArrowRight,
@@ -10,11 +10,15 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useRegistration } from '../contexts/RegistrationContext';
-import { roleToPath } from '../config/routes';
+import { PRIVACY_NOTICE_ACK_TEXT, PRIVACY_NOTICE_VERSION } from '../config/legalContent';
 
 function RoleSelection() {
   const navigate = useNavigate();
-  const { updateProfile } = useAuth();
+  const { completeGoogleSignup } = useAuth();
+  const [googleSignup] = useState(() => !!sessionStorage.getItem('googleRegistrationToken'));
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
   const { setSelectedRole: setContextRole } = useRegistration();
   /* Issue #4: Default to null so user must explicitly pick a role */
   const [params] = useSearchParams();
@@ -53,16 +57,13 @@ function RoleSelection() {
     const role = roles.find((item) => item.key === selectedRole);
     const title = role?.title || 'Tenant';
 
-    /* Issue #3: Check if this is a Google onboarding flow (already authenticated) */
-    const isOnboarding = localStorage.getItem('prmsOnboarding') === 'true';
-
-    if (isOnboarding) {
-      /* Update user's role from default Tenant to selected role */
-      await updateProfile({ role: title });
-      /* Clear onboarding flags */
-      localStorage.removeItem('prmsOnboarding');
-      /* Navigate to the selected role's dashboard */
-      navigate(consumePropertyReturn(title) || roleToPath(title));
+    // A first-time Google identity holds a short-lived registration grant.
+    if (googleSignup) {
+      if (!privacyAccepted || submitting) return;
+      setSubmitting(true);
+      setError('');
+      const result = await completeGoogleSignup({ role: title, consents: [{ type: 'PRIVACY_NOTICE', wording: PRIVACY_NOTICE_ACK_TEXT, version: PRIVACY_NOTICE_VERSION, consented: true }] }, navigate);
+      if (!result.success) { setError(result.error); setSubmitting(false); }
     } else {
       /* Regular registration flow: save role to context (syncs to sessionStorage) and go to Register */
       setContextRole(title);
@@ -101,7 +102,7 @@ function RoleSelection() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.35, duration: 0.55 }}
           >
-            Join Malaysia&apos;s most trusted property platform.
+            Choose how you want to use PRMS.
           </motion.h1>
 
           <motion.p
@@ -109,8 +110,7 @@ function RoleSelection() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.55 }}
           >
-            Join thousands of landlords, tenants, and agents simplifying property
-            management with secure workflows and seamless automation.
+            Explore rental listings, manage your properties, or help landlords as an assigned agent. PRMS is a development project with simulated payments.
           </motion.p>
         </div>
       </motion.section>
@@ -142,7 +142,7 @@ function RoleSelection() {
 
             <div className="step">
               <span>2</span>
-              <p>Account</p>
+              <p>{googleSignup ? 'Ready' : 'Account'}</p>
             </div>
           </motion.div>
 
@@ -195,11 +195,20 @@ function RoleSelection() {
             })}
           </div>
 
+          {googleSignup && (
+            <div className="role-consent">
+              <label>
+                <input type="checkbox" checked={privacyAccepted} onChange={e => setPrivacyAccepted(e.target.checked)} />
+                <span>{PRIVACY_NOTICE_ACK_TEXT} Read the <Link to="/privacy-notice" target="_blank" rel="noreferrer">Privacy Notice</Link>. By creating an account I agree to the <Link to="/terms" target="_blank" rel="noreferrer">Terms and Conditions</Link>.</span>
+              </label>
+            </div>
+          )}
+          {error && <p role="alert" style={{ color: 'var(--error-state, #b91c1c)' }}>{error} <Link to="/login" onClick={() => sessionStorage.removeItem('googleRegistrationToken')}>Try Google sign-in again</Link></p>}
           <motion.button
             type="button"
             className="continue-btn"
             onClick={handleContinue}
-            disabled={!selectedRole}
+            disabled={!selectedRole || submitting || (googleSignup && !privacyAccepted)}
             style={selectedRole ? {} : { opacity: 0.5, cursor: 'not-allowed' }}
             initial={{ y: 24, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -207,7 +216,7 @@ function RoleSelection() {
             whileHover={selectedRole ? { y: -3, scale: 1.01 } : {}}
             whileTap={selectedRole ? { scale: 0.97 } : {}}
           >
-            Continue <ArrowRight size={24} />
+            {submitting ? 'Creating account…' : googleSignup ? 'Create account' : 'Continue'} <ArrowRight size={24} />
           </motion.button>
 
           <motion.p
@@ -217,7 +226,7 @@ function RoleSelection() {
             style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.95rem', color: 'var(--text-secondary, #64748b)' }}
           >
             Already have an account?{' '}
-            <Link to="/login" style={{ color: 'var(--accent, #2563eb)', fontWeight: 600, textDecoration: 'none' }}>
+            <Link to="/login" onClick={() => sessionStorage.removeItem('googleRegistrationToken')} style={{ color: 'var(--accent, #2563eb)', fontWeight: 600, textDecoration: 'none' }}>
               Sign in
             </Link>
           </motion.p>

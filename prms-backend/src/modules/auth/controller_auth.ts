@@ -7,6 +7,7 @@ import { successResponse } from '../../utils/response';
 import { env } from '../../config';
 import jwt from 'jsonwebtoken';
 import { verifyFirebaseToken } from './firebase_auth';
+import { createGoogleRegistrationGrant, completeGoogleRegistration } from './googleRegistration';
 import { prisma } from '../../db';
 import { isStrongPassword, isValidPhoneNumber } from '../../utils/validators';
 import path from 'path';
@@ -30,16 +31,7 @@ export class AuthController {
       return res.status(400).json({ success: false, error: { message: errors.array()[0].msg } });
     }
     try {
-      const { email } = req.body;
-      const normalized = String(email).toLowerCase().trim();
-      const user = await prisma.user.findUnique({
-        where: { email: normalized },
-        select: { id: true, email: true, is_active: true }
-      });
-      return res.json(successResponse({
-        exists: !!user,
-        isActive: user ? user.is_active : false,
-      }, user ? 'Email is registered' : 'Email is not registered'));
+      return res.json(successResponse(null, 'Continue with your email and password to sign in.'));
     } catch (error: any) {
       return res.status(500).json({ success: false, error: { message: error.message } });
     }
@@ -228,21 +220,13 @@ export class AuthController {
 
   googleLogin = async (req: Request, res: Response) => {
     try {
-      const { idToken, email, displayName } = req.body;
-
-      let firebaseUid: string;
-
-      if (env.ENABLE_FIREBASE_VERIFY === true) {
-        if (!idToken) {
-          throw new Error('Firebase ID token required');
-        }
-
-        firebaseUid = await verifyFirebaseToken(idToken);
-      } else {
-        if (!email) {
-          throw new Error('Email is required when Firebase verification is disabled');
-        }
-        firebaseUid = `dev-${email.toLowerCase()}`;
+      const { idToken } = req.body;
+      if (!env.ENABLE_FIREBASE_VERIFY) throw new Error('Google sign-in is not configured');
+      if (typeof idToken !== 'string' || !idToken.trim()) throw new Error('Firebase ID token required');
+      const identity = await verifyFirebaseToken(idToken);
+      const { uid: firebaseUid, email } = identity;
+      if (req.body.email !== undefined && (typeof req.body.email !== 'string' || req.body.email.trim().toLowerCase() !== email)) {
+        throw new Error('Google account identity does not match');
       }
 
       // Step 1: find by firebase_uid
@@ -253,23 +237,26 @@ export class AuthController {
         user = await prisma.user.findUnique({ where: { email }, include: { UserRole: { include: { role: true } } } });
 
         if (user) {
-          // A "local-*" firebase_uid is a placeholder for password-based accounts
-          // (no real Firebase identity yet), so it's free to link to this Google account.
-          const hasRealFirebaseLink = user.firebase_uid && !user.firebase_uid.startsWith('local-');
+          // Older demo sign-ins stored dev-<email>, not a verified Firebase UID.
+          // Upgrade only the exact placeholder for the token's verified email.
+          const isPlaceholder = user.firebase_uid?.startsWith('local-') || user.firebase_uid === `dev-${email}`;
+          const hasRealFirebaseLink = user.firebase_uid && !isPlaceholder;
           if (hasRealFirebaseLink && user.firebase_uid !== firebaseUid) {
             throw new Error('Google account already linked');
           }
-          user = await prisma.user.update({ where: { id: user.id }, data: { firebase_uid: firebaseUid }, include: { UserRole: { include: { role: true } } } });
+          if (!user.is_active) throw new Error('Unable to sign in with this account');
+          const linked = await prisma.user.updateMany({
+            where: { id: user.id, firebase_uid: user.firebase_uid, is_active: true },
+            data: { firebase_uid: firebaseUid },
+          });
+          if (linked.count !== 1) throw new Error('Account changed during sign-in. Please try again.');
+          user = await prisma.user.findUnique({ where: { firebase_uid: firebaseUid }, include: { UserRole: { include: { role: true } } } });
         }
       }
 
-      // Step 3: Unregistered Google account check
+      // No account or access tokens exist until role selection and acknowledgement.
       if (!user) {
-        HELPERS(req).log({ action: 'GOOGLE_LOGIN', entity: 'User', description: `Google login rejected: unregistered email ${email || ''}`, status: 'Failed', level: 'warning' });
-        return res.status(401).json({
-          success: false,
-          error: { message: 'This Google account is not registered. Please sign up for an account first.' }
-        });
+        return res.json(successResponse({ isNewUser: true, registrationToken: createGoogleRegistrationGrant(identity) }, 'Choose a role to complete your account'));
       }
 
       if (!user.is_active) throw new Error('Account is suspended');
@@ -294,6 +281,19 @@ export class AuthController {
     } catch (error: any) {
       HELPERS(req).log({ action: 'GOOGLE_LOGIN', entity: 'User', description: `Google login failed: ${error.message}`, status: 'Failed', level: 'error', errorMessage: error.message });
       res.status(400).json({ success: false, error: { message: error.message } });
+    }
+  };
+
+  googleRegister = async (req: Request, res: Response) => {
+    try {
+      if (!env.ENABLE_FIREBASE_VERIFY) throw new Error('Google sign-in is not configured');
+      const user = await completeGoogleRegistration(req.body.registrationToken, req.body.role, req.body.consents, req.ip);
+      const tokens = authService.generateTokens(user.id);
+      await authService.saveRefreshToken(user.id, tokens.refreshToken);
+      HELPERS(req).log({ userId: user.id, username: user.email, userRole: req.body.role, action: 'USER_REGISTRATION', entity: 'User', entityId: user.id, description: 'Google account registration completed', status: 'Success', level: 'info' });
+      res.status(201).json(successResponse({ tokens }));
+    } catch (error: any) {
+      res.status(400).json({ success: false, error: { message: error.code === 'P2002' ? 'This account already exists. Sign in with Google again.' : error.message } });
     }
   };
 

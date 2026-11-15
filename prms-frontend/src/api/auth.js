@@ -27,6 +27,9 @@ export const authApi = {
       displayName: googleAuth.displayName,
     });
   },
+  completeGoogleRegistration(data) {
+    return apiClient.post('/auth/google/register', data);
+  },
 
   refresh({ refreshToken }) {
     return apiClient.post('/auth/refresh', { refreshToken });

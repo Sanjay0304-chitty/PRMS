@@ -84,12 +84,11 @@ export async function loginUser(email: string, password: string) {
     include: { UserRole: { include: { role: true } } },
   });
 
-  if (!user) throw new Error('This email is not registered. Please sign up for an account first.');
-  if (!user.passwordHash) throw new Error('Please use Firebase login for this account');
-  if (!user.is_active) throw new Error('Account is suspended');
-
-  const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) throw new Error('Wrong password. Please try again.');
+  // Always perform a password comparison, even for unknown or Google-only accounts.
+  const valid = await bcrypt.compare(password, user?.passwordHash || '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy');
+  if (!user || !user.passwordHash || !user.is_active || !valid) {
+    throw new Error('Unable to sign in. Check your email and password, or use Google sign-in.');
+  }
 
   return user;
 }

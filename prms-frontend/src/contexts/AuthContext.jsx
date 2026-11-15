@@ -148,15 +148,20 @@ function AuthProvider({ children }) {
       try {
         const { data } = await authApi.googleLogin(googleAuth);
 
+        if (data?.data?.isNewUser && data.data.registrationToken) {
+          sessionStorage.setItem('googleRegistrationToken', data.data.registrationToken);
+          localStorage.removeItem('prmsOnboarding');
+          dispatch({ type: ACTIONS.SET_LOADING, payload: false });
+          navigate?.('/role-selection');
+          return { success: true, isNewUser: true };
+        }
+
         // Store tokens — successResponse wraps in {success, message, data: {user, tokens, isNewUser}}
         const tokens = data?.data?.tokens || data?.tokens;
         if (tokens) {
           sessionStorage.setItem('accessToken', tokens.accessToken);
           sessionStorage.setItem('refreshToken', tokens.refreshToken);
         }
-
-        // Issue #3: isNewUser flag from backend
-        const isNewUser = !!data?.data?.isNewUser;
 
         // Fetch current user with normalized shape
         const { data: meData } = await authApi.getMe();
@@ -165,17 +170,13 @@ function AuthProvider({ children }) {
         dispatch({ type: ACTIONS.SET_USER, payload: user });
 
         if (navigate && user) {
-          // Issue #3: New Google users go to role-selection for onboarding
-          if (isNewUser) {
-            localStorage.setItem('prmsOnboarding', 'true');
-            navigate('/role-selection');
-          } else {
-            const path = consumePropertyReturn(user.role) || roleToPath(user.role);
-            navigate(path);
-          }
+          sessionStorage.removeItem('googleRegistrationToken');
+          localStorage.removeItem('prmsOnboarding');
+          const path = consumePropertyReturn(user.role) || roleToPath(user.role);
+          navigate(path);
         }
 
-        return { success: true, user, isNewUser };
+        return { success: true, user, isNewUser: false };
       } catch (err) {
         const msg = getApiError(err);
         dispatch({ type: ACTIONS.SET_ERROR, payload: msg });
@@ -186,6 +187,24 @@ function AuthProvider({ children }) {
   );
 
   /* ------ Logout (AUTH-008) ------ */
+
+  const completeGoogleSignup = useCallback(async (data, navigate) => {
+    try {
+      const registrationToken = sessionStorage.getItem('googleRegistrationToken');
+      const { data: result } = await authApi.completeGoogleRegistration({ ...data, registrationToken });
+      const tokens = result.data.tokens;
+      sessionStorage.setItem('accessToken', tokens.accessToken);
+      sessionStorage.setItem('refreshToken', tokens.refreshToken);
+      const { data: me } = await authApi.getMe();
+      const user = normalizeUser(me);
+      sessionStorage.removeItem('googleRegistrationToken');
+      dispatch({ type: ACTIONS.SET_USER, payload: user });
+      navigate(consumePropertyReturn(user.role) || roleToPath(user.role));
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: getApiError(err) };
+    }
+  }, []);
 
   const logout = useCallback(
     async (navigate) => {
@@ -202,6 +221,7 @@ function AuthProvider({ children }) {
       localStorage.removeItem('prmsDashboardPath');
       sessionStorage.removeItem('prmsSelectedRole');
       localStorage.removeItem('prmsOnboarding');
+      sessionStorage.removeItem('googleRegistrationToken');
       navigate?.('/login');
       dispatch({ type: ACTIONS.LOGOUT });
     },
@@ -314,6 +334,7 @@ function AuthProvider({ children }) {
     register,
     login,
     googleLogin,
+    completeGoogleSignup,
     logout,
     updateProfile,
     changePassword,

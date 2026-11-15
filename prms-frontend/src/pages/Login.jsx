@@ -2,11 +2,10 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { rememberPropertyReturn } from '../utils/publicJourney';
 import { motion } from 'framer-motion';
-import { Building2, Eye, EyeOff, LockKeyhole, LogIn, Mail, AlertCircle, Loader2 } from 'lucide-react';
+import { Building2, Eye, EyeOff, LockKeyhole, LogIn, Mail, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { signInWithGoogle } from '../firebase';
 import ThemeSwitcher from '../components/ThemeSwitcher';
-import { authApi } from '../api';
 import { isValidEmail } from '../utils/validators';
 
 function Login() {
@@ -21,7 +20,6 @@ function Login() {
   const [submitting, setSubmitting] = useState(false);
   const [remember, setRemember] = useState(false);
   const [emailError, setEmailError] = useState('');
-  const [checkingEmail, setCheckingEmail] = useState(false);
   const [localError, setLocalError] = useState('');
 
   async function verifyEmailRegistration(emailToTest) {
@@ -35,23 +33,8 @@ function Login() {
       return false;
     }
 
-    setCheckingEmail(true);
-    try {
-      const res = await authApi.checkEmail({ email: trimmed });
-      const exists = !!res?.data?.data?.exists;
-      if (!exists) {
-        setEmailError('This email is not registered with PRMS. Please sign up for an account.');
-        return false;
-      }
-      setEmailError('');
-      return true;
-    } catch {
-      // If check fails or network issue, clear inline error and let server-side login validate
-      setEmailError('');
-      return true;
-    } finally {
-      setCheckingEmail(false);
-    }
+    setEmailError('');
+    return true;
   }
 
   async function handleEmailBlur() {
@@ -87,14 +70,6 @@ function Login() {
 
     setSubmitting(true);
 
-    // Verify email is registered in system before allowing login attempt
-    const isRegistered = await verifyEmailRegistration(trimmedEmail);
-    if (!isRegistered) {
-      setSubmitting(false);
-      setLocalError('This email is not registered with PRMS. Only registered accounts can log in.');
-      return;
-    }
-
     const result = await login({ email: trimmedEmail, password, remember }, navigate);
 
     /* Remember-me: persist refresh token to localStorage longer */
@@ -113,10 +88,12 @@ function Login() {
       const googleAuth = await signInWithGoogle();
       const res = await googleLogin(googleAuth, navigate);
       if (res && !res.success) {
-        setLocalError(res.error || 'Google login failed. Only registered accounts can log in.');
+        setLocalError(res.error || 'Unable to sign in with Google. Please try again.');
       }
     } catch (err) {
-      const msg = err?.response?.data?.error?.message || err?.message || 'Google login failed.';
+      const msg = err?.code === 'auth/unauthorized-domain'
+        ? 'Google sign-in is not enabled for this website address. Ask the project administrator to authorize this preview domain in Firebase, or sign in with email and password.'
+        : err?.response?.data?.error?.message || err?.message || 'Google login failed.';
       setLocalError(msg);
       console.error('Google login failed', err);
     }
@@ -234,11 +211,6 @@ function Login() {
                   required
                   autoComplete="email"
                 />
-                {checkingEmail && (
-                  <span className="input-right-icon" title="Checking registered status...">
-                    <Loader2 size={18} className="spin" style={{ animation: 'spin 1s linear infinite' }} />
-                  </span>
-                )}
               </div>
               {emailError && (
                 <div
