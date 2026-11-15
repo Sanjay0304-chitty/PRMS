@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
+import { createWebSecurity } from './middleware/webSecurity';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { env } from './config';
@@ -44,6 +44,8 @@ if (getApps().length === 0) {
 const app = express();
 const router = express.Router();
 const PORT = env.PORT;
+// The dedicated demo origin accepts traffic only from its local scheduled gateway.
+if (process.env.DEMO_LOOPBACK_ONLY === 'true') app.set('trust proxy', 'loopback');
 
 // Parse CORS_ORIGIN: supports single string or comma-separated list → array
 const corsOrigins = env.CORS_ORIGIN.split(',').map((o: string) => o.trim());
@@ -55,9 +57,7 @@ app.use(cors({
   credentials: true,
 }));
 
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' },
-}));
+app.use(createWebSecurity(process.env.FIREBASE_AUTH_DOMAIN || `${env.FIREBASE_PROJECT_ID || 'project-prms-149c6'}.firebaseapp.com`));
 
 // Valerie Guard: Mounted before routes and static files
 app.use(express.json());
@@ -88,6 +88,9 @@ app.use('/uploads/agreements', protectAgreements, express.static(path.join(__dir
 app.use('/uploads/maintenance', protectMaintenance, express.static(path.join(__dirname, '..', 'uploads', 'maintenance')));
 
 const frontendDist = path.join(__dirname, '..', '..', 'prms-frontend', 'dist');
+
+// Vite bundles are static files, not API calls; serve them before the root API router.
+if (fs.existsSync(frontendDist)) app.use('/assets', express.static(path.join(frontendDist, 'assets'), { index: false }));
 
 app.get('/health', async (req, res) => {
   try {
@@ -177,9 +180,11 @@ app.use(errorHandler);
 // Check the configured database before accepting requests.
 bootstrap()
   .then(() => {
-    app.listen(PORT, () => {
+    const ready = () => {
       console.log(`PRMS Backend running on http://localhost:${PORT} (${env.NODE_ENV})`);
-    });
+    };
+    if (process.env.DEMO_LOOPBACK_ONLY === 'true') app.listen(Number(PORT), '127.0.0.1', ready);
+    else app.listen(PORT, ready);
   })
   .catch((err: Error) => {
     console.error('[Startup] Database bootstrap failed:', err);

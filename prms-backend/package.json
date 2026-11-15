@@ -20,7 +20,10 @@
     "mysql:status": "node scripts/local-mysql.cjs status",
     "mysql:validate": "prisma validate",
     "mysql:generate": "prisma generate",
-    "mysql:deploy": "prisma migrate deploy"
+    "mysql:deploy": "prisma migrate deploy",
+    "demo:cloudflare": "node ../scripts/start-cloudflare-demo.mjs",
+    "demo:stop": "node ../scripts/stop-cloudflare-demo.mjs",
+    "demo:gateway": "node ../scripts/run-demo-gateway.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.8.0",
