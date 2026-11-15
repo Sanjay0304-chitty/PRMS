@@ -1,8 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Trash2, Play, AlertTriangle } from 'lucide-react';
+import { Play } from 'lucide-react';
 import { privacyApi } from '../api';
-import Modal from '../components/Modal';
 import './SharedPageShell.css';
+
+const dateBasis = {
+  rejected_cancelled_applications: 'Cancelled applications only; measured from last updated.',
+  viewing_records: 'Completed, cancelled or no-show viewings; measured from last updated.',
+  superseded_agreements: 'Superseded or cancelled agreements; measured from last updated.',
+  notifications: 'Read and unread notifications; measured from creation.',
+  resolved_maintenance_tickets: 'Resolved or closed tickets; measured from last updated.',
+  audit_logs: 'Measured from creation.',
+};
 
 function formatDate(d) {
   if (!d) return '—';
@@ -15,8 +23,6 @@ export default function AdminRetention() {
   const [simResults, setSimResults] = useState(null);
   const [loading, setLoading] = useState(true);
   const [simulating, setSimulating] = useState(false);
-  const [executing, setExecuting] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
@@ -35,12 +41,13 @@ export default function AdminRetention() {
   }, [load]);
 
   async function handleSave(category) {
-    const days = Number(edits[category]);
-    if (!days || days < 1) { setError('Enter a valid number of days'); return; }
+    const days = Number(edits[category] ?? policies.find(p => p.category === category)?.retentionDays);
+    if (!Number.isInteger(days) || days < 1 || days > 2147483647) { setError('Enter a positive whole number of days, up to 2,147,483,647.'); return; }
     setError('');
     setNotice('');
     try {
       await privacyApi.updateRetentionPolicy(category, days);
+      setSimResults(null);
       setNotice(`Updated retention for "${category}" to ${days} days.`);
       await load();
     } catch (e) { setError(e.response?.data?.error?.message || 'Failed to save'); }
@@ -50,53 +57,43 @@ export default function AdminRetention() {
     setSimulating(true);
     setError('');
     try {
+      setSimResults(null);
+      setNotice('');
       const res = await privacyApi.simulateCleanup();
       setSimResults(res.data?.data || []);
-    } catch (e) { setError(e.response?.data?.error?.message || 'Simulation failed'); }
+    } catch (e) { setError(e.response?.data?.error?.message || 'Unable to load preview'); }
     finally { setSimulating(false); }
-  }
-
-  async function handleExecuteCleanup() {
-    setExecuting(true);
-    setError('');
-    try {
-      const res = await privacyApi.executeCleanup();
-      const count = res.data?.data?.totalDeleted ?? 0;
-      setNotice(`Operational retention cleanup completed: ${count} expired record(s) permanently deleted / anonymized.`);
-      setShowConfirmModal(false);
-      await handleSimulate();
-    } catch (e) {
-      setError(e.response?.data?.error?.message || 'Retention cleanup execution failed');
-    } finally {
-      setExecuting(false);
-    }
   }
 
   return (
     <div className="page-shell">
       <div className="page-header">
-        <h1 className="page-title">Data Retention & Operational Cleanup</h1>
-        <p>Configure and enforce statutory retention periods for personal data categories under Malaysia PDPA Retention Principle.</p>
+        <h1 className="page-title">Retention Settings & Preview</h1>
+        <p>Configure how long records are kept and preview records older than the configured periods.</p>
       </div>
 
-      {error && <div className="alert alert-danger mt-2">{error}</div>}
-      {notice && <div className="alert" style={{ background: 'var(--success-state-background)', color: 'var(--success-state)' }}>{notice}</div>}
+      {error && <div role="alert" className="alert alert-danger mt-2">{error}</div>}
+      {notice && <div role="status" className="alert" style={{ background: 'var(--success-state-background)', color: 'var(--success-state)' }}>{notice}</div>}
 
+      <p>Initial periods are system defaults requiring review, not verified legal requirements. Saving a period does not delete records or establish legal compliance.</p>
       <div className="card-table">
-        <h2 style={{ fontSize: 16, margin: '0 0 12px' }}>Active Retention Schedules</h2>
+        <h2 style={{ fontSize: 16, margin: '0 0 12px' }}>Configured Retention Periods</h2>
         {loading ? <p>Loading...</p> : (
           <table className="table">
-            <thead><tr><th>Category</th><th>Description</th><th>Retention (days)</th><th>Last updated</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Category</th><th>Description and date used</th><th>Retention (days)</th><th>Last updated</th><th>Actions</th></tr></thead>
             <tbody>
               {policies.map((p) => (
                 <tr key={p.id}>
                   <td><strong>{p.label}</strong></td>
-                  <td style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{p.description}</td>
+                  <td style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{p.description}<br /><span>{dateBasis[p.category] || 'Date basis is not configured; review this category before use.'}</span></td>
                   <td>
                     <input
                       type="number"
                       min={1}
-                      defaultValue={p.retentionDays}
+                      max={2147483647}
+                      step={1}
+                      aria-label={`Retention days for ${p.label}`}
+                      value={edits[p.category] ?? p.retentionDays}
                       onChange={(e) => setEdits((prev) => ({ ...prev, [p.category]: e.target.value }))}
                       style={{ width: 80, padding: '6px 8px', border: '1px solid var(--border-color)', borderRadius: 6 }}
                     />
@@ -113,26 +110,23 @@ export default function AdminRetention() {
       <div className="card-table" style={{ marginTop: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 10 }}>
           <div>
-            <h2 style={{ fontSize: 16, margin: 0 }}>Retention Enforcement & Cleanup Actions</h2>
+            <h2 style={{ fontSize: 16, margin: 0 }}>Eligible Records Preview</h2>
             <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '4px 0 0' }}>
-              Preview eligible records without changing them. Permanent cleanup is disabled pending disposal-policy review.
+              Preview only—no records will be deleted. Permanent cleanup remains disabled pending disposal-policy review.
             </p>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn btn-sm btn-outline" onClick={handleSimulate} disabled={simulating}>
               <Play size={14} style={{ marginRight: 6 }} />
-              {simulating ? 'Simulating…' : 'Run Simulation'}
-            </button>
-            <button className="btn btn-sm btn-danger" disabled title="Permanent cleanup is disabled pending disposal-policy review">
-              <Trash2 size={14} style={{ marginRight: 6 }} />
-              {executing ? 'Executing…' : 'Execute Retention Cleanup'}
+              {simulating ? 'Loading preview…' : 'Preview Eligible Records'}
             </button>
           </div>
         </div>
 
+        <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>The preview uses saved settings. Records must have a qualifying status and a date earlier than the cutoff. Last updated means the most recent record update, which may differ from its completion date. Counts do not check tenancy dependencies, disputes or retention holds and are not disposal approval.</p>
         {simResults && (
           <table className="table">
-            <thead><tr><th>Category</th><th>Retention Threshold</th><th>Cutoff Date</th><th>Eligible Records for Disposal</th></tr></thead>
+            <thead><tr><th>Category</th><th>Retention Threshold</th><th>Cutoff Date</th><th>Records Older Than Cutoff</th></tr></thead>
             <tbody>
               {simResults.map((r) => (
                 <tr key={r.category}>
@@ -151,36 +145,6 @@ export default function AdminRetention() {
         )}
       </div>
 
-      {/* Confirmation Modal for Operational Retention Execution */}
-      <Modal
-        isOpen={showConfirmModal}
-        onOpenChange={setShowConfirmModal}
-        title="Confirm Operational Retention Cleanup"
-        size="md"
-        footer={(
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-            <button type="button" className="btn btn-outline" onClick={() => setShowConfirmModal(false)} disabled={executing}>
-              Cancel
-            </button>
-            <button type="button" className="btn btn-danger" onClick={handleExecuteCleanup} disabled={executing}>
-              {executing ? 'Executing…' : 'Confirm Permanent Disposal'}
-            </button>
-          </div>
-        )}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#dc2626' }}>
-            <AlertTriangle size={24} />
-            <strong style={{ fontSize: 15 }}>Permanent Personal Data Disposal</strong>
-          </div>
-          <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.5, margin: 0 }}>
-            This operational action will permanently delete or anonymize all personal data and historical records that have exceeded their statutory retention cutoff periods (cancelled applications, closed viewing appointments, superseded contract drafts, expired notifications, and resolved maintenance logs).
-          </p>
-          <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: 8, padding: 10, fontSize: 12, color: '#991b1b' }}>
-            An audit log event (<code>EXECUTE_RETENTION_CLEANUP</code>) will be recorded for compliance accountability.
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }

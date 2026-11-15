@@ -74,8 +74,8 @@ export default function PrivacyNotice() {
 
         <div className="legal-disclaimer">
           {lang === 'bm'
-            ? 'Notis ini disediakan mengikut peruntukan Seksyen 7(3) Akta Perlindungan Data Peribadi 2010 (APDP) dalam kedua-dua Bahasa Kebangsaan dan Bahasa Inggeris.'
-            : 'This Personal Data Protection Notice is provided in accordance with Section 7(3) of the Personal Data Protection Act 2010 (PDPA) in both the National Language and English.'}
+            ? 'Notis projek pembangunan ini menerangkan konfigurasi demonstrasi semasa dalam Bahasa Malaysia dan Bahasa Inggeris. Gunakan data contoh semasa ujian.'
+            : 'This development-project notice describes the current demonstration setup in Bahasa Malaysia and English. Use sample data during testing.'}
         </div>
 
         {sections.map((s) => (

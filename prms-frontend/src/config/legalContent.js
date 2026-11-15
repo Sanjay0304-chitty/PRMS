@@ -3,7 +3,7 @@
 // the wording changes materially, so historical consent records stay
 // tied to the text the user actually saw.
 
-export const PRIVACY_NOTICE_VERSION = '2.0';
+export const PRIVACY_NOTICE_VERSION = '2.1';
 export const PRIVACY_NOTICE_ACK_TEXT =
   'I acknowledge the Privacy Notice and consent to my personal data being processed for account and rental-management purposes.';
 
@@ -28,11 +28,11 @@ export const PRIVACY_NOTICE_SECTIONS = [
   },
   {
     title: '2. Why it is required (Purpose)',
-    body: 'To create and manage your account, process rental applications, generate and execute legally-binding tenancy agreements, coordinate physical and virtual property viewings, manage property maintenance workflows, and operate role-based access control (Tenant, Landlord, Agent, Admin) across the platform.',
+    body: "To create and manage your account and demonstrate rental applications, tenancy agreements, viewings, maintenance and role-based access. Payments and agreement verification codes are simulated in this development project. Use sample data for testing; do not upload real identity documents or banking details.",
   },
   {
     title: '3. Mandatory vs optional data',
-    body: 'Account registration and rental-management data are mandatory under contractual necessity to use PRMS. Marketing communications and optional notifications are voluntary and never required to apply for or rent a property.',
+    body: "Required fields are identified in each form. Missing required information may prevent account creation or the requested rental task. Optional marketing consent can be declined without preventing use of the system.",
   },
   {
     title: '4. How your information is used',
@@ -40,27 +40,27 @@ export const PRIVACY_NOTICE_SECTIONS = [
   },
   {
     title: '5. Who it may be disclosed to',
-    body: 'Data is strictly shared only with parties directly involved in your tenancy: the verified Landlord who owns the property, explicitly assigned Agents managing that property, authorized system Administrators, and lawful Malaysian law enforcement authorities where legally mandated by court order or statute. PRMS never sells personal data or shares it with third-party advertisers.',
+    body: "Rental information is accessible to the relevant Tenant, property owner, assigned Agent and authorised Admin according to their permissions. Property listing images and profile avatars may be publicly accessible. Google sign-in uses Firebase and Google; password recovery uses the configured email provider. These providers process the information needed to deliver their services. PRMS does not sell personal data.",
   },
   {
     title: '6. Hosting and cross-border transfers',
-    body: 'Personal data is securely hosted in Asia-Pacific cloud infrastructure located in Singapore and Malaysia. Where secondary cloud infrastructure processes data across borders, transfers are governed by standard contractual clauses (SCCs) and high-grade technical safeguards including AES-256 encryption at rest and TLS 1.3 in transit, fully complying with Section 129 of the Personal Data Protection Act 2010 (PDPA).',
+    body: "The current demonstration runs on the project computer with a local MySQL database and local uploaded files. When a Cloudflare demonstration tunnel is enabled, traffic passes through Cloudflare. Firebase/Google and email services may process information outside Malaysia. Permanent hosting and its storage location are not yet selected. Hosting, provider locations and safeguards must be reviewed before real personal data is used; this notice does not claim verified storage encryption or a particular TLS version.",
   },
   {
     title: '7. Retention and disposal',
-    body: 'Personal data is retained only as long as necessary to fulfill tenancy administration, statutory accounting, and legal dispute limitation periods (up to 7 years for financial/contractual records, 90 to 180 days for inactive viewing and transient notification records). Operational cleanup and data anonymization procedures are executed under Admin governance.',
+    body: "Admin can review retention policies and preview records eligible for cleanup. Permanent retention cleanup is disabled; there is no automatic deletion schedule. Archiving hides records from the relevant list and does not delete them. Approved account-closure requests anonymise basic profile details and deactivate the account, while related records and files remain. Admin reviews requests and records the action taken. Retention periods, retained files and backups must be reviewed before real-data deployment.",
   },
   {
     title: '8. Your rights under Malaysia PDPA',
-    body: 'Under the PDPA 2010, you have the right to request access to your personal data, request correction of inaccurate data, withdraw voluntary consent, or request account deletion and data anonymization at any time via Settings > Privacy & Personal Data.',
+    body: "Use Settings > Privacy & Personal Data to review selected stored information, submit an access or correction request, withdraw optional consent, or request account closure. Requests are reviewed by Admin; they do not automatically erase all records. Closure may require active applications, tenancies and owned listings to be resolved first. Contact the project administrator if the overview does not include information you need.",
   },
   {
     title: '9. Withdrawing consent',
     body: 'Optional consent (such as promotional marketing) can be withdrawn at any time without penalty. Withdrawing core data processing consent requires account closure, as core personal data is essential for ongoing tenancy contract management.',
   },
   {
-    title: '10. Data Protection Officer (DPO) Contact',
-    body: 'For any inquiries, requests to exercise your data subject rights, or privacy concerns, please contact our Data Protection Officer:\n\n• Officer: Adrian Chew (Lead Data Protection Officer)\n• Department: Compliance & Data Protection Unit\n• Email: privacy@prms-malaysia.com / dpo@prms.com.my\n• Address: Level 18, Menara PRMS, Jalan Tun Razak, 50400 Kuala Lumpur, Malaysia.',
+    title: '10. Privacy contact',
+    body: "For this development project, submit privacy requests through Settings > Privacy & Personal Data, or contact the project administrator using the contact details supplied with your test invitation. A production privacy contact and any formal DPO appointment have not been confirmed. Do not send passwords, identity documents or banking details with feedback.",
   },
 ];
 
@@ -71,11 +71,11 @@ export const PRIVACY_NOTICE_SECTIONS_BM = [
   },
   {
     title: '2. Tujuan pemprosesan data',
-    body: 'Untuk mendaftar dan mentadbir akaun anda, memproses permohonan sewa hartanah, menjana dan menyempurnakan perjanjian penyewaan, menyelaras temu janji lawatan, menguruskan pembaikan dan penyelenggaraan hartanah, serta mengendalikan kawalan capaian berasaskan peranan (Penyewa, Pemilik Hartanah, Ejen, Pentadbir).',
+    body: "Untuk mengurus akaun dan mendemonstrasikan permohonan sewa, perjanjian, lawatan, penyelenggaraan dan kawalan akses mengikut peranan. Bayaran dan kod pengesahan perjanjian adalah simulasi dalam projek pembangunan ini. Gunakan data contoh untuk ujian; jangan muat naik dokumen identiti sebenar atau butiran perbankan.",
   },
   {
     title: '3. Data mandatori dan pilihan',
-    body: 'Maklumat akaun dan pengurusan sewa adalah mandatori di bawah keperluan kontrak untuk menggunakan PRMS. Komunikasi pemasaran dan promosi adalah pilihan dan tidak wajib untuk menyewa hartanah.',
+    body: "Medan wajib ditandakan pada setiap borang. Maklumat wajib yang tidak lengkap boleh menghalang pendaftaran atau urusan sewa yang diminta. Persetujuan pemasaran pilihan boleh ditolak tanpa menghalang penggunaan sistem.",
   },
   {
     title: '4. Cara maklumat anda digunakan',
@@ -83,27 +83,27 @@ export const PRIVACY_NOTICE_SECTIONS_BM = [
   },
   {
     title: '5. Penzahiran data peribadi',
-    body: 'Data peribadi hanya dizahirkan kepada pihak yang berkaitan secara langsung dengan penyewaan anda: Pemilik yang memiliki hartanah berkenaan, Ejen sah yang ditugaskan, Pentadbir sistem yang diberi kuasa, dan pihak berkuasa undang-undang Malaysia sekiranya diwajibkan oleh perintah mahkamah atau statutori. PRMS tidak sesekali menjual data peribadi anda kepada pihak ketiga.',
+    body: "Maklumat sewaan boleh diakses oleh Penyewa berkaitan, pemilik hartanah, Ejen yang ditugaskan dan Pentadbir mengikut kebenaran mereka. Gambar penyenaraian dan avatar profil mungkin boleh diakses secara awam. Log masuk Google menggunakan Firebase dan Google; pemulihan kata laluan menggunakan penyedia emel yang dikonfigurasi. Penyedia ini memproses maklumat yang diperlukan untuk perkhidmatan mereka. PRMS tidak menjual data peribadi.",
   },
   {
     title: '6. Lokasi pengehosan dan pemindahan rentas sempadan',
-    body: 'Data peribadi dihoskan secara selamat di pusat data awan rantau Asia-Pasifik (Singapura dan Malaysia). Sebarang pemindahan rentas sempadan tertakluk kepada klausa kontrak standard serta penyulitan AES-256 (semasa simpanan) dan TLS 1.3 (semasa penghantaran), selaras dengan Seksyen 129 Akta Perlindungan Data Peribadi 2010 (APDP).',
+    body: "Demonstrasi semasa dijalankan pada komputer projek dengan pangkalan data MySQL dan fail muat naik tempatan. Apabila terowong demonstrasi Cloudflare diaktifkan, trafik melalui Cloudflare. Firebase/Google dan perkhidmatan emel mungkin memproses maklumat di luar Malaysia. Pengehosan tetap dan lokasi simpanan belum dipilih. Lokasi penyedia dan langkah perlindungan perlu disemak sebelum menggunakan data peribadi sebenar; notis ini tidak mendakwa penyulitan simpanan yang disahkan atau versi TLS tertentu.",
   },
   {
     title: '7. Penyimpanan dan pelupusan data',
-    body: 'Data peribadi disimpan hanya selama yang diperlukan untuk memenuhi tujuan pengurusan penyewaan, keperluan perakaunan berkanun, dan had masa pertikaian undang-undang (sehingga 7 tahun bagi rekod kontrak/kewangan, 90 hingga 180 hari bagi rekod temu janji dan notifikasi tidak aktif). Pelupusan dan proses penganoniman data dikendalikan secara berkala.',
+    body: "Pentadbir boleh menyemak polisi simpanan dan pratonton rekod yang layak untuk pembersihan. Pembersihan kekal dinyahaktifkan; tiada jadual pemadaman automatik. Pengarkiban menyembunyikan rekod daripada senarai berkaitan dan tidak memadamkannya. Permohonan penutupan akaun yang diluluskan menganonimkan butiran profil asas dan menyahaktifkan akaun, manakala rekod serta fail berkaitan dikekalkan. Pentadbir menyemak permohonan dan merekodkan tindakan. Tempoh simpanan, fail dan sandaran perlu disemak sebelum penggunaan data sebenar.",
   },
   {
     title: '8. Hak anda di bawah APDP 2010',
-    body: 'Di bawah APDP 2010, anda berhak meminta akses kepada data peribadi anda, membetulkan data yang tidak tepat, menarik balik persetujuan pilihan, atau meminta pemadaman akaun dan penganoniman data pada bila-bila masa melalui Tetapan > Privasi & Data Peribadi.',
+    body: "Gunakan Tetapan > Privasi & Data Peribadi untuk melihat maklumat tersimpan terpilih, menghantar permohonan akses atau pembetulan, menarik balik persetujuan pilihan, atau memohon penutupan akaun. Permohonan disemak oleh Pentadbir dan tidak memadamkan semua rekod secara automatik. Permohonan, penyewaan dan penyenaraian aktif mungkin perlu diselesaikan terlebih dahulu. Hubungi pentadbir projek jika maklumat yang diperlukan tiada dalam gambaran keseluruhan.",
   },
   {
     title: '9. Penarikan balik persetujuan',
     body: 'Persetujuan pilihan (seperti emel promosi) boleh ditarik balik pada bila-bila masa tanpa sebarang penalti. Penarikan balik persetujuan pemprosesan data teras memerlukan penutupan akaun kerana data tersebut penting untuk pengurusan kontrak penyewaan aktif.',
   },
   {
-    title: '10. Hubungi Pegawai Perlindungan Data (DPO)',
-    body: 'Untuk sebarang pertanyaan, permohonan menggunakan hak subjek data, atau kemusykilan privasi, sila hubungi Pegawai Perlindungan Data kami:\n\n• Pegawai: Adrian Chew (Ketua Pegawai Perlindungan Data)\n• Unit: Unit Pematuhan & Perlindungan Data\n• Emel: privacy@prms-malaysia.com / dpo@prms.com.my\n• Alamat: Aras 18, Menara PRMS, Jalan Tun Razak, 50400 Kuala Lumpur, Malaysia.',
+    title: '10. Hubungan privasi',
+    body: "Untuk projek pembangunan ini, hantar permohonan melalui Tetapan > Privasi & Data Peribadi atau hubungi pentadbir projek menggunakan butiran hubungan dalam jemputan ujian. Pegawai hubungan privasi bagi penggunaan sebenar dan sebarang pelantikan rasmi DPO belum disahkan. Jangan hantar kata laluan, dokumen identiti atau butiran perbankan bersama maklum balas.",
   },
 ];
 

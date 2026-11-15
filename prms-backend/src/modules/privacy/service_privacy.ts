@@ -157,7 +157,7 @@ export async function getPolicies() {
 }
 
 export async function updatePolicy(category: string, retentionDays: number) {
-  if (!Number.isFinite(retentionDays) || retentionDays < 1) throw new Error('retentionDays must be a positive number');
+  if (!Number.isInteger(retentionDays) || retentionDays < 1 || retentionDays > 2147483647) throw new Error('retentionDays must be a positive whole number up to 2147483647');
   return prisma.retentionPolicy.update({ where: { category }, data: { retentionDays } });
 }
 
