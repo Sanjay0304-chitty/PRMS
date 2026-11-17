@@ -100,7 +100,7 @@ async function main() {
   });
   await prisma.systemSetting.upsert({
     where: { key: 'currency' },
-    create: { key: 'currency', value: 'MYR', category: 'general', description: 'Default currency' },
+    create: { key: 'currency', value: 'RM', category: 'general', description: 'Default currency' },
     update: {},
   });
 

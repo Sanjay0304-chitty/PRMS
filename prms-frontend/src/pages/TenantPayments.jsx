@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { paymentApi } from '../api';
 import {
@@ -25,13 +25,33 @@ const FILTERS = [
 
 function TenantPayments() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [payments, setPayments] = useState([]);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
+  const initialPage = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
+  const [page, setPage] = useState(initialPage);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [expandedId, setExpandedId] = useState(null);
+
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (newPage > 1) {
+        next.set('page', String(newPage));
+      } else {
+        next.delete('page');
+      }
+      return next;
+    }, { replace: true });
+  };
+
+  useEffect(() => {
+    const p = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
+    if (p !== page) setPage(p);
+  }, [searchParams]);
 
   const LIMIT = 20;
 
@@ -376,7 +396,7 @@ function TenantPayments() {
         <div className="payments-pager">
           <button
             disabled={page <= 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            onClick={() => handlePageChange(Math.max(1, page - 1))}
           >
             Previous
           </button>
@@ -385,7 +405,7 @@ function TenantPayments() {
           </span>
           <button
             disabled={page >= totalPages}
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            onClick={() => handlePageChange(Math.min(totalPages, page + 1))}
           >
             Next
           </button>

@@ -66,7 +66,7 @@
 }
 
 .filter-icon {
-  color: var(--secondary-accent);
+  color: var(--primary-color, var(--secondary-accent));
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -103,14 +103,14 @@
 }
 
 .chip-btn:hover {
-  border-color: var(--secondary-accent);
-  color: var(--secondary-accent);
+  border-color: var(--primary-color, var(--secondary-accent));
+  color: var(--primary-color, var(--secondary-accent));
 }
 
 .chip-btn.active {
-  background: var(--secondary-accent);
+  background: var(--primary-color, var(--secondary-accent));
   color: white;
-  border-color: var(--secondary-accent);
+  border-color: var(--primary-color, var(--secondary-accent));
 }
 
 /* Status filter buttons */
@@ -136,14 +136,14 @@
 }
 
 .status-btn:hover {
-  border-color: var(--secondary-accent);
-  color: var(--secondary-accent);
+  border-color: var(--primary-color, var(--secondary-accent));
+  color: var(--primary-color, var(--secondary-accent));
 }
 
 .status-btn.active {
-  background: var(--secondary-accent);
+  background: var(--primary-color, var(--secondary-accent));
   color: white;
-  border-color: var(--secondary-accent);
+  border-color: var(--primary-color, var(--secondary-accent));
 }
 
 .status-dot {
@@ -194,7 +194,7 @@
 
 .view-btn.active {
   background: var(--card-bg);
-  color: var(--secondary-accent);
+  color: var(--primary-color, var(--secondary-accent));
   box-shadow: var(--shadow-sm);
 }
 
@@ -202,10 +202,10 @@
 .filter-count {
   padding: 8px 16px;
   margin: 0;
-  background: rgba(129, 43, 202, 0.06);
-  border: 1px solid rgba(129, 43, 202, 0.15);
+  background: var(--secondary-fixed, rgba(138, 43, 226, 0.08));
+  border: 1px solid var(--secondary-fixed-dim, rgba(138, 43, 226, 0.2));
   border-radius: var(--radius-md);
-  color: var(--secondary-accent);
+  color: var(--primary-color, var(--secondary-accent));
   font-size: 13px;
   font-weight: 600;
 }
@@ -225,7 +225,7 @@
   width: 36px;
   height: 36px;
   border: 3px solid var(--border-color);
-  border-top-color: var(--secondary-accent);
+  border-top-color: var(--primary-color, var(--secondary-accent));
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }

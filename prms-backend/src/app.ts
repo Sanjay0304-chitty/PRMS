@@ -7,7 +7,7 @@ import { env } from './config';
 import { prisma, bootstrap } from './db';
 import path from 'path';
 import fs from 'fs';
-import { valerieGuard } from './middleware/valerieGuard';
+import { valerieGuard, startValerieGuard } from './middleware/valerieGuard';
 import { protectAgreements, protectUserFiles, protectPropertyUploads, protectMaintenance, protectUserThumbnails } from './middleware/fileAuth';
 import { isAllowedOrigin } from './middleware/corsPolicy';
 import { requestLogger } from './middleware/logging';
@@ -44,18 +44,28 @@ if (getApps().length === 0) {
 const app = express();
 const router = express.Router();
 const PORT = env.PORT;
-// The dedicated demo origin accepts traffic only from its local scheduled gateway.
-if (process.env.DEMO_LOOPBACK_ONLY === 'true') app.set('trust proxy', 'loopback');
+
+// Trust local reverse proxies (such as cloudflared quick tunnels or scheduled gateway on loopback)
+app.set('trust proxy', 'loopback');
 
 // Parse CORS_ORIGIN: supports single string or comma-separated list → array
 const corsOrigins = env.CORS_ORIGIN.split(',').map((o: string) => o.trim());
 
-app.use(cors({
-  origin: (origin, callback) => {
-    return callback(null, isAllowedOrigin(origin, corsOrigins, env.NODE_ENV));
-  },
-  credentials: true,
-}));
+app.use((req, res, next) => {
+  cors({
+    origin: (origin, callback) => {
+      const tunnelHost = req.headers.host;
+      const isSameTunnelOrigin = Boolean(
+        origin &&
+        tunnelHost &&
+        (/^[a-zA-Z0-9-]+\.trycloudflare\.com$/.test(tunnelHost) || /^[a-zA-Z0-9-.]+\.ts\.net$/.test(tunnelHost)) &&
+        (origin === `https://${tunnelHost}` || origin === `http://${tunnelHost}`)
+      );
+      return callback(null, isSameTunnelOrigin || isAllowedOrigin(origin, corsOrigins, env.NODE_ENV));
+    },
+    credentials: true,
+  })(req, res, next);
+});
 
 app.use(createWebSecurity(process.env.FIREBASE_AUTH_DOMAIN || `${env.FIREBASE_PROJECT_ID || 'project-prms-149c6'}.firebaseapp.com`));
 
@@ -148,26 +158,28 @@ router.use('/agreements', agreementRoutes);
 import privacyRoutes from './modules/privacy/routes_privacy';
 router.use('/privacy', privacyRoutes);
 
-app.use('/api', router);
-app.use(router);
+import { isSpaPagePath, isExplicitJsonRequest } from './middleware/spaFallback';
 
-// Serve frontend dist when built (single-origin hosting mode with SPA fallback)
+// Serve built frontend and browser page navigations before bare-path API router
+// so refreshing or opening SPA routes like /properties returns the UI instead of raw JSON.
 if (fs.existsSync(frontendDist)) {
   app.use(express.static(frontendDist));
   app.use((req, res, next) => {
-    if (req.method !== 'GET') return next();
-    // Skip static assets, uploads, and health/api endpoints
-    if (
-      req.path.startsWith('/api') ||
-      req.path.startsWith('/uploads') ||
-      req.path.startsWith('/files') ||
-      req.path.startsWith('/images') ||
-      req.path.startsWith('/health') ||
-      path.extname(req.path)
-    ) {
-      return next();
+    if (req.method !== 'GET' || !isSpaPagePath(req.path)) return next();
+    if (!isExplicitJsonRequest(req.headers.accept)) {
+      return res.sendFile(path.join(frontendDist, 'index.html'));
     }
-    // API clients expecting JSON should not receive HTML
+    next();
+  });
+}
+
+app.use('/api', router);
+app.use(router);
+
+// Fallback SPA routing for any remaining client-side GET paths
+if (fs.existsSync(frontendDist)) {
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' || !isSpaPagePath(req.path)) return next();
     if (req.headers.accept?.includes('application/json') && !req.headers.accept?.includes('text/html')) {
       return next();
     }
@@ -182,6 +194,7 @@ bootstrap()
   .then(() => {
     const ready = () => {
       console.log(`PRMS Backend running on http://localhost:${PORT} (${env.NODE_ENV})`);
+      startValerieGuard(); // check in with Valerie from the start, not only after the first visitor
     };
     if (process.env.DEMO_LOOPBACK_ONLY === 'true') app.listen(Number(PORT), '127.0.0.1', ready);
     else app.listen(PORT, ready);

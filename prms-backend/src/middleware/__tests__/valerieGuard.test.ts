@@ -256,13 +256,53 @@ describe('valerieGuard Middleware', () => {
       const req = {
         socket: { remoteAddress: '198.51.100.12' },
         headers: {},
-        originalUrl: '/properties',
+        method: 'GET',
+        originalUrl: '/api/properties',
+        query: {},
       } as unknown as Request;
       const res = { status: jest.fn().mockReturnThis(), json: jest.fn() } as unknown as Response;
       const next = jest.fn();
 
       valerieGuard(req, res, next);
 
+      expect(res.status).toHaveBeenCalledWith(503);
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    // Lockdown must still let people load the site and sign in, or nobody could log in at all
+    const lockdownCase = (method: string, url: string) => {
+      setLockdown(true);
+      const req = { socket: { remoteAddress: '198.51.100.12' }, headers: {}, method, originalUrl: url, url, path: url.split('?')[0], query: {} } as unknown as Request;
+      const res = { status: jest.fn().mockReturnThis(), json: jest.fn(), on: jest.fn() } as unknown as Response;
+      const next = jest.fn();
+      valerieGuard(req, res, next);
+      return { res, next };
+    };
+
+    it.each([
+      ['GET', '/'],
+      ['GET', '/login'],
+      ['GET', '/properties'],
+      ['GET', '/assets/index-abc123.js'],
+      ['POST', '/api/auth/login'],
+      ['POST', '/api/auth/refresh'],
+      ['POST', '/api/auth/login/'],
+    ])('lets %s %s through during lockdown', (method, url) => {
+      const { res, next } = lockdownCase(method, url);
+      expect(next).toHaveBeenCalled();
+      expect(res.status).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['GET', '/api/properties'],
+      ['POST', '/api/auth/register'],
+      ['POST', '/api/auth/forgot-password'],
+      ['GET', '/api/auth/login'],
+      ['POST', '/api/bookings'],
+      ['POST', '/login'],
+      ['DELETE', '/properties/1'],
+    ])('blocks %s %s without a login during lockdown', (method, url) => {
+      const { res, next } = lockdownCase(method, url);
       expect(res.status).toHaveBeenCalledWith(503);
       expect(next).not.toHaveBeenCalled();
     });

@@ -25,6 +25,7 @@ import {
   Trash2,
   UserCheck,
   Flag,
+  CheckCircle2,
 } from 'lucide-react';
 import { propertyApi, viewingApi } from '../api';
 import { favoritesApi } from '../api/favorites';
@@ -69,12 +70,26 @@ function BookingCard({ property, onBookClick, onReportClick }) {
   const [viewingAlternative, setViewingAlternative] = useState('');
   const [viewingMessage, setViewingMessage] = useState('');
   const [viewingSubmitting, setViewingSubmitting] = useState(false);
-  const [viewingResult, setViewingResult] = useState(null);
+  const [viewingError, setViewingError] = useState(null);
+  const [viewingSuccess, setViewingSuccess] = useState(null);
 
   // Tenant account requirement modal state
   const [showTenantRequiredModal, setShowTenantRequiredModal] = useState(false);
 
   const isTenant = user && (user.role || '').toLowerCase() === 'tenant';
+
+  // Earliest selectable viewing time (5 minutes from now) formatted for datetime-local (YYYY-MM-DDTHH:mm)
+  const minViewingDate = (() => {
+    const d = new Date(Date.now() + 5 * 60000);
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 16);
+  })();
+
+  function resetViewingModal() {
+    setShowViewingModal(false);
+    setViewingError(null);
+    setViewingSuccess(null);
+  }
 
   function handleApplyClick() {
     if (!isPropertyAvailable(property.status)) return;
@@ -92,13 +107,31 @@ function BookingCard({ property, onBookClick, onReportClick }) {
       setShowTenantRequiredModal(true);
       return;
     }
+    setViewingError(null);
+    setViewingSuccess(null);
     setShowViewingModal(true);
   }
 
   async function handleRequestViewing() {
-    if (!viewingPreferred) return;
+    if (!viewingPreferred) {
+      setViewingError('Please select a preferred viewing date and time.');
+      return;
+    }
+    const prefTime = new Date(viewingPreferred).getTime();
+    if (Number.isNaN(prefTime) || prefTime <= Date.now()) {
+      setViewingError('Preferred viewing time must be a valid date in the future.');
+      return;
+    }
+    if (viewingAlternative) {
+      const altTime = new Date(viewingAlternative).getTime();
+      if (Number.isNaN(altTime) || altTime <= Date.now()) {
+        setViewingError('Alternative viewing time must be a valid date in the future.');
+        return;
+      }
+    }
+
     setViewingSubmitting(true);
-    setViewingResult(null);
+    setViewingError(null);
     try {
       await viewingApi.request({
         propertyId: property.id,
@@ -106,16 +139,15 @@ function BookingCard({ property, onBookClick, onReportClick }) {
         alternativeTime: viewingAlternative || undefined,
         message: viewingMessage || undefined,
       });
-      setViewingResult({ success: true, message: 'Viewing requested — the landlord will respond soon.' });
+      setViewingSuccess('Viewing requested — the landlord will respond soon.');
       setTimeout(() => {
-        setShowViewingModal(false);
-        setViewingResult(null);
+        resetViewingModal();
         setViewingPreferred('');
         setViewingAlternative('');
         setViewingMessage('');
-      }, 1800);
+      }, 2000);
     } catch (err) {
-      setViewingResult({ success: false, message: err.response?.data?.error?.message || 'Failed to request viewing' });
+      setViewingError(err.response?.data?.error?.message || 'Failed to request viewing');
     } finally {
       setViewingSubmitting(false);
     }
@@ -217,34 +249,80 @@ function BookingCard({ property, onBookClick, onReportClick }) {
       {/* Viewing Modal */}
       <Modal
         isOpen={showViewingModal}
-        onOpenChange={(open) => { if (!open) { setShowViewingModal(false); setViewingResult(null); } }}
+        onOpenChange={(open) => { if (!open) resetViewingModal(); }}
         title="Request a Viewing"
-        footer={(
+        footer={viewingSuccess ? null : (
           <div className="viewing-modal-actions">
-            <button type="button" className="btn btn-outline" onClick={() => setShowViewingModal(false)}>Cancel</button>
-            <button type="button" className="btn btn-primary" onClick={handleRequestViewing} disabled={viewingSubmitting || !viewingPreferred}>
+            <button
+              type="button"
+              className="viewing-btn-cancel"
+              onClick={resetViewingModal}
+              disabled={viewingSubmitting}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="viewing-btn-submit"
+              onClick={handleRequestViewing}
+              disabled={viewingSubmitting || !viewingPreferred}
+            >
               {viewingSubmitting ? 'Requesting…' : 'Request Viewing'}
             </button>
           </div>
         )}
       >
-        {viewingResult ? (
-          <p style={{ color: viewingResult.success ? 'var(--status-success)' : 'var(--status-error)' }}>{viewingResult.message}</p>
+        {viewingSuccess ? (
+          <div className="viewing-modal-success-state">
+            <CheckCircle2 size={44} color="#10B981" />
+            <h4 className="viewing-success-title">Viewing Requested!</h4>
+            <p className="viewing-success-desc">{viewingSuccess}</p>
+          </div>
         ) : (
-          <>
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12, fontSize: 13, fontWeight: 600 }}>
-              Preferred Time
-              <input type="datetime-local" value={viewingPreferred} onChange={(e) => setViewingPreferred(e.target.value)} style={{ padding: '8px 10px', border: '1px solid var(--border-color)', borderRadius: 6 }} />
+          <div className="viewing-modal-form">
+            {viewingError && (
+              <div className="viewing-modal-alert viewing-modal-alert-error">
+                {viewingError}
+              </div>
+            )}
+            <label className="viewing-field-label">
+              <span>Preferred Time</span>
+              <input
+                type="datetime-local"
+                min={minViewingDate}
+                value={viewingPreferred}
+                onChange={(e) => {
+                  setViewingPreferred(e.target.value);
+                  if (viewingError) setViewingError(null);
+                }}
+                className="viewing-field-input"
+                required
+              />
             </label>
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12, fontSize: 13, fontWeight: 600 }}>
-              Alternative Time (optional)
-              <input type="datetime-local" value={viewingAlternative} onChange={(e) => setViewingAlternative(e.target.value)} style={{ padding: '8px 10px', border: '1px solid var(--border-color)', borderRadius: 6 }} />
+            <label className="viewing-field-label">
+              <span>Alternative Time (optional)</span>
+              <input
+                type="datetime-local"
+                min={minViewingDate}
+                value={viewingAlternative}
+                onChange={(e) => {
+                  setViewingAlternative(e.target.value);
+                  if (viewingError) setViewingError(null);
+                }}
+                className="viewing-field-input"
+              />
             </label>
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13, fontWeight: 600 }}>
-              Message (optional)
-              <textarea rows={3} value={viewingMessage} onChange={(e) => setViewingMessage(e.target.value)} style={{ padding: '8px 10px', border: '1px solid var(--border-color)', borderRadius: 6, fontFamily: 'inherit' }} />
+            <label className="viewing-field-label">
+              <span>Message (optional)</span>
+              <textarea
+                rows={3}
+                value={viewingMessage}
+                onChange={(e) => setViewingMessage(e.target.value)}
+                placeholder="Any questions or specific preferences for the landlord..."
+                className="viewing-field-textarea"
+              />
             </label>
-          </>
+          </div>
         )}
       </Modal>
 
@@ -596,8 +674,8 @@ function PropertyDetail() {
             <h1 className="pd-title">{property.title}</h1>
             <div className="pd-rating">
               <Star size={16} fill="#F59E0B" color="#F59E0B" />
-              <span className="pd-rating-val">{rating}</span>
-              <span className="pd-rating-count">({totalReviewsCount} reviews)</span>
+              {reviewsList.length > 0 && <span className="pd-rating-val">{rating}</span>}
+              <span className="pd-rating-count">({totalReviewsCount} {totalReviewsCount === 1 ? 'review' : 'reviews'})</span>
               <span className="pd-rating-loc">
                 <MapPin size={13} />
                 {property.city ? `${property.city}${property.state ? `, ${property.state}` : ''}` : property.address}
@@ -874,9 +952,9 @@ function PropertyDetail() {
 
             {/* Reviews */}
             <div className="pd-section">
-              <h3 className="pd-section-title">
+              <h3 className="pd-section-title pd-reviews-heading">
                 <Star size={18} fill="#F59E0B" color="#F59E0B" />
-                {' '}{rating} · {totalReviewsCount} reviews
+                <span>{reviewsList.length ? `${rating} · ${totalReviewsCount} ${totalReviewsCount === 1 ? 'review' : 'reviews'}` : `${totalReviewsCount} reviews`}</span>
               </h3>
 
               {/* Review submit form for authenticated tenants / guests */}
@@ -890,19 +968,20 @@ function PropertyDetail() {
                     <div className="pd-review-alert pd-review-alert-error">{reviewError}</div>
                   )}
                   <div className="pd-review-form-row">
-                    <label>Rating:</label>
+                    <label className="pd-review-rating-label">Rating:</label>
                     <div className="pd-star-select">
-                      {[5, 4, 3, 2, 1].map((num) => (
+                      {[1, 2, 3, 4, 5].map((num) => (
                         <button
                           type="button"
                           key={num}
                           className={`pd-star-choice ${newReviewRating >= num ? 'active' : ''}`}
                           onClick={() => setNewReviewRating(num)}
+                          aria-label={`${num} Star${num > 1 ? 's' : ''}`}
                         >
                           <Star size={18} fill={newReviewRating >= num ? '#F59E0B' : 'none'} color="#F59E0B" />
                         </button>
                       ))}
-                      <span className="pd-star-choice-label">{newReviewRating} Stars</span>
+                      <span className="pd-star-choice-label">{newReviewRating} {newReviewRating === 1 ? 'Star' : 'Stars'}</span>
                     </div>
                   </div>
                   <textarea

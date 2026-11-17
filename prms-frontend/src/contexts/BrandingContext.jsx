@@ -24,12 +24,27 @@ import { useAuth } from './AuthContext'
  * data-theme.
  */
 const PAINT_MAP = [
-  ['light_header_bg',  ['--header-background-color']],
-  ['light_sidebar_bg', ['--sidebar-bg']],
-  ['light_card_bg',    ['--card-bg']],
-  ['light_body_bg',    ['--background-color', '--page-bg']],
-  ['light_accent_color',['--primary-color', '--accent-color']],
-  ['light_footer_bg',  ['--footer-background-color']],
+  ['light_header_bg',   ['--header-background-color']],
+  ['light_sidebar_bg',  ['--sidebar-bg']],
+  ['light_card_bg',     ['--card-bg', '--surface-main', '--surface-container-lowest']],
+  ['light_body_bg',     ['--background-color', '--page-bg', '--surface']],
+  ['light_accent_color',[
+    '--primary-color',
+    '--accent-color',
+    '--primary-accent',
+    '--secondary-accent',
+    '--primary-container',
+    '--header-cta-button-color',
+  ]],
+  ['light_footer_bg',   ['--footer-background-color']],
+]
+
+const DERIVED_PROPERTIES = [
+  '--primary-rgb',
+  '--secondary-fixed',
+  '--secondary-fixed-dim',
+  '--secondary-container',
+  '--on-primary',
 ]
 
 function getTheme() {
@@ -54,6 +69,9 @@ function paintTheme(data, theme) {
     for (const [, cssVars] of PAINT_MAP) {
       for (const cv of cssVars) root.removeProperty(cv)
     }
+    for (const prop of DERIVED_PROPERTIES) {
+      root.removeProperty(prop)
+    }
     return
   }
   for (const [field, cssVars] of PAINT_MAP) {
@@ -63,6 +81,22 @@ function paintTheme(data, theme) {
         root.setProperty(cv, value)
       }
     }
+  }
+
+  const accentHex = data.light_accent_color
+  if (accentHex && /^#[0-9a-fA-F]{3,8}$/.test(accentHex)) {
+    const clean = accentHex.replace('#', '')
+    const exp = clean.length === 3 ? clean.split('').map(c => c + c).join('') : clean.slice(0, 6)
+    const r = parseInt(exp.slice(0, 2), 16)
+    const g = parseInt(exp.slice(2, 4), 16)
+    const b = parseInt(exp.slice(4, 6), 16)
+    const ch = [r / 255, g / 255, b / 255].map(v => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)
+    const accentLum = ch[0] * 0.2126 + ch[1] * 0.7152 + ch[2] * 0.0722
+    root.setProperty('--primary-rgb', `${r}, ${g}, ${b}`)
+    root.setProperty('--secondary-fixed', `rgba(${r}, ${g}, ${b}, 0.12)`)
+    root.setProperty('--secondary-fixed-dim', `rgba(${r}, ${g}, ${b}, 0.25)`)
+    root.setProperty('--secondary-container', accentHex)
+    root.setProperty('--on-primary', accentLum > 0.4 ? '#111827' : '#ffffff')
   }
 }
 

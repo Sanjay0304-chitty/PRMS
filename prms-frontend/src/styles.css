@@ -147,8 +147,8 @@ input {
   --text-secondary: #6b7280;
   --text-secondary-light: #cbd5e1;
 
-  /* Accent colors (aligned with reference design) */
-  --secondary-accent: #812bca;
+  /* Accent colors */
+  --secondary-accent: var(--primary-color, #812bca);
   --secondary-container: #9c4ae5;
   --secondary-fixed: #f1dbff;
   --secondary-fixed-dim: #deb7ff;
@@ -156,9 +156,9 @@ input {
   --on-secondary-fixed: #2d0050;
   --on-secondary-fixed-variant: #6a00b2;
 
-  /* Dark containers */
-  --primary-container: #131b2e;
-  --on-primary-container: #7c839b;
+  /* Dark containers / primary buttons */
+  --primary-container: var(--primary-color, #8a2be2);
+  --on-primary-container: #ffffff;
   --on-primary: #ffffff;
   --primary-fixed: #dae2fd;
 
@@ -728,7 +728,7 @@ form label {
 }
 
 .step.active span {
-  background: #8a2be2;
+  background: var(--primary-color, #ef4444);
   color: white;
 }
 
@@ -816,8 +816,8 @@ form label {
 }
 
 .role-option.selected {
-  border-color: #8a2be2;
-  background: #f3d8ff;
+  border-color: var(--primary-color, #8a2be2);
+  background: var(--secondary-fixed, #f3d8ff);
 }
 
 .role-icon {
@@ -827,7 +827,7 @@ form label {
   display: grid;
   place-items: center;
   background: #eaf1ff;
-  color: #8a2be2;
+  color: var(--primary-color, #8a2be2);
 }
 
 .role-option h3 {
@@ -855,11 +855,11 @@ form label {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #8a2be2;
+  background: var(--primary-color, #8a2be2);
 }
 
 .role-option.selected .radio-circle {
-  border-color: #8a2be2;
+  border-color: var(--primary-color, #8a2be2);
 }
 
 .continue-btn {

@@ -23,11 +23,69 @@ const DEFAULTS = {
   light_card_bg: '#ffffff',
 };
 
+const THEME_PRESETS = [
+  {
+    name: 'Default (Navy & Purple)',
+    accent: '#8a2be2',
+    body: '#f3f6fb',
+    card: '#ffffff',
+    header: '#0f172a',
+    sidebar: '#0f172a',
+    footer: '#0f172a',
+  },
+  {
+    name: 'Ruby Red',
+    accent: '#ef4444',
+    body: '#f3f6fb',
+    card: '#ffffff',
+    header: '#0f172a',
+    sidebar: '#0f172a',
+    footer: '#0f172a',
+  },
+  {
+    name: 'Royal Purple',
+    accent: '#8a2be2',
+    body: '#f3f6fb',
+    card: '#ffffff',
+    header: '#0f172a',
+    sidebar: '#0f172a',
+    footer: '#0f172a',
+  },
+  {
+    name: 'Ocean Blue',
+    accent: '#2563eb',
+    body: '#f3f6fb',
+    card: '#ffffff',
+    header: '#0f172a',
+    sidebar: '#0f172a',
+    footer: '#0f172a',
+  },
+  {
+    name: 'Emerald Green',
+    accent: '#10b981',
+    body: '#f3f6fb',
+    card: '#ffffff',
+    header: '#0f172a',
+    sidebar: '#0f172a',
+    footer: '#0f172a',
+  },
+  {
+    name: 'Sunset Orange',
+    accent: '#f97316',
+    body: '#f3f6fb',
+    card: '#ffffff',
+    header: '#0f172a',
+    sidebar: '#0f172a',
+    footer: '#0f172a',
+  },
+];
+
 /* ── ColorInput ── */
-function ColorInput({ label, value, onChange, disabled }) {
+function ColorInput({ label, hint, value, onChange, disabled }) {
   return (
     <div className="editor-field">
       <label>{label}</label>
+      {hint && <span className="editor-field-hint">{hint}</span>}
       <div className="color-row">
         <input type="color" value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} />
         <input type="text" value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} />
@@ -71,22 +129,43 @@ function BrandingSection({ company_name, logo_url, onCompanyChange, onLogoUpload
 }
 
 /* ── Colors section ── */
-function ColorsSection({ colors, onChange, disabled }) {
+function ColorsSection({ colors, onChange, onApplyPreset, disabled }) {
   const fields = [
-    ['header_bg', 'Header Background'],
-    ['sidebar_bg', 'Sidebar Background'],
-    ['body_bg', 'Body Background'],
-    ['card_bg', 'Card / Element Background'],
-    ['footer_bg', 'Footer Background'],
-    ['accent_color', 'Accent / Attention Color'],
+    ['accent_color', 'Primary Accent Color', 'Buttons, active filter tabs, progress bars, highlights'],
+    ['body_bg', 'Page Body Background', 'Background across all views (recommended: clean neutral #f3f6fb)'],
+    ['card_bg', 'Card / Container Background', 'Background for property cards, tables, panels (default: #ffffff)'],
+    ['header_bg', 'Header Background', 'Top navigation bar background'],
+    ['sidebar_bg', 'Sidebar Background', 'Sidebar menu background'],
+    ['footer_bg', 'Footer Background', 'Footer section background'],
   ];
+
   return (
     <div className="editor-section">
-      {fields.map(([k, l]) => (
+      <div className="preset-section">
+        <div className="editor-section-title">Theme Presets</div>
+        <div className="preset-grid">
+          {THEME_PRESETS.map((p) => (
+            <button
+              key={p.name}
+              type="button"
+              className="preset-btn"
+              onClick={() => onApplyPreset(p)}
+              disabled={disabled}
+            >
+              <span className="preset-dot" style={{ backgroundColor: p.accent }} />
+              {p.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="editor-section-title" style={{ marginTop: '8px' }}>Custom Palette</div>
+      {fields.map(([k, l, hint]) => (
         <ColorInput
           key={k}
           label={l}
-          value={colors[`light_${k}`]}
+          hint={hint}
+          value={colors[`light_${k}`] || DEFAULTS[`light_${k}`]}
           onChange={(v) => onChange(`light_${k}`, v)}
           disabled={disabled}
         />
@@ -98,8 +177,10 @@ function ColorsSection({ colors, onChange, disabled }) {
 /* ── Preview (rendered inline) ── */
 function PreviewPanel({ config }) {
   const active = { ...pick(DEFAULTS, 'light_'), ...pick(config, 'light_') };
-
   const logoSrc = config.logo_url ? getFullUrl(config.logo_url) : null;
+  const accentColor = active.accent_color || '#8a2be2';
+  const cardBg = active.card_bg || '#ffffff';
+  const bodyBg = active.body_bg || '#f3f6fb';
 
   return (
     <div className="preview-area">
@@ -108,8 +189,8 @@ function PreviewPanel({ config }) {
       </div>
       <div className="preview-iframe-wrapper">
         <div style={{
-          backgroundColor: active.body_bg || '#f9fafb',
-          minHeight: '480px',
+          backgroundColor: bodyBg,
+          minHeight: '520px',
           display: 'flex',
           flexDirection: 'column',
           color: '#111827',
@@ -120,14 +201,27 @@ function PreviewPanel({ config }) {
             padding: '12px 24px',
             display: 'flex',
             alignItems: 'center',
-            gap: '12px',
-            borderBottom: `2px solid ${active.accent_color}`,
+            justifyContent: 'space-between',
+            borderBottom: `2px solid ${accentColor}`,
           }}>
-            {logoSrc && <img src={logoSrc} alt="Logo" style={{ height: '32px', objectFit: 'contain' }} />}
-            <span style={{ fontWeight: 700, fontSize: '18px', color: '#111827' }}>
-              {config.company_name || 'PRMS'}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {logoSrc && <img src={logoSrc} alt="Logo" style={{ height: '32px', objectFit: 'contain' }} />}
+              <span style={{ fontWeight: 700, fontSize: '18px', color: '#ffffff' }}>
+                {config.company_name || 'PRMS'}
+              </span>
+            </div>
+            <span style={{
+              background: accentColor,
+              color: '#ffffff',
+              padding: '6px 14px',
+              borderRadius: '6px',
+              fontSize: '12px',
+              fontWeight: 600,
+            }}>
+              Portal
             </span>
           </div>
+
           {/* Sidebar + Body */}
           <div style={{ flex: 1, display: 'flex' }}>
             {/* Sidebar Preview */}
@@ -145,49 +239,114 @@ function PreviewPanel({ config }) {
                 <div key={i} style={{
                   width: 32, height: 32, borderRadius: 6,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 14, opacity: 0.7,
+                  fontSize: 14, color: '#ffffff', opacity: i === 0 ? 1 : 0.6,
+                  background: i === 0 ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
                 }}>{icon}</div>
               ))}
             </div>
+
             {/* Body */}
-            <div style={{ flex: 1, padding: '32px 24px', textAlign: 'center' }}>
-            <h2 style={{ color: active.accent_color, marginBottom: 8, fontSize: '28px' }}>
-              {config.company_name || 'PRMS'}
-            </h2>
-            <p style={{ maxWidth: 500, margin: '0 auto', fontSize: '15px', opacity: 0.8 }}>
-              Property Rental Management System
-            </p>
-            <div style={{ marginTop: 24, display: 'flex', justifyContent: 'center', gap: 12 }}>
-              <span style={{
-                padding: '8px 24px',
-                borderRadius: 8,
-                background: active.accent_color,
-                color: '#fff',
-                fontWeight: 600,
-                fontSize: 14,
+            <div style={{ flex: 1, padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Filter Tabs Preview */}
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{
+                  padding: '6px 14px',
+                  borderRadius: '999px',
+                  background: accentColor,
+                  color: '#ffffff',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                }}>All</span>
+                <span style={{
+                  padding: '6px 14px',
+                  borderRadius: '999px',
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  color: '#6b7280',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                }}>Available</span>
+                <span style={{
+                  padding: '6px 14px',
+                  borderRadius: '999px',
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  color: '#6b7280',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                }}>Rented</span>
+              </div>
+
+              {/* Sample Card Preview */}
+              <div style={{
+                backgroundColor: cardBg,
+                borderRadius: '10px',
+                border: '1px solid #e2e8f0',
+                padding: '16px',
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
               }}>
-                Browse Properties
-              </span>
-              <span style={{
-                padding: '8px 24px',
-                borderRadius: 8,
-                border: `1px solid ${active.accent_color}`,
-                color: active.accent_color,
-                fontWeight: 600,
-                fontSize: 14,
-              }}>
-                Contact Us
-              </span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 700, fontSize: '15px', color: '#111827' }}>
+                    Modern Apartment in Downtown
+                  </span>
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    padding: '3px 8px',
+                    borderRadius: '999px',
+                    background: accentColor,
+                    color: '#ffffff',
+                  }}>
+                    Featured
+                  </span>
+                </div>
+                <div style={{ fontSize: '13px', color: '#6b7280' }}>
+                  RM 2,500 /mo · 2 Beds · 2 Baths
+                </div>
+                {/* Progress bar preview */}
+                <div style={{ height: '6px', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden' }}>
+                  <div style={{ width: '75%', height: '100%', background: accentColor }} />
+                </div>
+                {/* Buttons row */}
+                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                  <span style={{
+                    padding: '8px 18px',
+                    borderRadius: '6px',
+                    background: accentColor,
+                    color: '#ffffff',
+                    fontWeight: 600,
+                    fontSize: '13px',
+                    cursor: 'default',
+                  }}>
+                    Manage Property
+                  </span>
+                  <span style={{
+                    padding: '8px 18px',
+                    borderRadius: '6px',
+                    border: '1px solid #e2e8f0',
+                    background: '#ffffff',
+                    color: '#374151',
+                    fontWeight: 600,
+                    fontSize: '13px',
+                    cursor: 'default',
+                  }}>
+                    Export
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-          </div>
+
           {/* Footer */}
           <div style={{
             backgroundColor: active.footer_bg,
-            padding: '16px 24px',
+            padding: '12px 24px',
             textAlign: 'center',
-            color: '#9ca3af',
-            fontSize: '13px',
+            color: '#94a3b8',
+            fontSize: '12px',
           }}>
             © {new Date().getFullYear()} {config.company_name || 'PRMS'} — Property Rental Management System
           </div>
@@ -243,6 +402,20 @@ export default function WebsiteCustomizer() {
 
   const onColorChange = (field, value) => {
     setConfig((p) => ({ ...p, [field]: value }));
+    setDirty(true);
+    previewKeyRef.current++;
+  };
+
+  const onApplyPreset = (preset) => {
+    setConfig((p) => ({
+      ...p,
+      light_accent_color: preset.accent,
+      light_body_bg: preset.body,
+      light_card_bg: preset.card,
+      light_header_bg: preset.header,
+      light_sidebar_bg: preset.sidebar,
+      light_footer_bg: preset.footer,
+    }));
     setDirty(true);
     previewKeyRef.current++;
   };
@@ -370,6 +543,7 @@ export default function WebsiteCustomizer() {
           <ColorsSection
             colors={config}
             onChange={onColorChange}
+            onApplyPreset={onApplyPreset}
             disabled={saving}
           />
         </div>
