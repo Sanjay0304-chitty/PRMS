@@ -731,7 +731,7 @@ function PropertyDetail() {
                   </h2>
                   <p className="pd-capacity-line">
                     {(() => {
-                      const t = property?.property_type || property?.propertyType || 'Property';
+                      const t = property?.category?.name || property?.property_type || property?.propertyType || 'Property';
                       return t.charAt(0).toUpperCase() + t.slice(1);
                     })()}
                     {property?.floorArea && ` · ${property.floorArea} sq ft`}

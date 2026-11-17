@@ -3,7 +3,7 @@ import { ArrowLeft, CheckCircle, Loader2, Save } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { propertyApi } from '../api';
 import { agentApi } from '../api/agents';
-import { PROPERTY_TYPES } from '../config/propertyTypes';
+import { categoryApi } from '../api/categories';
 import { propertyStatusInfo } from '../config/propertyStatus';
 import './PropertyEdit.css';
 
@@ -15,25 +15,28 @@ export default function AgentPropertyEdit() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [property, setProperty] = useState(null);
-  const [form, setForm] = useState({ title: '', address: '', property_type: 'apartment', city: '', state: '', description: '', amenities: '' });
+  const [categories, setCategories] = useState([]);
+  const [form, setForm] = useState({ title: '', address: '', categoryId: '', city: '', state: '', description: '', amenities: '' });
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       try {
-        const [propertyRes, assignedRes] = await Promise.all([
+        const [propertyRes, assignedRes, catRes] = await Promise.all([
           propertyApi.getById(id),
           agentApi.myProperties({ limit: 100 }),
+          categoryApi.assignable().catch(() => ({ data: { data: [] } })),
         ]);
         const assigned = assignedRes.data?.data || [];
         if (!assigned.some((item) => item.id === id)) throw new Error('You are not assigned to this property');
         const item = propertyRes.data?.data;
         if (!cancelled) {
+          setCategories(catRes.data?.data || []);
           setProperty(item);
           setForm({
             title: item.title || '',
             address: item.address || '',
-            property_type: item.property_type || 'apartment',
+            categoryId: item.categoryId || item.category?.id || '',
             city: item.city || '',
             state: item.state || '',
             description: item.description || '',
@@ -66,10 +69,12 @@ export default function AgentPropertyEdit() {
         const existing = existingAmenities.get(name.toLowerCase());
         return existing || { name, description: `Amenity: ${name}` };
       });
+      const selectedCat = categories.find((c) => c.id === form.categoryId);
       await propertyApi.updateOperational(id, {
         title: form.title.trim(),
         address: form.address.trim(),
-        property_type: form.property_type,
+        property_type: selectedCat?.name ? selectedCat.name.toLowerCase() : (property?.property_type || 'apartment'),
+        categoryId: form.categoryId || null,
         city: form.city.trim(),
         state: form.state.trim(),
         description: form.description.trim(),
@@ -109,7 +114,7 @@ export default function AgentPropertyEdit() {
               <div className="pe-group"><label className="pe-field-label">City</label><input className="pe-input" value={form.city} onChange={(e) => update('city', e.target.value)} /></div>
               <div className="pe-group"><label className="pe-field-label">State</label><input className="pe-input" value={form.state} onChange={(e) => update('state', e.target.value)} /></div>
             </div>
-            <div className="pe-group"><label className="pe-field-label">Property type</label><select className="pe-input" value={form.property_type} onChange={(e) => update('property_type', e.target.value)}>{PROPERTY_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}</select></div>
+            <div className="pe-group"><label className="pe-field-label">Category</label><select className="pe-input" value={form.categoryId} onChange={(e) => update('categoryId', e.target.value)}><option value="">Select category</option>{categories.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}</select></div>
             <div className="pe-group"><label className="pe-field-label">Description</label><textarea className="pe-textarea" rows={6} value={form.description} onChange={(e) => update('description', e.target.value)} /></div>
             <div className="pe-group"><label className="pe-field-label">Amenities</label><input className="pe-input" value={form.amenities} onChange={(e) => update('amenities', e.target.value)} placeholder="WiFi, Parking, Gym" /><span className="pe-field-help">Separate amenities with commas.</span></div>
           </section>

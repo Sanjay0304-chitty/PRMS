@@ -45,6 +45,8 @@ export class PropertyController {
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 10));
       const type = typeof req.query.type === 'string' ? req.query.type : undefined;
+      const category = typeof req.query.category === 'string' ? req.query.category : undefined;
+      const categoryId = typeof req.query.categoryId === 'string' ? req.query.categoryId : undefined;
       const search = typeof req.query.search === 'string' ? req.query.search : undefined;
       const requestedStatus = typeof req.query.status === 'string' ? req.query.status.toUpperCase() : undefined;
       const validStatuses = ['AVAILABLE', 'RENTED', 'MAINTENANCE', 'INACTIVE'];
@@ -57,7 +59,7 @@ export class PropertyController {
         return res.status(400).json({ success: false, error: { message: 'Enter a valid price range' } });
       }
       const publicOnly = !(req as AuthRequest).user || req.query.publicOnly === 'true';
-      const { properties, total } = await propertyService.getAllProperties(page, limit, { type, search, status: requestedStatus, minRent, maxRent, publicOnly });
+      const { properties, total } = await propertyService.getAllProperties(page, limit, { type, category, categoryId, search, status: requestedStatus, minRent, maxRent, publicOnly });
       HELPERS(req).log({ action: 'VIEW_PROPERTIES', entity: 'Property', description: `Listed properties (page ${page})` });
       res.json(paginatedResponse(properties, page, limit, total));
     } catch (error: any) { HELPERS(req).log({ action: 'VIEW_PROPERTIES', entity: 'Property', status: 'Failed', level: 'error', errorMessage: error.message }); res.status(500).json({ success: false, error: { message: error.message } }); }
@@ -96,7 +98,7 @@ export class PropertyController {
   };
 
   updateOperational = async (req: AuthRequest, res: Response) => {
-    const allowedFields = ['title', 'address', 'property_type', 'description', 'city', 'state', 'amenities'];
+    const allowedFields = ['title', 'address', 'property_type', 'description', 'city', 'state', 'amenities', 'categoryId'];
     try {
       const access = await canManageProperty(req, String(req.params.id));
       if (!access.exists) return res.status(404).json({ success: false, error: { message: 'Property not found' } });

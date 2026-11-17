@@ -6,10 +6,10 @@ import { CategoryController } from './controller_category';
 const router = express.Router();
 const ctrl = new CategoryController();
 
-router.use(authenticate);
-
-// Shared categories - any authenticated user can read
+// Shared categories - any user (including public guests) can read
 router.get('/shared', ctrl.shared);
+
+router.use(authenticate);
 
 // Personal (non-admin) endpoints - a landlord's own categories
 router.get('/personal', ctrl.personalList);

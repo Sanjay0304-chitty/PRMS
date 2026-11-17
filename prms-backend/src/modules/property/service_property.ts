@@ -9,7 +9,7 @@ export function normalizeDate(val: any): Date | undefined {
   return isNaN(d.getTime()) ? undefined : d;
 }
 
-export async function getAllProperties(page = 1, limit = 10, filters: { type?: string; search?: string; status?: string; minRent?: number; maxRent?: number; publicOnly?: boolean } = {}) {
+export async function getAllProperties(page = 1, limit = 10, filters: { type?: string; category?: string; categoryId?: string; search?: string; status?: string; minRent?: number; maxRent?: number; publicOnly?: boolean } = {}) {
   const where: any = {};
   if (filters.publicOnly) where.AND = [{ status: { not: 'INACTIVE' } }];
   if (filters.minRent !== undefined || filters.maxRent !== undefined) where.rent = {
@@ -17,7 +17,14 @@ export async function getAllProperties(page = 1, limit = 10, filters: { type?: s
     ...(filters.maxRent !== undefined ? { lte: filters.maxRent } : {}),
   };
 
-  if (filters.type) {
+  if (filters.categoryId) {
+    where.categoryId = filters.categoryId;
+  } else if (filters.category) {
+    where.OR = [
+      { categoryId: filters.category },
+      { property_type: filters.category },
+    ];
+  } else if (filters.type) {
     where.property_type = { equals: filters.type };
   }
 
@@ -94,6 +101,14 @@ export async function updateProperty(id: string, data: any) {
   delete data.images;
   delete data.videos;
   delete data.amenities;
+
+  if (data.category) {
+    if (data.category.id) data.categoryId = data.category.id;
+    delete data.category;
+  }
+  if (data.categoryId === '') {
+    data.categoryId = null;
+  }
 
   // Normalize date-only strings for Prisma DateTime fields
   if (data.availableFrom != null) data.availableFrom = normalizeDate(data.availableFrom);

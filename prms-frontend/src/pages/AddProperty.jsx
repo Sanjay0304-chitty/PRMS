@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { categoryApi } from '../api/categories';
 import { propertyApi } from '../api/property';
-import { PROPERTY_TYPES } from '../config/propertyTypes';
 import { getPropertyRoute } from '../config/routes';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -33,7 +32,6 @@ function AddProperty() {
 
   const [formData, setFormData] = useState({
     title: '',
-    propertyType: 'apartment',
     status: 'AVAILABLE',
     monthlyRent: '',
     address: '',
@@ -68,14 +66,13 @@ function AddProperty() {
         if (p) {
           setFormData({
             title: p.title || '',
-            propertyType: p.property_type || 'apartment',
             status: p.status || 'AVAILABLE',
             monthlyRent: p.rent || '',
             address: p.address || '',
             city: p.city || '',
             state: p.state || '',
             amenities: p.amenities?.map?.((a) => a.name) || [],
-            categoryId: p.categoryId || '',
+            categoryId: p.categoryId || p.category?.id || '',
           });
           if (p.images?.length) {
             setImagePreviews(p.images.map((img) => img.url));
@@ -168,10 +165,11 @@ function AddProperty() {
     setErrors({});
     try {
       // Build JSON body matching backend property schema
+      const selectedCategory = categories.find((c) => c.id === formData.categoryId);
       const body = {
         title: formData.title.trim(),
         address: formData.address.trim(),
-        property_type: (formData.propertyType || 'apartment').toLowerCase(),
+        property_type: selectedCategory?.name ? selectedCategory.name.toLowerCase() : 'apartment',
         rent: parseFloat(formData.monthlyRent) || 0,
         city: formData.city.trim(),
         state: formData.state.trim() || undefined,
@@ -521,40 +519,12 @@ function AddProperty() {
                   </div>
 
                   <div className="form-group">
-                    <label style={labelStyle}>Property Type</label>
-                    <select
-                      name="propertyType"
-                      value={formData.propertyType}
-                      onChange={handleInputChange}
-                      style={{ ...inputStyle, width: '100%', padding: '10px 14px', outline: 'none', appearance: 'none', paddingRight: '32px', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='${encodeURIComponent(textColor)}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center' }}
-                    >
-                      {PROPERTY_TYPES.map((t) => (
-                        <option key={t.value} value={t.value}>
-                          {t.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Description — removed: not in Property model */}
-
-                {/* Category, Amenities Row */}
-                <div
-                  className="form-grid"
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '16px',
-                  }}
-                >
-                  <div className="form-group">
                     <label style={labelStyle}>Category</label>
                     <select
                       name="categoryId"
                       value={formData.categoryId}
                       onChange={handleInputChange}
-                      style={{ ...inputStyle, width: '100%', padding: '10px 14px', outline: 'none' }}
+                      style={{ ...inputStyle, width: '100%', padding: '10px 14px', outline: 'none', appearance: 'none', paddingRight: '32px', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='${encodeURIComponent(textColor)}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center' }}
                     >
                       <option value="">Select category</option>
                       {categories.map((c) => (
@@ -564,42 +534,43 @@ function AddProperty() {
                       ))}
                     </select>
                   </div>
+                </div>
 
-                  <div className="form-group">
-                    <label style={labelStyle}>Amenities</label>
-                    <div
-                      style={{
-                        ...inputStyle,
-                        padding: '10px 14px',
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: '6px',
-                        minHeight: '42px',
-                      }}
-                    >
-                      {AMENITY_OPTIONS.map((a) => (
-                        <button
-                          type="button"
-                          key={a}
-                          onClick={() => toggleAmenity(a)}
-                          style={{
-                            background: formData.amenities.includes(a)
-                              ? primaryColor
-                              : 'transparent',
-                            border: `1px solid ${formData.amenities.includes(a) ? primaryColor : borderColor}`,
-                            color: formData.amenities.includes(a) ? '#fff' : textColor,
-                            borderRadius: '4px',
-                            padding: '3px 10px',
-                            cursor: 'pointer',
-                            fontSize: '12px',
-                            fontWeight: formData.amenities.includes(a) ? 600 : 400,
-                            transition: 'all 0.15s',
-                          }}
-                        >
-                          {a}
-                        </button>
-                      ))}
-                    </div>
+                {/* Amenities Row */}
+                <div className="form-group" style={{ marginTop: '16px' }}>
+                  <label style={labelStyle}>Amenities</label>
+                  <div
+                    style={{
+                      ...inputStyle,
+                      padding: '10px 14px',
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '6px',
+                      minHeight: '42px',
+                    }}
+                  >
+                    {AMENITY_OPTIONS.map((a) => (
+                      <button
+                        type="button"
+                        key={a}
+                        onClick={() => toggleAmenity(a)}
+                        style={{
+                          background: formData.amenities.includes(a)
+                            ? primaryColor
+                            : 'transparent',
+                          border: `1px solid ${formData.amenities.includes(a) ? primaryColor : borderColor}`,
+                          color: formData.amenities.includes(a) ? '#fff' : textColor,
+                          borderRadius: '4px',
+                          padding: '3px 10px',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          fontWeight: formData.amenities.includes(a) ? 600 : 400,
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        {a}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>

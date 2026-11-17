@@ -15,7 +15,7 @@ const roles = [
   { role: 'Agent', icon: Users, title: 'Make every handover easier.', description: 'Stay connected to the Landlords, properties and tasks assigned to you.', features: ['Access your assigned properties', 'Coordinate viewings and maintenance', 'Keep property conversations together'] },
 ];
 const steps = [
-  { icon: Search, title: 'Find your space', description: 'Explore listings by location, property type and monthly rent.' },
+  { icon: Search, title: 'Find your space', description: 'Explore listings by location, category and monthly rent.' },
   { icon: CalendarDays, title: 'See it for yourself', description: 'Sign in as a Tenant to arrange a viewing and ask the property manager questions.' },
   { icon: KeyRound, title: 'Make your next move', description: 'Submit your application, review your agreement and manage your tenancy in one place.' },
 ];
@@ -51,7 +51,7 @@ export default function GuestHome() {
         <h1 id="home-title">{settings?.homepage_hero_title || 'Find your next place to call home.'}</h1>
         <p className="home-hero-description">{settings?.homepage_hero_subtitle || 'Discover rental homes across Malaysia. From your first viewing to everyday living, bring it all together with PRMS.'}</p>
         {settings?.homepage_show_search_bar !== false && <><form className="home-search" onSubmit={e => { e.preventDefault(); search(); }}>
-          <div className="home-search-field"><MapPin size={22} /><label htmlFor="home-search">Where would you like to live?<input id="home-search" aria-label="Search by location, name or property type" placeholder="City, neighbourhood or property type" value={query} onChange={e => setQuery(e.target.value)} /></label></div>
+          <div className="home-search-field"><MapPin size={22} /><label htmlFor="home-search">Where would you like to live?<input id="home-search" aria-label="Search by location, name or category" placeholder="City, neighbourhood or category" value={query} onChange={e => setQuery(e.target.value)} /></label></div>
           <button type="submit">Find a home <Search size={19} /></button>
         </form><div className="home-quick-search"><span>Explore</span>{['Kuala Lumpur','Petaling Jaya','Condo','Studio'].map(tag => <button type="button" key={tag} onClick={() => search(tag)}>{tag}<ArrowUpRight size={12} /></button>)}</div></>}
         <div className="home-hero-benefits"><span><CircleCheck size={16} /> Live availability</span><span><CalendarDays size={16} /> Viewing requests</span><span><KeyRound size={16} /> Tenancy management</span></div>
@@ -68,7 +68,7 @@ export default function GuestHome() {
       <div className="home-property-grid">{homes.map(home => {
         const images = photos(home);
         return <Link className="home-property-card" key={home.id} to={`/properties/${home.id}`}>
-          <div className="home-property-image"><PrivateImage src={images[0]} fallbackSources={images.slice(1)} alt={home.title} loading="lazy" /><span className="home-property-type">{propertyTypeLabel(home.property_type)}</span><span className="home-property-open" aria-hidden="true"><ArrowUpRight size={20} /></span></div>
+          <div className="home-property-image"><PrivateImage src={images[0]} fallbackSources={images.slice(1)} alt={home.title} loading="lazy" /><span className="home-property-type">{home.category?.name || propertyTypeLabel(home.property_type)}</span><span className="home-property-open" aria-hidden="true"><ArrowUpRight size={20} /></span></div>
           <div className="home-property-content"><p className="home-property-location"><MapPin size={13} /> {[home.city,home.state].filter(Boolean).join(', ') || home.address}</p><h3>{home.title}</h3><div className="home-property-price"><p><strong>{money(home.rent)}</strong><span> / month</span></p><span className="home-review">{home.reviewsCount ? `★ ${Number(home.rating).toFixed(1)}` : 'No reviews yet'}</span></div></div>
         </Link>;
       })}</div>

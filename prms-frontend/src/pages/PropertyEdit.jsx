@@ -24,7 +24,7 @@ import {
   Info,
 } from 'lucide-react';
 import { propertyApi } from '../api';
-import { PROPERTY_TYPES } from '../config/propertyTypes';
+import { categoryApi } from '../api/categories';
 import './PropertyEdit.css';
 
 /* ================= VALIDATION HELPERS ================= */
@@ -139,30 +139,30 @@ function StatusPicker({ value, onChange }) {
   );
 }
 
-/* ================= PROPERTY TYPE SELECT ================= */
+/* ================= PROPERTY CATEGORY SELECT ================= */
 
-function PropertyTypeSelect({ value, onChange }) {
+function CategorySelect({ value, onChange, categories = [] }) {
   return (
     <div className="pe-group">
-      <label htmlFor="propertyType" className="pe-field-label">
+      <label htmlFor="propertyCategory" className="pe-field-label">
         <Building2 size={18} />
-        Property Type
+        Category
       </label>
       <select
-        id="propertyType"
+        id="propertyCategory"
         className={`pe-select ${!value ? 'pe-select--empty' : ''}`}
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
-        aria-describedby="propertyTypeHelp"
+        aria-describedby="propertyCategoryHelp"
       >
-        <option value="">Select type</option>
-        {PROPERTY_TYPES.map((t) => (
-          <option key={t.value} value={t.value}>
-            {t.label}
+        <option value="">Select category</option>
+        {categories.map((c) => (
+          <option key={c.id || c._id} value={c.id || c._id}>
+            {c.name}
           </option>
         ))}
       </select>
-      <span id="propertyTypeHelp" className="pe-field-help">Type of the property unit.</span>
+      <span id="propertyCategoryHelp" className="pe-field-help">Category of the property unit.</span>
     </div>
   );
 }
@@ -474,7 +474,8 @@ function PropertyEdit() {
   // Form fields backed by Property schema
   const [title, setTitle] = useState('');
   const [address, setAddress] = useState('');
-  const [propertyType, setPropertyType] = useState('');
+  const [categoryId, setCategoryId] = useState('');
+  const [propertyCategories, setPropertyCategories] = useState([]);
   const [rent, setRent] = useState('');
   const [status, setStatus] = useState('AVAILABLE');
   const [availableFrom, setAvailableFrom] = useState('');
@@ -487,11 +488,21 @@ function PropertyEdit() {
   const [images, setImages] = useState([]);
   const [videos, setVideos] = useState([]);
   const [documents, setDocuments] = useState([]);
-  const [categories] = useState([{ id: 'cat-1', name: 'Living Room' }, { id: 'cat-2', name: 'Bedroom' }, { id: 'cat-3', name: 'Kitchen' }, { id: 'cat-4', name: 'Bathroom' }, { id: 'cat-5', name: 'Exterior' }]);
+  const [mediaCategories] = useState([{ id: 'cat-1', name: 'Living Room' }, { id: 'cat-2', name: 'Bedroom' }, { id: 'cat-3', name: 'Kitchen' }, { id: 'cat-4', name: 'Bathroom' }, { id: 'cat-5', name: 'Exterior' }]);
 
   // Amenities (many-to-many: Property -> Amenity via PropertyAmenity join)
   const [amenities, setAmenities] = useState([]);
   const [newAmenityName, setNewAmenityName] = useState('');
+
+  useEffect(() => {
+    categoryApi
+      .assignable()
+      .then((res) => {
+        const list = res.data?.data || res.data || [];
+        setPropertyCategories(Array.isArray(list) ? list : []);
+      })
+      .catch(() => setPropertyCategories([]));
+  }, []);
 
   /* ---- Fetch property data ---- */
   useEffect(() => {
@@ -518,7 +529,7 @@ function PropertyEdit() {
           setProperty(prop);
           setTitle(prop.title || '');
           setAddress(prop.address || '');
-          setPropertyType(prop.property_type || prop.propertyType || '');
+          setCategoryId(prop.categoryId || prop.category?.id || prop.category?._id || '');
           setRent(prop.rent ? String(prop.rent) : '');
           setStatus(prop.status || 'AVAILABLE');
           setAvailableFrom(safeDate(prop.availableFrom));
@@ -584,10 +595,12 @@ function PropertyEdit() {
     }
     setSaving(true);
     try {
+      const selectedCat = propertyCategories.find((c) => (c.id || c._id) === categoryId);
       const body = {
         title: title.trim(),
         address: address.trim(),
-        property_type: propertyType,
+        property_type: selectedCat?.name ? selectedCat.name.toLowerCase() : (property?.property_type || 'apartment'),
+        categoryId: categoryId || null,
         rent: parseFloat(rent) || 0,
         status,
         availableFrom: availableFrom || null,
@@ -706,7 +719,7 @@ function PropertyEdit() {
         <div className="pe-topbar-center">
           <h1 className="pe-topbar-title" data-customize-id="edit.title">Edit Property</h1>
           <span className="pe-topbar-sub">
-            {property ? property.property_type || property.propertyType : 'Property'} &middot; RM {property ? property.rent || 0 : 0}
+            {property ? (property.category?.name || property.property_type || property.propertyType) : 'Property'} &middot; RM {property ? property.rent || 0 : 0}
           </span>
         </div>
         <div className="pe-topbar-actions" data-customize-id="edit.actions">
@@ -833,7 +846,7 @@ function PropertyEdit() {
               </div>
             </div>
 
-            {/* Rent + Property Type */}
+            {/* Rent + Category */}
             <div className="pe-row-group">
               <div className="pe-group">
                 <label htmlFor="editRent" className="pe-field-label">
@@ -861,7 +874,7 @@ function PropertyEdit() {
                   </span>
                 )}
               </div>
-              <PropertyTypeSelect value={propertyType} onChange={setPropertyType} />
+              <CategorySelect value={categoryId} onChange={setCategoryId} categories={propertyCategories} />
             </div>
 
             {/* Status */}
@@ -1064,8 +1077,8 @@ function PropertyEdit() {
                 <span className="pe-summary-value">{status}</span>
               </div>
               <div className="pe-summary-row">
-                <span className="pe-summary-label">Type</span>
-                <span className="pe-summary-value">{propertyType || 'Not set'}</span>
+                <span className="pe-summary-label">Category</span>
+                <span className="pe-summary-value">{propertyCategories.find(c => (c.id || c._id) === categoryId)?.name || property?.category?.name || property?.property_type || 'Not set'}</span>
               </div>
               <div className="pe-summary-row">
                 <span className="pe-summary-label">Images</span>
@@ -1089,7 +1102,7 @@ function PropertyEdit() {
       </div>
 
       {/* Media Add Modal */}
-      <AddMediaModal isOpen={!!showMediaModal} onClose={() => setShowMediaModal(null)} type={showMediaModal} propertyId={id} onAdd={showMediaModal === 'image' ? addImage : showMediaModal === 'video' ? addVideo : addDocument} categories={categories} />
+      <AddMediaModal isOpen={!!showMediaModal} onClose={() => setShowMediaModal(null)} type={showMediaModal} propertyId={id} onAdd={showMediaModal === 'image' ? addImage : showMediaModal === 'video' ? addVideo : addDocument} categories={mediaCategories} />
 
       {/* Amenity Add Modal */}
       {showAmenityModal && (

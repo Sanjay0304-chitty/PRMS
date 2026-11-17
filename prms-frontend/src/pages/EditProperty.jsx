@@ -13,21 +13,6 @@ import {
   X,
 } from 'lucide-react'
 
-const UNDEAD_PROPERTY_TYPES = [
-  'apartment',
-  'house',
-  'townhouse',
-  'condo',
-  'villa',
-  'studio',
-  'commercial',
-  'retail',
-  'office',
-  'warehouse',
-  'land',
-  'farmhouse',
-]
-
 const UNDEAD_AMENITIES = [
   'WiFi',
   'Parking',
@@ -66,7 +51,6 @@ export default function EditProperty() {
   const [formData, setFormData] = useState({
     title: '',
     address: '',
-    property_type: 'apartment',
     rent: '',
     city: '',
     state: '',
@@ -94,7 +78,6 @@ export default function EditProperty() {
       setFormData({
         title: p.title || p.name || '',
         address: p.address || '',
-        property_type: p.property_type || p.type || 'apartment',
         rent: p.rent || p.price || '',
         city: p.city || '',
         state: p.state || '',
@@ -102,7 +85,7 @@ export default function EditProperty() {
         availableFrom: p.availableFrom ? p.availableFrom.split('T')[0] : '',
         availableTo: p.availableTo ? p.availableTo.split('T')[0] : '',
       })
-      setSelectedCategoryId(p.categoryId || p.category?._id || '')
+      setSelectedCategoryId(p.categoryId || p.category?._id || p.category?.id || '')
       setSelectedAmenities(
         (p.amenities || []).map((a) => a.name || a)
       )
@@ -165,10 +148,12 @@ export default function EditProperty() {
     setError(null)
     setSuccess(false)
     try {
+      const selectedCat = categories.find((c) => (c._id || c.id) === selectedCategoryId)
       const payload = {
         title: formData.title.trim(),
         address: formData.address.trim(),
-        property_type: formData.property_type,
+        property_type: selectedCat?.name ? selectedCat.name.toLowerCase() : 'apartment',
+        categoryId: selectedCategoryId || null,
         rent: Number(formData.rent),
         city: formData.city.trim(),
         state: formData.state.trim(),
@@ -177,9 +162,6 @@ export default function EditProperty() {
         availableTo: formData.availableTo || undefined,
         selectedAmenities,
         imageUrls,
-      }
-      if (selectedCategoryId) {
-        payload.categoryId = selectedCategoryId
       }
 
       await propertyApi.update(id, payload)
@@ -282,14 +264,15 @@ export default function EditProperty() {
 
             <div className="field-row">
               <label>
-                Property Type <span className="required">*</span>
+                Category <span className="required">*</span>
                 <select
-                  value={formData.property_type}
-                  onChange={(e) => handleFieldChange('property_type', e.target.value)}
+                  value={selectedCategoryId}
+                  onChange={(e) => setSelectedCategoryId(e.target.value)}
                 >
-                  {UNDEAD_PROPERTY_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {t.charAt(0).toUpperCase() + t.slice(1)}
+                  <option value="">Select category</option>
+                  {categories.map((c) => (
+                    <option key={c._id || c.id} value={c._id || c.id}>
+                      {c.name}
                     </option>
                   ))}
                 </select>
@@ -321,23 +304,6 @@ export default function EditProperty() {
                 ))}
               </select>
             </label>
-
-            {categories.length > 0 && (
-              <label>
-                Category
-                <select
-                  value={selectedCategoryId}
-                  onChange={(e) => setSelectedCategoryId(e.target.value)}
-                >
-                  <option value="">No category</option>
-                  {categories.map((c) => (
-                    <option key={c._id || c.id} value={c._id || c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
           </div>
 
           {/* ── Location ── */}

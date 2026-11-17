@@ -25,15 +25,11 @@ import ReportListingModal from '../components/ReportListingModal'
 import { getImageUrl } from '../config/imageHelper';
 import { propertyApi, getApiError } from '../api'
 import { favoritesApi } from '../api/favorites'
+import { categoryApi } from '../api/categories'
 import { getAddPropertyRoute, getPropertyDetailPath } from '../config/routes'
 import { PROPERTY_TYPES as CANONICAL_PROPERTY_TYPES, propertyTypeLabel } from '../config/propertyTypes'
 import { PROPERTY_STATUSES, propertyStatusInfo } from '../config/propertyStatus'
 import './Properties.css'
-
-const TYPE_FILTERS = [
-  { key: 'all', label: 'All Types' },
-  ...CANONICAL_PROPERTY_TYPES.map((t) => ({ key: t.value, label: t.label })),
-]
 
 const STATUS_FILTERS = [
   { key: 'all', label: 'All' },
@@ -82,9 +78,24 @@ function Properties() {
   const isAdmin = role.includes('admin')
   const isLandlord = role.includes('landlord')
   const [favoriteIds, setFavoriteIds] = useState(new Set())
+  const [categories, setCategories] = useState([])
   const [reportProperty, setReportProperty] = useState(null)
   const [propertyToDelete, setPropertyToDelete] = useState(null)
   const [deleting, setDeleting] = useState(false)
+
+  useEffect(() => {
+    categoryApi
+      .assignable()
+      .then(({ data }) => setCategories(data?.data ?? []))
+      .catch(() => setCategories([]))
+  }, [])
+
+  const categoryFilters = [
+    { key: 'all', label: 'All Categories' },
+    ...(categories.length > 0
+      ? categories.map((c) => ({ key: c.id, label: c.name }))
+      : CANONICAL_PROPERTY_TYPES.map((t) => ({ key: t.value, label: t.label }))),
+  ]
 
   const handleDeleteClick = (e, prop) => {
     e.stopPropagation()
@@ -164,7 +175,13 @@ function Properties() {
 
         let filtered = extracted
         if (activeType !== 'all') {
-          filtered = filtered.filter((p) => (p.property_type || '').toLowerCase() === activeType.toLowerCase())
+          filtered = filtered.filter((p) => {
+            const pCatId = p.categoryId || p.category?.id || p.category?._id
+            const pCatName = (p.category?.name || '').toLowerCase()
+            const pType = (p.property_type || '').toLowerCase()
+            const activeLow = activeType.toLowerCase()
+            return pCatId === activeType || pCatName === activeLow || pType === activeLow
+          })
         }
         if (activeStatus !== 'all') {
           filtered = filtered.filter((p) => (p.status || '').toLowerCase() === activeStatus.toLowerCase())
@@ -175,7 +192,8 @@ function Properties() {
             (p.title || p.name || '').toLowerCase().includes(q) ||
             (p.address || p.location || '').toLowerCase().includes(q) ||
             (p.city || '').toLowerCase().includes(q) ||
-            (p.state || '').toLowerCase().includes(q)
+            (p.state || '').toLowerCase().includes(q) ||
+            (p.category?.name || '').toLowerCase().includes(q)
           )
         }
 
@@ -190,6 +208,7 @@ function Properties() {
               page: currentPage,
               limit: perPage,
               type: activeType === 'all' ? undefined : activeType,
+              category: activeType === 'all' ? undefined : activeType,
               search: debouncedSearch || undefined,
               status: activeStatus === 'all' ? undefined : activeStatus,
             })
@@ -278,9 +297,15 @@ function Properties() {
     if (activeStatus !== 'all' && propertyStatusInfo(p.status).value !== activeStatus) return false
     if (!isLandlord) return true
 
-    if (activeType !== 'all' && (p.property_type || '').toLowerCase() !== activeType.toLowerCase()) return false
+    if (activeType !== 'all') {
+      const pCatId = p.categoryId || p.category?.id || p.category?._id
+      const pCatName = (p.category?.name || '').toLowerCase()
+      const pType = (p.property_type || '').toLowerCase()
+      const activeLow = activeType.toLowerCase()
+      if (pCatId !== activeType && pCatName !== activeLow && pType !== activeLow) return false
+    }
     if (debouncedSearch) {
-      const searchable = [p.title, p.name, p.address, p.city, p.state, p.property_type, p.location]
+      const searchable = [p.title, p.name, p.address, p.city, p.state, p.category?.name, p.property_type, p.location]
         .filter(Boolean)
         .join(' ')
         .toLowerCase()
@@ -380,7 +405,7 @@ function Properties() {
 
         <div className="properties-controls">
           <div className="properties-type-filters">
-            {TYPE_FILTERS.map((t) => (
+            {categoryFilters.map((t) => (
               <button
                 type="button"
                 key={t.key}
@@ -592,8 +617,8 @@ function Properties() {
                             <MapPin size={14} />
                             <span>{p.location || p.address || 'Location not set'}</span>
                           </div>
-                          <span className={`type-badge type-${(p.property_type || 'property').toLowerCase()}`}>
-                            {propertyTypeLabel(p.property_type)}
+                          <span className={`type-badge type-${(p.category?.name || p.property_type || 'property').toLowerCase()}`}>
+                            {p.category?.name || propertyTypeLabel(p.property_type)}
                           </span>
                           <div className="property-footer">
                             <div className="property-price">

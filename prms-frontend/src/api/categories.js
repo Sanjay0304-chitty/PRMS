@@ -3,9 +3,19 @@ import { apiClient } from '../api';
 
 export const categoryApi = {
   assignable: async () => {
-    const [shared, personal] = await Promise.all([categoryApi.shared(), categoryApi.personalList()]);
-    const categories = [...(shared.data?.data ?? []), ...(personal.data?.data ?? [])];
-    return { data: { data: [...new Map(categories.filter(category => !category.isDisabled).map(category => [category.id, category])).values()] } };
+    try {
+      const [sharedRes, personalRes] = await Promise.allSettled([
+        categoryApi.shared(),
+        categoryApi.personalList(),
+      ]);
+      const shared = sharedRes.status === 'fulfilled' ? (sharedRes.value?.data?.data ?? []) : [];
+      const personal = personalRes.status === 'fulfilled' ? (personalRes.value?.data?.data ?? []) : [];
+      const categories = [...shared, ...personal];
+      const unique = [...new Map(categories.filter((c) => !c.isDisabled).map((c) => [c.id, c])).values()];
+      return { data: { data: unique } };
+    } catch {
+      return { data: { data: [] } };
+    }
   },
   list: (params) => apiClient.get('/categories', { params }),
   shared: () => apiClient.get('/categories/shared'),

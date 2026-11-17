@@ -5,6 +5,7 @@ import { Heart, Flag, Search, MapPin } from 'lucide-react';
 import { propertyApi } from '../api';
 import { favoritesApi } from '../api/favorites';
 import { useAuth } from '../contexts/AuthContext';
+import { categoryApi } from '../api/categories';
 import { PROPERTY_TYPES, propertyTypeLabel } from '../config/propertyTypes';
 import { propertyStatusInfo } from '../config/propertyStatus';
 import { getImageUrl } from '../config/imageHelper';
@@ -21,6 +22,7 @@ export default function GuestProperties() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [properties, setProperties] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [pagination, setPagination] = useState({total:0,totalPages:0});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -31,6 +33,9 @@ export default function GuestProperties() {
   const page = Math.max(1, Number.parseInt(params.get('page'), 10) || 1);
   const search = params.get('search') || params.get('q') || '';
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, [page]);
+  useEffect(() => {
+    categoryApi.assignable().then(res => setCategories(res.data?.data || [])).catch(() => setCategories([]));
+  }, []);
   const status = ['AVAILABLE','RENTED','MAINTENANCE','ALL'].includes(params.get('status')) ? params.get('status') : 'AVAILABLE';
   const update = values => {
     const next = new URLSearchParams(params);
@@ -75,11 +80,11 @@ export default function GuestProperties() {
   return <div className="guest-properties-page"><PublicHeader /><main className="public-catalogue">
     <h1>Rental properties</h1><p>Browse available homes or explore other published listings.</p>
     <form className="public-search-form" key={search} onSubmit={e => { e.preventDefault(); update({search:new FormData(e.currentTarget).get('search').trim()}); }}>
-      <label htmlFor="catalogue-search">Location, property name or type</label><div><input id="catalogue-search" type="search" name="search" defaultValue={search} placeholder="Search properties" /><button className="public-primary" type="submit"><Search size={18} /> Search</button></div>
+      <label htmlFor="catalogue-search">Location, property name or category</label><div><input id="catalogue-search" type="search" name="search" defaultValue={search} placeholder="Search properties" /><button className="public-primary" type="submit"><Search size={18} /> Search</button></div>
     </form>
     <details className="public-filter-panel" open><summary>Filter properties</summary><div className="public-filter-fields">
       <label>Availability<select value={status} onChange={e => update({status:e.target.value})}><option value="AVAILABLE">Available</option><option value="ALL">All published listings</option><option value="RENTED">Rented</option><option value="MAINTENANCE">Maintenance</option></select></label>
-      <label>Property type<select value={params.get('type') || ''} onChange={e => update({type:e.target.value})}><option value="">All types</option>{PROPERTY_TYPES.map(type => <option key={type.value} value={type.value}>{type.label}</option>)}</select></label>
+      <label>Category<select value={params.get('category') || params.get('type') || ''} onChange={e => update({category:e.target.value,type:e.target.value})}><option value="">All categories</option>{categories.length > 0 ? categories.map(c => <option key={c.id} value={c.name.toLowerCase()}>{c.name}</option>) : PROPERTY_TYPES.map(type => <option key={type.value} value={type.value}>{type.label}</option>)}</select></label>
       <label>Minimum monthly rent (RM)<input type="number" min="0" step="100" value={params.get('minRent') || ''} onChange={e => update({minRent:e.target.value})} /></label>
       <label>Maximum monthly rent (RM)<input type="number" min="0" step="100" value={params.get('maxRent') || ''} onChange={e => update({maxRent:e.target.value})} /></label>
     </div><button type="button" className="btn btn-outline" onClick={() => setParams({})}>Reset filters</button></details>
@@ -93,7 +98,7 @@ export default function GuestProperties() {
           <button type="button" className="heart-btn" aria-label={`${favorites.has(property.id) ? 'Remove from' : 'Save to'} favorites: ${property.title}`} aria-pressed={favorites.has(property.id)} disabled={busy===property.id} onClick={() => favorite(property)}><Heart size={20} fill={favorites.has(property.id) ? 'currentColor' : 'none'} /></button>
         </div><div className="guest-property-body"><h2><Link to={`/properties/${property.id}`}>{property.title}</Link></h2>
           <p>{property.reviewsCount ? `★ ${Number(property.rating).toFixed(1)} (${property.reviewsCount} reviews)` : 'No reviews yet'}</p>
-          <p><MapPin size={15} /> {[property.city,property.state].filter(Boolean).join(', ') || property.address}</p><p>{propertyTypeLabel(property.property_type)}</p><p className="public-listing-status">{info.label}</p>
+          <p><MapPin size={15} /> {[property.city,property.state].filter(Boolean).join(', ') || property.address}</p><p>{property.category?.name || propertyTypeLabel(property.property_type)}</p><p className="public-listing-status">{info.label}</p>
           <div className="guest-property-footer"><strong>RM {Number(property.rent).toLocaleString()} / month</strong><button type="button" className="guest-card-report-link" onClick={() => setReport(property)}><Flag size={14} /> Report</button></div>
         </div></article>;
       })}</div>

@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { getImageUrl } from '../config/imageHelper';
 import { searchApi } from '../api/search'
+import { categoryApi } from '../api/categories'
 import { ROUTES } from '../config/routes'
 import { isPropertyAvailable } from '../config/propertyStatus'
 import {
@@ -26,8 +27,16 @@ function SearchPage() {
   const [sort, setSort] = useState('relevance')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [results, setResults] = useState([])
+  const [categories, setCategories] = useState([])
   const [reportProperty, setReportProperty] = useState(null)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    categoryApi
+      .assignable()
+      .then(({ data }) => setCategories(data?.data ?? []))
+      .catch(() => setCategories([]))
+  }, [])
   const [error, setError] = useState('')
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -40,7 +49,10 @@ function SearchPage() {
       const params = { page: String(page), limit: '20' }
       if (query) params.location = query
       if (location) params.location = location
-      if (type !== 'all') params.property_type = type
+      if (type !== 'all') {
+        params.property_type = type
+        params.category = type
+      }
       params.sort = sort
 
       let response
@@ -87,12 +99,16 @@ function SearchPage() {
     setPage(1)
   }, [])
 
-  const typeOptions = [
-    { value: 'all', label: 'All Types' },
-    { value: 'apartment', label: 'Apartment' },
-    { value: 'condo', label: 'Condominium' },
-    { value: 'house', label: 'House' },
-    { value: 'studio', label: 'Studio' },
+  const categoryOptions = [
+    { value: 'all', label: 'All Categories' },
+    ...(categories.length > 0
+      ? categories.map((c) => ({ value: c.id, label: c.name }))
+      : [
+          { value: 'apartment', label: 'Apartment' },
+          { value: 'condo', label: 'Condominium' },
+          { value: 'house', label: 'House' },
+          { value: 'studio', label: 'Studio' },
+        ]),
   ]
 
   const sortOptions = [
@@ -155,9 +171,9 @@ function SearchPage() {
           </div>
 
           <div className="filter-group">
-            <label>Property Type</label>
+            <label>Category</label>
             <select value={type} onChange={e => setType(e.target.value)}>
-              {typeOptions.map(opt => (
+              {categoryOptions.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
