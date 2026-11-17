@@ -689,3 +689,52 @@
   cursor: not-allowed;
 }
 
+/* ── Favorites & View Tabs ── */
+.properties-view-tabs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+.view-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 18px;
+  border-radius: 9999px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  background: var(--surface-container, #ffffff);
+  color: var(--text-secondary, #64748b);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.view-tab-btn:hover {
+  background: var(--surface-hover, #f8fafc);
+  color: var(--text-primary, #0f172a);
+  border-color: var(--border-color-hover, #cbd5e1);
+}
+
+.view-tab-btn.active {
+  background: var(--primary-container, #8b5cf6);
+  border-color: var(--primary-container, #8b5cf6);
+  color: var(--on-primary, #ffffff);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.25);
+}
+
+.view-tab-btn-fav.active {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
+}
+
+.view-tab-btn-fav.active svg {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+

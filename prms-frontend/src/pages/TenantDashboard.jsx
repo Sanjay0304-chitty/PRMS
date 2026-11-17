@@ -112,6 +112,7 @@ function TenantDashboard() {
         const favorites = favoritesRes.data?.data || []
         setSavedProperties(
           favorites.slice(0, 4).map((f) => ({
+            id: f.property?.id || f.propertyId,
             name: f.property?.title || 'Property',
             location: [f.property?.city, f.property?.state].filter(Boolean).join(', ') || f.property?.address || '',
             price: f.property?.rent ? `${formatAmount(f.property.rent)} / month` : '',
@@ -300,7 +301,7 @@ function TenantDashboard() {
           <button
             type="button"
             className="btn-outline-sm"
-            onClick={() => navigate(ROUTES.tenant.properties)}
+            onClick={() => navigate(`${ROUTES.tenant.properties}?favorites=true`)}
           >
             View All
           </button>
@@ -308,11 +309,24 @@ function TenantDashboard() {
 
         <div className="saved-grid">
           {savedProperties.length ? savedProperties.map((property, i) => (
-            <article className="saved-card" key={`${property.name}-${i}`}>
+            <article
+              className="saved-card"
+              key={`${property.name}-${i}`}
+              onClick={() => property.id && navigate(`/tenant/properties/${property.id}`)}
+              style={{ cursor: property.id ? 'pointer' : 'default' }}
+            >
               {property.image && <PrivateImage src={property.image} alt={property.name} />}
 
-              <button type="button" className="heart-btn">
-                <Heart size={24} fill="currentColor" />
+              <button
+                type="button"
+                className="heart-btn"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  navigate(`${ROUTES.tenant.properties}?favorites=true`)
+                }}
+                title="View Favorites"
+              >
+                <Heart size={24} fill="#EF4444" color="#EF4444" />
               </button>
 
               <div className="saved-overlay">

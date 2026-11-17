@@ -49,6 +49,7 @@ function Properties() {
   const initialType = searchParams.get('type') || 'all'
   const initialStatus = searchParams.get('status') || 'all'
   const initialSearch = searchParams.get('search') || ''
+  const initialFavorites = searchParams.get('favorites') === 'true'
 
   const [properties, setProperties] = useState([])
   const [loading, setLoading] = useState(true)
@@ -58,6 +59,7 @@ function Properties() {
   const [activeStatus, setActiveStatus] = useState(initialStatus)
   const [searchTerm, setSearchTerm] = useState(initialSearch)
   const [debouncedSearch, setDebouncedSearch] = useState(initialSearch)
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(initialFavorites)
   const [currentPage, setCurrentPage] = useState(initialPage)
   const [totalCount, setTotalCount] = useState(0)
   const { gridRef, pageSize: perPage } = usePropertyGridPageSize()
@@ -67,7 +69,7 @@ function Properties() {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev)
       Object.entries(updates).forEach(([key, value]) => {
-        if (!value || value === 'all' || (key === 'page' && Number(value) <= 1)) {
+        if (!value || value === 'all' || value === false || (key === 'page' && Number(value) <= 1)) {
           next.delete(key)
         } else {
           next.set(key, String(value))
@@ -128,6 +130,10 @@ function Properties() {
       else next.add(propertyId)
       return next
     })
+    if (showFavoritesOnly && isFav) {
+      setProperties((prev) => prev.filter((p) => (p._id || p.id) !== propertyId))
+      setTotalCount((prev) => Math.max(0, prev - 1))
+    }
     try {
       if (isFav) {
         await favoritesApi.removeFavorite(propertyId)
@@ -141,6 +147,9 @@ function Properties() {
         else next.delete(propertyId)
         return next
       })
+      if (showFavoritesOnly && isFav) {
+        fetchProperties()
+      }
     }
   }
 
@@ -148,31 +157,59 @@ function Properties() {
     setLoading(true)
     setError(null)
     try {
-      const { data } = isLandlord
-        ? await propertyApi.myProperties()
-        : await propertyApi.list({
-            page: currentPage,
-            limit: perPage,
-            type: activeType === 'all' ? undefined : activeType,
-            search: debouncedSearch || undefined,
-            status: activeStatus === 'all' ? undefined : activeStatus,
-          })
-      const list = data?.data || data?.properties || data
-      setProperties(Array.isArray(list) ? list : [])
+      if (showFavoritesOnly) {
+        const { data } = await favoritesApi.getMyFavorites()
+        const favsList = data?.data || []
+        const extracted = favsList.map((f) => f.property).filter(Boolean)
 
-      setTotalCount(
-        data?.pagination?.total ??
-          data?.totalCount ??
-          data?.total ??
-          (Array.isArray(list) ? list.length : 0)
-      )
+        let filtered = extracted
+        if (activeType !== 'all') {
+          filtered = filtered.filter((p) => (p.property_type || '').toLowerCase() === activeType.toLowerCase())
+        }
+        if (activeStatus !== 'all') {
+          filtered = filtered.filter((p) => (p.status || '').toLowerCase() === activeStatus.toLowerCase())
+        }
+        if (debouncedSearch) {
+          const q = debouncedSearch.toLowerCase()
+          filtered = filtered.filter((p) =>
+            (p.title || p.name || '').toLowerCase().includes(q) ||
+            (p.address || p.location || '').toLowerCase().includes(q) ||
+            (p.city || '').toLowerCase().includes(q) ||
+            (p.state || '').toLowerCase().includes(q)
+          )
+        }
+
+        setTotalCount(filtered.length)
+        const startIndex = (currentPage - 1) * perPage
+        const paginated = filtered.slice(startIndex, startIndex + perPage)
+        setProperties(paginated)
+      } else {
+        const { data } = isLandlord
+          ? await propertyApi.myProperties()
+          : await propertyApi.list({
+              page: currentPage,
+              limit: perPage,
+              type: activeType === 'all' ? undefined : activeType,
+              search: debouncedSearch || undefined,
+              status: activeStatus === 'all' ? undefined : activeStatus,
+            })
+        const list = data?.data || data?.properties || data
+        setProperties(Array.isArray(list) ? list : [])
+
+        setTotalCount(
+          data?.pagination?.total ??
+            data?.totalCount ??
+            data?.total ??
+            (Array.isArray(list) ? list.length : 0)
+        )
+      }
     } catch (err) {
       setError(getApiError(err))
       setProperties([])
     } finally {
       setLoading(false)
     }
-  }, [activeStatus, activeType, currentPage, debouncedSearch, isLandlord, perPage])
+  }, [activeStatus, activeType, currentPage, debouncedSearch, isLandlord, perPage, showFavoritesOnly])
 
   // Synchronize state if URL search parameters change (e.g. back/forward navigation)
   useEffect(() => {
@@ -180,10 +217,12 @@ function Properties() {
     const typeFromUrl = searchParams.get('type') || 'all'
     const statusFromUrl = searchParams.get('status') || 'all'
     const searchFromUrl = searchParams.get('search') || ''
+    const favsFromUrl = searchParams.get('favorites') === 'true'
 
     if (pageFromUrl !== currentPage) setCurrentPage(pageFromUrl)
     if (typeFromUrl !== activeType) setActiveType(typeFromUrl)
     if (statusFromUrl !== activeStatus) setActiveStatus(statusFromUrl)
+    if (favsFromUrl !== showFavoritesOnly) setShowFavoritesOnly(favsFromUrl)
     if (searchFromUrl !== searchTerm) {
       setSearchTerm(searchFromUrl)
       setDebouncedSearch(searchFromUrl)
@@ -250,10 +289,10 @@ function Properties() {
     return true
   })
   const totalPages = Math.max(
-    Math.ceil((isLandlord ? filteredProperties.length : totalCount) / perPage),
+    Math.ceil((isLandlord && !showFavoritesOnly ? filteredProperties.length : totalCount) / perPage),
     1
   )
-  const displayedProperties = isLandlord
+  const displayedProperties = isLandlord && !showFavoritesOnly
     ? filteredProperties.slice((currentPage - 1) * perPage, currentPage * perPage)
     : filteredProperties
 
@@ -270,13 +309,15 @@ function Properties() {
       {/* ── Title bar ── */}
       <div className="properties-titlebar">
         <div>
-          <h1 className="page-title">Properties</h1>
+          <h1 className="page-title">{showFavoritesOnly ? 'Saved Properties' : 'Properties'}</h1>
           <p className="page-subtitle">
-            {isAdmin
-              ? 'Review and manage property listings across the platform.'
-              : isLandlord
-                ? 'Browse and manage only the property listings in your portfolio.'
-                : 'Browse available property listings.'}
+            {showFavoritesOnly
+              ? 'Browse and manage properties you have added to your favorites watchlist.'
+              : isAdmin
+                ? 'Review and manage property listings across the platform.'
+                : isLandlord
+                  ? 'Browse and manage only the property listings in your portfolio.'
+                  : 'Browse available property listings.'}
           </p>
         </div>
         {getAddPropertyRoute(user?.role) && (
@@ -294,6 +335,35 @@ function Properties() {
           </motion.button>
         )}
       </div>
+
+      {/* ── Filter Tabs (All Properties vs My Favorites) ── */}
+      {user && (
+        <div className="properties-view-tabs">
+          <button
+            type="button"
+            className={`view-tab-btn ${!showFavoritesOnly ? 'active' : ''}`}
+            onClick={() => {
+              setShowFavoritesOnly(false)
+              setCurrentPage(1)
+              updateUrlParams({ favorites: false, page: 1 })
+            }}
+          >
+            All Properties
+          </button>
+          <button
+            type="button"
+            className={`view-tab-btn view-tab-btn-fav ${showFavoritesOnly ? 'active' : ''}`}
+            onClick={() => {
+              setShowFavoritesOnly(true)
+              setCurrentPage(1)
+              updateUrlParams({ favorites: true, page: 1 })
+            }}
+          >
+            <Heart size={14} fill={showFavoritesOnly ? '#EF4444' : 'none'} color={showFavoritesOnly ? '#EF4444' : 'currentColor'} />
+            My Favorites ({favoriteIds.size})
+          </button>
+        </div>
+      )}
 
       {/* ── Toolbar: Search + Filters + View toggle ── */}
       <div className="panel-card properties-toolbar">
@@ -390,20 +460,40 @@ function Properties() {
           {displayedProperties.length === 0 ? (
             <div className="panel-card empty-state">
               <div className="empty-icon">
-                <Building2 size={56} />
+                {showFavoritesOnly ? <Heart size={56} color="#ef4444" /> : <Building2 size={56} />}
               </div>
-              <h2>No properties found</h2>
-              <p>Try adjusting your filters or add a new property.</p>
-              {getAddPropertyRoute(user?.role) && (
-                <motion.button
+              <h2>{showFavoritesOnly ? 'No favorite properties found' : 'No properties found'}</h2>
+              <p>
+                {showFavoritesOnly
+                  ? searchTerm || activeType !== 'all'
+                    ? 'No saved properties match your search or filter.'
+                    : "You haven't saved any properties yet. Click the heart icon on any property to add it to your favorites."
+                  : 'Try adjusting your filters or add a new property.'}
+              </p>
+              {showFavoritesOnly ? (
+                <button
                   type="button"
-                  className="btn-outline"
-                  onClick={() => navigate(getAddPropertyRoute(user?.role))}
-                  whileHover={{ y: -2 }}
-                  whileTap={{ scale: 0.97 }}
+                  className="btn-primary-solid"
+                  onClick={() => {
+                    setShowFavoritesOnly(false)
+                    setCurrentPage(1)
+                    updateUrlParams({ favorites: false, page: 1 })
+                  }}
                 >
-                  <Plus size={16} /> Add Property
-                </motion.button>
+                  Browse All Properties
+                </button>
+              ) : (
+                getAddPropertyRoute(user?.role) && (
+                  <motion.button
+                    type="button"
+                    className="btn-outline"
+                    onClick={() => navigate(getAddPropertyRoute(user?.role))}
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.97 }}
+                  >
+                    <Plus size={16} /> Add Property
+                  </motion.button>
+                )
               )}
             </div>
           ) : (
